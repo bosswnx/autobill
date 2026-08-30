@@ -15,8 +15,9 @@ npm install
 npm run dev              # web http://127.0.0.1:5173/
 npm run dev:lan          # bind Vite to LAN for device live reload
 npm run build            # build web
-npm run server           # sync server (tsx watch)
+npm run server           # sync server (tsx watch); serves the web app if dist exists
 npm run server:start     # sync server (no watch)
+npm run serve            # build web, then start API + web on one port
 npm run ios              # build + cap sync ios + open Xcode
 npm run ios:live         # device against this machine's Vite
 ```

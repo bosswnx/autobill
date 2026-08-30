@@ -34,6 +34,17 @@ export function describeSyncError(error: unknown): string {
   return '同步失败'
 }
 
+export function detectHostedOrigin(): Promise<string | null> {
+  if (typeof window === 'undefined') return Promise.resolve(null)
+  return fetch(`${window.location.origin}/healthz`, { signal: AbortSignal.timeout(2500) })
+    .then(async (response) => {
+      if (!response.ok) return null
+      const body = (await response.json()) as { ok?: boolean }
+      return body.ok ? window.location.origin : null
+    })
+    .catch(() => null)
+}
+
 export function normalizeServerUrl(input: string): string {
   let url = input.trim().replace(/\/+$/, '')
   if (!url) return ''

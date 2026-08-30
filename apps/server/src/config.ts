@@ -12,6 +12,7 @@ export type Config = {
   pepper: string
   dataDir: string
   dbPath: string
+  webRoot: string | null
   generatedTargetKey: boolean
 }
 
@@ -23,6 +24,21 @@ type SecretsFile = {
 function env(name: string): string | undefined {
   const value = process.env[name]?.trim()
   return value || undefined
+}
+
+function webRootPath(): string | null {
+  const raw = env('TAGLEDGER_WEB')
+  const candidates = [
+    raw,
+    join(root, '..', '..', 'web', 'dist'),
+    join(process.cwd(), '..', 'web', 'dist'),
+  ]
+  for (const dir of candidates) {
+    if (!dir) continue
+    const resolved = isAbsolute(dir) ? dir : join(process.cwd(), dir)
+    if (existsSync(join(resolved, 'index.html'))) return resolved
+  }
+  return null
 }
 
 function dataDirPath(): string {
@@ -68,6 +84,7 @@ export function loadConfig(): Config {
     pepper: secrets.pepper,
     dataDir,
     dbPath: join(dataDir, 'tagledger.sqlite'),
+    webRoot: webRootPath(),
     generatedTargetKey: !fromEnvTarget,
   }
 }

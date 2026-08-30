@@ -57,8 +57,12 @@ npm run build
 ### 同步服务
 
 ```bash
-npm run server
+npm run serve
 ```
+
+先编 web，再在同一个端口上同时跑 API 和网页（默认 `http://0.0.0.0:8787`）。用浏览器打开这个地址就是一台终端：设置里只填 target key 和用户 token。手机和其他浏览器仍按服务器地址连接。
+
+只跑 API、不编网页：`npm run server`。已经编过、只想启动：`npm run server:start`（有 `apps/web/dist` 就会托管网页）。
 
 默认 `http://0.0.0.0:8787`。第一次若没设环境变量，会在 `apps/server/data/secrets.json` 生成 **target key** 并打印到终端。`data/` 和 `.env` 不进 git。
 
@@ -70,16 +74,17 @@ npm run server
 | `TAGLEDGER_PEPPER` | 用户 token 哈希用，不要给客户端 |
 | `PORT` / `HOST` | 默认 `8787` / `0.0.0.0` |
 | `TAGLEDGER_DATA` | SQLite 和 secrets 目录 |
+| `TAGLEDGER_WEB` | 可选，网页 `dist` 目录 |
 
-前面用 Caddy / nginx 终止 TLS。生产用 `npm run server:start`。
+前面用 Caddy / nginx 终止 TLS。打开服务器上的网页时不用填地址，只要 target key 和用户 token。
 
-连上需要三样：
+从别的设备连上仍需要三样：
 
 1. 服务器地址
 2. Target key
 3. 你自己设的用户 token（至少 8 位）
 
-同一台服务器上，用户 token 就是你的空间。不要和别人重复。设置页填这三项即可；连上之后同步走设备 token，不再传 target key 和用户 token。
+**直接打开这台服务器上的网页**不用填地址，这个浏览器就是一台终端。同一台服务器上，用户 token 就是你的空间。不要和别人重复。连上之后同步走设备 token，不再传 target key 和用户 token。
 
 两边都有数据时会停下来让你选：用本机覆盖云端、用云端覆盖本机、两边都留。
 

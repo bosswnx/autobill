@@ -4,7 +4,7 @@ import { useLiveQuery } from 'dexie-react-hooks'
 import { useEffect, useState } from 'react'
 import { Overlay } from '../components/Overlay'
 import { db } from '../db/database'
-import { describeSyncError, normalizeServerUrl } from '../sync/api'
+import { describeSyncError, detectHostedOrigin, normalizeServerUrl } from '../sync/api'
 import {
   connectToServer,
   disconnect,
@@ -123,14 +123,23 @@ function ConnectedCard({
 
 function ConnectForm() {
   const [serverUrl, setServerUrl] = useState('')
+  const [hosted, setHosted] = useState(false)
   const [targetKey, setTargetKey] = useState('')
   const [userToken, setUserToken] = useState('')
   const [error, setError] = useState('')
   const [busy, setBusy] = useState(false)
   const [pending, setPending] = useState<{ url: string; connected: ConnectResponse } | null>(null)
 
+  useEffect(() => {
+    void detectHostedOrigin().then((origin) => {
+      if (!origin) return
+      setHosted(true)
+      setServerUrl(origin)
+    })
+  }, [])
+
   async function submit() {
-    const url = normalizeServerUrl(serverUrl)
+    const url = hosted ? serverUrl.replace(/\/+$/, '') : normalizeServerUrl(serverUrl)
     if (!url) {
       setError('请填写服务器地址')
       return
@@ -168,10 +177,11 @@ function ConnectForm() {
     <section className="flex flex-col gap-4">
       <h2 className="text-sm font-medium text-muted">同步</h2>
       <p className="text-sm leading-relaxed text-muted">
-        连上自建服务器后，浏览器和手机共用一本账。需要三样：服务器地址、这台服务器的
-        target key、你自己设的用户 token。同一台服务器上，用户 token
-        就是你的空间，不要和别人重复。
+        {hosted
+          ? '这个网页就在同步服务器上。填这台服务器的 target key 和你的用户 token，就能把浏览器当一台终端。'
+          : '连上自建服务器后，浏览器和手机共用一本账。需要三样：服务器地址、这台服务器的 target key、你自己设的用户 token。同一台服务器上，用户 token 就是你的空间，不要和别人重复。'}
       </p>
+      {hosted ? null : (
       <label className="block">
         <span className="text-xs text-faint">服务器地址</span>
         <input
@@ -184,6 +194,7 @@ function ConnectForm() {
           className={INPUT}
         />
       </label>
+      )}
       <label className="block">
         <span className="text-xs text-faint">Target key</span>
         <input

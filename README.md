@@ -57,8 +57,12 @@ Builds web. Shared is consumed from source via the Vite alias.
 ### Sync server
 
 ```bash
-npm run server
+npm run serve
 ```
+
+Builds the web app, then starts the API **and** the same UI on one port (`http://0.0.0.0:8787`). Opening that URL in a browser is a full client: Settings only asks for the target key and user token. Phone apps and other browsers still connect by URL.
+
+Dev-only API (no web build): `npm run server`. Production without rebuilding: `npm run server:start` (serves `apps/web/dist` if it exists).
 
 Listens on `http://0.0.0.0:8787` by default. If env vars are unset on first start, a **target key** is generated in `apps/server/data/secrets.json` and printed to the terminal. `data/` and `.env` are gitignored.
 
@@ -70,16 +74,17 @@ For a real deploy, set env vars (see `apps/server/.env.example`):
 | `TAGLEDGER_PEPPER` | Used to hash user tokens; never send to clients |
 | `PORT` / `HOST` | Defaults `8787` / `0.0.0.0` |
 | `TAGLEDGER_DATA` | Directory for SQLite and secrets |
+| `TAGLEDGER_WEB` | Optional path to the web `dist` folder |
 
-Terminate TLS with Caddy or nginx. Production: `npm run server:start`.
+Terminate TLS with Caddy or nginx. A hosted browser only needs the target key and user token; the server URL is this page.
 
-Connecting needs three things:
+Connecting from another device still needs three things:
 
 1. Server URL
 2. Target key
 3. A user token you choose (at least 8 characters)
 
-On a given server, the user token *is* the space. Do not share it. Enter those three fields in Settings. After connect, sync uses a device token; the target key and user token are not sent again.
+Opening the page **on the server itself** skips the URL; that browser is already a terminal. On a given server, the user token *is* the space. Do not share it. After connect, sync uses a device token; the target key and user token are not sent again.
 
 If both sides already have data, the app stops and asks: overwrite cloud with this device, overwrite this device with cloud, or keep both.
 

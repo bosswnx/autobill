@@ -29,6 +29,7 @@ import {
   withTxn,
 } from './db.ts'
 import { rateLimit } from './rateLimit.ts'
+import { mountWeb } from './web.ts'
 
 const config = loadConfig()
 openDb(config.dbPath)
@@ -45,14 +46,14 @@ app.use(
 )
 
 app.use(
-  '*',
+  '/v1/*',
   bodyLimit({
     maxSize: 2 * 1024 * 1024,
     onError: (c) => c.json({ error: 'payload_too_large' }, 413),
   }),
 )
 
-app.get('/healthz', (c) => c.json({ ok: true }))
+app.get('/healthz', (c) => c.json({ ok: true, web: Boolean(config.webRoot) }))
 
 app.post('/v1/connect', async (c) => {
   const ip = c.req.header('x-forwarded-for')?.split(',')[0]?.trim() || 'local'
@@ -182,7 +183,16 @@ app.post('/v1/sync', async (c) => {
   }
 })
 
-app.notFound((c) => c.json({ error: 'not_found' }, 404))
+if (config.webRoot) {
+  mountWeb(app, config.webRoot)
+}
+
+app.notFound((c) => {
+  if (c.req.path.startsWith('/v1/') || c.req.header('accept')?.includes('application/json')) {
+    return c.json({ error: 'not_found' }, 404)
+  }
+  return c.text('Not found', 404)
+})
 
 function authDevice(header: string | undefined) {
   if (!header?.startsWith('Bearer ')) return undefined
@@ -228,6 +238,12 @@ function parseChange(raw: Change): Change | null {
 serve({ fetch: app.fetch, hostname: config.host, port: config.port }, () => {
   console.log(`TagLedger sync  http://${config.host}:${config.port}`)
   console.log(`database         ${config.dbPath}`)
+  if (config.webRoot) {
+    console.log(`web              ${config.webRoot}`)
+    console.log(`open             http://127.0.0.1:${config.port}/`)
+  } else {
+    console.log('web              not built — run npm run build, then restart')
+  }
   if (config.generatedTargetKey) {
     console.log('')
     console.log('TAGLEDGER_TARGET_KEY was not set. Using the generated value in data/secrets.json:')
