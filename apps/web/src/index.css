@@ -1,0 +1,262 @@
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Inter", "Noto Sans SC", ui-sans-serif, system-ui, sans-serif;
+  --color-page: #ffffff;
+  --color-sidebar: #f7f6f3;
+  --color-ink: #37352f;
+  --color-muted: #787774;
+  --color-faint: #9b9a97;
+  --color-line: rgb(55 53 47 / 9%);
+  --color-hover: rgb(55 53 47 / 6%);
+  --color-active: rgb(55 53 47 / 8%);
+  --color-accent: #2383e2;
+  --color-accent-ink: #ffffff;
+  --color-expense: #e03e3e;
+  --color-income: #0f7b6c;
+  --color-overlay: rgb(15 15 15 / 40%);
+}
+
+:root {
+  --sat: max(env(safe-area-inset-top, 0px), var(--safe-area-inset-top, 0px));
+  --sab: max(env(safe-area-inset-bottom, 0px), var(--safe-area-inset-bottom, 0px));
+  --sal: max(env(safe-area-inset-left, 0px), var(--safe-area-inset-left, 0px));
+  --sar: max(env(safe-area-inset-right, 0px), var(--safe-area-inset-right, 0px));
+}
+
+html,
+body,
+#root {
+  min-height: 100%;
+  min-height: 100dvh;
+}
+
+html,
+body {
+  overscroll-behavior: none;
+}
+
+html.overlay-open,
+html.overlay-open body {
+  overflow: hidden;
+  overscroll-behavior: none;
+}
+
+html.overlay-open body {
+  position: fixed;
+  left: 0;
+  right: 0;
+  width: 100%;
+}
+
+html.overlay-open #root {
+  overflow: hidden;
+}
+
+.overlay-layer {
+  top: var(--vv-top, 0px);
+  left: 0;
+  right: 0;
+  height: var(--vv-height, 100dvh);
+}
+
+body {
+  margin: 0;
+  background: var(--color-page);
+  color: var(--color-ink);
+  font-family: var(--font-sans);
+  font-size: 14px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  -webkit-tap-highlight-color: transparent;
+}
+
+body::before {
+  content: '';
+  pointer-events: none;
+  position: fixed;
+  z-index: 40;
+  top: 0;
+  right: 0;
+  left: 0;
+  height: var(--sat);
+  background: var(--color-page);
+}
+
+#root {
+  min-height: 100svh;
+}
+
+button,
+input,
+select,
+textarea {
+  font-family: inherit;
+  touch-action: manipulation;
+}
+
+@media (max-width: 767px) {
+  input,
+  select,
+  textarea {
+    font-size: 16px;
+  }
+}
+
+input[type='date'],
+input[type='time'],
+input[type='month'] {
+  min-width: 0;
+  max-width: 100%;
+}
+
+input[type='date']::-webkit-datetime-edit,
+input[type='time']::-webkit-datetime-edit,
+input[type='month']::-webkit-datetime-edit {
+  min-width: 0;
+  overflow: hidden;
+}
+
+input[type='date']::-webkit-date-and-time-value,
+input[type='time']::-webkit-date-and-time-value,
+input[type='month']::-webkit-date-and-time-value {
+  text-align: left;
+}
+
+button {
+  cursor: pointer;
+}
+
+input,
+select,
+textarea {
+  outline: none;
+}
+
+::selection {
+  background: rgb(35 131 226 / 18%);
+}
+
+@keyframes overlay-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes overlay-out {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+  }
+}
+
+@keyframes panel-in {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes panel-out {
+  from {
+    opacity: 1;
+    transform: none;
+  }
+  to {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+}
+
+@keyframes page-in {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes sheet-in {
+  from {
+    transform: translateY(100%);
+  }
+  to {
+    transform: none;
+  }
+}
+
+@keyframes sheet-out {
+  from {
+    transform: none;
+  }
+  to {
+    transform: translateY(100%);
+  }
+}
+
+.anim-overlay {
+  animation: overlay-in 200ms ease-out both;
+}
+
+.overlay-pad {
+  padding: max(1.5rem, var(--sat)) max(1.5rem, var(--sar)) max(1.5rem, var(--sab))
+    max(1.5rem, var(--sal));
+}
+
+.anim-overlay.is-leaving {
+  animation: overlay-out 200ms ease-in both;
+}
+
+.anim-panel {
+  animation: panel-in 180ms ease-out both;
+}
+
+.anim-sheet {
+  animation: sheet-in 360ms cubic-bezier(0.32, 0.72, 0, 1) both;
+}
+
+.anim-overlay.is-leaving .anim-panel {
+  animation: panel-out 140ms ease-in both;
+}
+
+.anim-overlay.is-leaving .anim-sheet {
+  animation: sheet-out 300ms cubic-bezier(0.32, 0.72, 0, 1) both;
+}
+
+@media (min-width: 640px) {
+  .anim-sheet {
+    animation: panel-in 180ms ease-out both;
+  }
+
+  .anim-overlay.is-leaving .anim-sheet {
+    animation: panel-out 140ms ease-in both;
+  }
+}
+
+.anim-page {
+  animation: page-in 180ms ease-out both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .anim-overlay,
+  .anim-overlay.is-leaving,
+  .anim-panel,
+  .anim-overlay.is-leaving .anim-panel,
+  .anim-sheet,
+  .anim-overlay.is-leaving .anim-sheet,
+  .anim-page {
+    animation: none;
+  }
+}

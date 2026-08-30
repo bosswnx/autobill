@@ -1,0 +1,40 @@
+{
+  "name": "@tagledger/web",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "dev:lan": "vite --host",
+    "build": "tsc -b && vite build",
+    "lint": "oxlint",
+    "preview": "vite preview",
+    "cap:sync": "cap sync",
+    "cap:open": "cap open ios",
+    "ios": "npm run build && cap sync ios && cap open ios",
+    "ios:live": "node ./scripts/ios-live.mjs"
+  },
+  "dependencies": {
+    "@capacitor/app": "^8.0.0",
+    "@capacitor/core": "^8.0.0",
+    "@capacitor/ios": "^8.0.0",
+    "@tagledger/shared": "*",
+    "dexie": "^4.2.1",
+    "dexie-react-hooks": "^4.2.0",
+    "lucide-react": "^1.37.0",
+    "react": "^19.2.8",
+    "react-dom": "^19.2.8"
+  },
+  "devDependencies": {
+    "@capacitor/cli": "^8.0.0",
+    "@tailwindcss/vite": "^4.1.12",
+    "@types/node": "^24.13.3",
+    "@types/react": "^19.2.18",
+    "@types/react-dom": "^19.2.4",
+    "@vitejs/plugin-react": "^6.1.0",
+    "oxlint": "^1.79.0",
+    "tailwindcss": "^4.1.12",
+    "typescript": "~6.0.2",
+    "vite": "^8.2.2"
+  }
+}

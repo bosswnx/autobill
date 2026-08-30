@@ -1,0 +1,17 @@
+{
+  "name": "tagledger",
+  "private": true,
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "dev": "npm run dev -w @tagledger/web",
+    "dev:lan": "npm run dev:lan -w @tagledger/web",
+    "build": "npm run build -w @tagledger/web",
+    "server": "npm run dev -w @tagledger/server",
+    "server:start": "npm run start -w @tagledger/server",
+    "ios": "npm run ios -w @tagledger/web",
+    "ios:live": "npm run ios:live -w @tagledger/web"
+  }
+}
