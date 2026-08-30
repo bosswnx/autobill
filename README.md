@@ -1,240 +1,242 @@
 # TagLedger
 
-基于标签的个人账本。扁平标签，没有分类树，也没有钱包。一本书、一笔可改的**存款**。
+A tag-based personal ledger. Flat tags, no category tree, no wallets. One book, and one editable **savings** figure.
 
-**目标平台：浏览器、iPhone、iPad、Android。** 同一套 React UI，不按端各写一份。浏览器和 iOS（iPhone / iPad）已经接上；Android 还没接。跨设备同步走自建 Linux 服务：每台设备和服务器都保存全量记录，用追加变更对账。
+**Targets: browser, iPhone, iPad, Android.** One React UI, not a separate app per platform. Browser and iOS (iPhone / iPad) are working; Android is not wired up yet. Cross-device sync is a self-hosted Linux service: every device and the server keep a full copy and reconcile by appending changes.
 
-界面是中文。金额内部用**分**（`amountCents`），展示时用 `formatYuan`：整数不带小数，有余数才显示；整数部分每三位加逗号。
+The UI is Chinese. Amounts are stored as **cents** (`amountCents`). Display uses `formatYuan`: no decimal when the value is a whole yuan; otherwise show the remainder. Integer groups of three get commas.
 
-## 技术栈
+[中文](README.zh.md)
 
-- npm workspaces：`apps/web`、`apps/server`、`packages/shared`
-- 前端：React 19 + Vite + TypeScript + Tailwind CSS v4
-- 本地库：Dexie（IndexedDB）+ `dexie-react-hooks`
-- 同步服务：Hono + SQLite（`better-sqlite3`），可部署在 Linux
-- 原生壳：Capacitor（iOS 同时覆盖 iPhone 和 iPad）
-- 图标：Lucide
+## Stack
 
-共享类型在 `@tagledger/shared`。Vite 和同步服务都直接吃源码，改类型不用先 build。
+- npm workspaces: `apps/web`, `apps/server`, `packages/shared`
+- Client: React 19 + Vite + TypeScript + Tailwind CSS v4
+- Local store: Dexie (IndexedDB) + `dexie-react-hooks`
+- Sync server: Hono + SQLite (`better-sqlite3`), deployable on Linux
+- Native shell: Capacitor (one iOS project for iPhone and iPad)
+- Icons: Lucide
 
-## 目录
+Shared types live in `@tagledger/shared`. Vite and the sync server import the source directly; you do not need to build the package first.
+
+## Layout
 
 ```
-apps/web/                 前端 + Capacitor 壳
-  src/App.tsx             导航：流水 / 统计 / 标签 / 设置 + 记一笔
-  src/screens/            LedgerScreen、StatsScreen、TagsScreen、EntrySheet、SettingsScreen
-  src/components/         图表、标签、金额键盘、Overlay、月份/年份切换
-  src/db/                 Dexie、mutations、首次 seed
-  src/sync/               同步引擎：连接、推拉、冲突三选一
-  src/hooks/useLedger.ts  活查询
-  src/lib/                金额、时间、标签筛选、统计计算、键盘
-  capacitor.config.ts     原生壳配置
-  ios/                    Xcode 工程（iPhone / iPad）
-apps/server/              同步服务（Linux）
-  src/index.ts            HTTP：/healthz、/v1/connect、/v1/sync、/v1/replace
-  src/db.ts               SQLite 日志与物化实体
-  .env.example            环境变量样例
-packages/shared/src/      Book / Tag / Entry / Change 等类型与 LWW
+apps/web/                 Web app + Capacitor shell
+  src/App.tsx             Nav: ledger / stats / tags / settings + new entry
+  src/screens/            LedgerScreen, StatsScreen, TagsScreen, EntrySheet, SettingsScreen
+  src/components/         Charts, tags, amount keypad, Overlay, month/year pagers
+  src/db/                 Dexie, mutations, first-run seed
+  src/sync/               Sync engine: connect, push/pull, three-way merge
+  src/hooks/useLedger.ts  Live queries
+  src/lib/                Money, time, tag filters, stats, keypad
+  capacitor.config.ts    Native shell config
+  ios/                    Xcode project (iPhone / iPad)
+apps/server/              Sync server (Linux)
+  src/index.ts            HTTP: /healthz, /v1/connect, /v1/sync, /v1/replace
+  src/db.ts               SQLite log and materialized entities
+  .env.example            Environment sample
+packages/shared/src/     Book / Tag / Entry / Change types and LWW
 ```
 
-## 运行
+## Run
 
 ```bash
 npm install
 npm run dev
 ```
 
-开发地址：`http://127.0.0.1:5173/`。
+Dev URL: `http://127.0.0.1:5173/`.
 
 ```bash
 npm run build
 ```
 
-先编 web。shared 由 Vite alias 直接吃源码。
+Builds web. Shared is consumed from source via the Vite alias.
 
-### 同步服务
+### Sync server
 
 ```bash
 npm run server
 ```
 
-默认 `http://0.0.0.0:8787`。第一次若没设环境变量，会在 `apps/server/data/secrets.json` 生成 **target key** 并打印到终端。`data/` 和 `.env` 不进 git。
+Listens on `http://0.0.0.0:8787` by default. If env vars are unset on first start, a **target key** is generated in `apps/server/data/secrets.json` and printed to the terminal. `data/` and `.env` are gitignored.
 
-正式部署用环境变量（见 `apps/server/.env.example`）：
+For a real deploy, set env vars (see `apps/server/.env.example`):
 
-| 变量 | 作用 |
+| Variable | Role |
 | --- | --- |
-| `TAGLEDGER_TARGET_KEY` | 这台服务器的门禁，所有用户共用 |
-| `TAGLEDGER_PEPPER` | 用户 token 哈希用，不要给客户端 |
-| `PORT` / `HOST` | 默认 `8787` / `0.0.0.0` |
-| `TAGLEDGER_DATA` | SQLite 和 secrets 目录 |
+| `TAGLEDGER_TARGET_KEY` | Server gate, shared by every user on this instance |
+| `TAGLEDGER_PEPPER` | Used to hash user tokens; never send to clients |
+| `PORT` / `HOST` | Defaults `8787` / `0.0.0.0` |
+| `TAGLEDGER_DATA` | Directory for SQLite and secrets |
 
-前面用 Caddy / nginx 终止 TLS。生产用 `npm run server:start`。
+Terminate TLS with Caddy or nginx. Production: `npm run server:start`.
 
-连上需要三样：
+Connecting needs three things:
 
-1. 服务器地址
+1. Server URL
 2. Target key
-3. 你自己设的用户 token（至少 8 位）
+3. A user token you choose (at least 8 characters)
 
-同一台服务器上，用户 token 就是你的空间。不要和别人重复。设置页填这三项即可；连上之后同步走设备 token，不再传 target key 和用户 token。
+On a given server, the user token *is* the space. Do not share it. Enter those three fields in Settings. After connect, sync uses a device token; the target key and user token are not sent again.
 
-两边都有数据时会停下来让你选：用本机覆盖云端、用云端覆盖本机、两边都留。
+If both sides already have data, the app stops and asks: overwrite cloud with this device, overwrite this device with cloud, or keep both.
 
-### iPhone / iPad（可安装的 App）
+### iPhone / iPad (installable app)
 
-同一套 React UI，Capacitor 打进 WKWebView。需要本机有 Xcode，以及一台签过名的 iPhone，或模拟器。Xcode → Settings → Components 里要装好对应的 iOS 平台，否则编不过。
+The same React UI is wrapped in WKWebView by Capacitor. You need Xcode, plus a signed iPhone or a simulator. Install the matching iOS platform under Xcode → Settings → Components or the build will fail.
 
-第一次或改完前端之后：
+First time, or after changing the web app:
 
 ```bash
 npm run ios
 ```
 
-会 `build` → `cap sync ios` → 打开 Xcode。在 Xcode 里：
+This runs `build` → `cap sync ios` → opens Xcode. Then:
 
-1. 顶部选中你的 iPhone（用线连上，或选模拟器）
-2. Signing & Capabilities 里勾 Automatic Signing，选你的 Apple ID Team
-3. 点 Run。真机第一次会提示「不受信任的开发者」，到系统设置 → 通用 → VPN 与设备管理里信任
+1. Pick your iPhone (cable or simulator) in the toolbar
+2. Signing & Capabilities → Automatic Signing, pick your Apple ID team
+3. Run. The first device install will say the developer is untrusted; trust it under Settings → General → VPN & Device Management
 
-之后只改了 Web：
+After web-only changes:
 
 ```bash
 npm run build
 npm run cap:sync -w @tagledger/web
 ```
 
-再回 Xcode 点 Run。不必每次 `cap open`。
+Then Run in Xcode. You do not need `cap open` every time.
 
-真机对着局域网热重载（改代码立刻刷新，不必反复 sync）：
+Live reload on a physical device against your LAN:
 
 ```bash
-# 终端 1：Vite 绑到局域网
+# Terminal 1: bind Vite to the LAN
 npm run dev:lan
 
-# 终端 2：把壳指到这台电脑的 IP，再打开 Xcode
+# Terminal 2: point the shell at this machine's IP, then open Xcode
 npm run ios:live
 ```
 
-手机和电脑要在同一 Wi-Fi。`ios:live` 会写 `CAP_SERVER_URL` 进 Capacitor 配置；打正式包前用普通的 `npm run ios`，不要带 live URL。
+Phone and computer must be on the same Wi-Fi. `ios:live` writes `CAP_SERVER_URL` into the Capacitor config. For a store/dev IPA use plain `npm run ios` with no live URL.
 
-Bundle ID 是 `app.tagledger`。上架、隐私清单、证书还没做，现在只覆盖本机安装。
+Bundle ID is `app.tagledger`. App Store, privacy manifests, and certificates are not in this repo yet. Local install only.
 
-## 数据模型
+## Data model
 
-实体都带 `id / rev / createdAt / updatedAt / deletedAt`，删除是软删。写操作走 `mutations.ts`，并往 `changes` 表追加一条。设备 id 存在 `localStorage`（`tagledger.deviceId`）。
+Every entity has `id / rev / createdAt / updatedAt / deletedAt`. Deletes are soft. Writes go through `mutations.ts` and append a row to `changes`. Device id is in `localStorage` (`tagledger.deviceId`).
 
-| 表 | 作用 |
+| Table | Role |
 | --- | --- |
-| `books` | 账本。`openingBalanceCents` 是期初，用来反推当前存款 |
-| `tags` | 标签。`kind` 只能是 `expense` 或 `income` |
-| `entries` | 流水。`type` 为支出/收入；`tagIds` 多对多 |
-| `accounts` | 预留，界面未用 |
-| `changes` | 变更日志。未上传时 `seq` 为空，服务端确认后写入序号 |
-| `meta` | 同步会话：服务器地址、设备 token、cursor |
+| `books` | Ledger. `openingBalanceCents` is the opening figure used to recover current savings |
+| `tags` | Tags. `kind` is `expense` or `income` only |
+| `entries` | Transactions. `type` is expense/income; `tagIds` is many-to-many |
+| `accounts` | Reserved, unused in the UI |
+| `changes` | Change log. `seq` is empty until the server acks it |
+| `meta` | Sync session: server URL, device token, cursor |
 
-IndexedDB 库名：`tagledger`。
+IndexedDB name: `tagledger`.
 
-**存款**不是单独存一个余额。用户填「现在有多少」时，会写成：
+**Savings** is not stored as a running balance. When the user types “how much I have now”:
 
-`openingBalanceCents = 当前存款 − 全部流水净额`
+`openingBalanceCents = current savings − net of all entries`
 
-之后记账自动加减。当前存款 = 期初 + 收入 − 支出。
+Later entries add and subtract automatically. Current savings = opening + income − expense.
 
-金额一律用整数分，避免浮点。
+Always integer cents. No floats.
 
-## 同步
+## Sync
 
-每台设备和服务器都是完整副本。本地写入先改实体、再追加 `changes`；上线后 `POST /v1/sync` 一轮完成推+拉。服务端给每条首次见到的 change 发全局单调 `seq`，客户端 cursor 是已吃到的最大 seq。
+Every device and the server is a full replica. A local write updates the entity, then appends `changes`. When online, one `POST /v1/sync` pushes and pulls. The server assigns a global monotonic `seq` to each change it sees for the first time. The client cursor is the highest `seq` it has applied.
 
-冲突按整实体 **LWW**：同一 `entityId` 比 `updatedAt`，相同再比 `rev`。`rev` 只是本机代数，不当全局时钟。
+Conflicts are whole-entity **LWW**: same `entityId` compares `updatedAt`, then `rev`. `rev` is a local generation count, not a global clock.
 
-- 一个空间一本账。
-- 已连接的设备不再写入示例 seed。
-- 同名标签不自动合并（两台都新建「餐饮」会得到两个 id）。
-- 存款随账本实体 LWW；对完账后数字可能变，不对就再设一次。
+- One space, one book.
+- A connected device must not write the sample seed.
+- Duplicate tag names are not auto-merged (two devices creating “餐饮” get two ids).
+- Savings follows LWW on the book entity. After a merge the displayed number may change; set savings again if it looks wrong.
 
-接口：
+API:
 
-| 方法 | 路径 | 说明 |
+| Method | Path | Role |
 | --- | --- | --- |
-| `GET` | `/healthz` | 探活 |
-| `POST` | `/v1/connect` | 地址已在客户端；body 带 target key、用户 token、设备信息 → 设备 token |
-| `POST` | `/v1/sync` | `Authorization: Bearer <deviceToken>`，推未确认的 change，拉 `seq > cursor` |
-| `POST` | `/v1/replace` | 用本机覆盖云端时，先清空该空间日志再推 |
+| `GET` | `/healthz` | Health |
+| `POST` | `/v1/connect` | Body: target key, user token, device info → device token |
+| `POST` | `/v1/sync` | `Authorization: Bearer <deviceToken>`; push unacked changes, pull `seq > cursor` |
+| `POST` | `/v1/replace` | When overwriting cloud with local: wipe that space’s log, then push |
 
-## 页面
+## Screens
 
-**流水**  
-按月看账。顶部：存款、支出、收入、结余。可按详细信息搜索，可按标签筛选。
+**Ledger**  
+Month view. Header: savings, expense, income, net. Search notes; filter by tags.
 
-**记一笔 / 改一笔**  
-支出和收入各用一套标签，只展示、只可选当前类型。切换类型会丢掉另一类已选标签。搜索框回车可按当前类型新建标签。金额是自定义键盘（数字、小数点、加减乘除、等号、清零）。详细信息空着时，标题用「用得最多的已选标签」，否则是支出/收入。
+**New / edit entry**  
+Expense and income each have their own tag set; only the current type is shown and selectable. Switching type drops tags of the other kind. Enter in the search box creates a tag of the current type. Amount uses a custom keypad (digits, decimal, + − × ÷, equals, clear). If the note is empty, the title is the most-used selected tag; otherwise “expense” or “income”.
 
-**标签**  
-支出、收入分两块，各自添加。同名标签可以在两类各有一条。唯一约束是 `bookId + name + kind`。
+**Tags**  
+Expense and income blocks, each with its own add. The same name may exist once per kind. Uniqueness is `bookId + name + kind`.
 
-**统计**  
-月 / 年切换。月视图：每天支出/收入柱状图、资产折线、标签金额条。年视图把「天」换成「月」。顶栏：总支出、总收入、结余、总资产、日均或月均。资产线标收尾、最高、最低；最高最低有虚线和对应刻度。
+**Stats**  
+Month / year. Month: daily expense/income bars, asset line, tag amount bars. Year swaps days for months. Header: total expense, total income, net, total assets, daily or monthly average. The asset line marks last, high, and low; high/low have dashed guides and ticks.
 
-**设置**  
-连接/断开同步、立即同步、两边都有数据时的三选一。
+**Settings**  
+Connect / disconnect sync, sync now, and the three-way choice when both sides have data.
 
-## 标签筛选（流水）
+## Tag filter (ledger)
 
-- 同一行（支出内部，或收入内部）：**交集**，选中的标签都要命中。
-- 两行之间：**并集**，支出条件或收入条件对上即可。
-- 某一行一个都没选，这一行不参与。
+- Same row (within expense, or within income): **intersection** — every selected tag must match.
+- Across the two rows: **union** — expense condition or income condition.
+- An empty row does not participate.
 
-实现：`entryMatchesTagFilter`（`apps/web/src/lib/tags.ts`）。
+Implemented by `entryMatchesTagFilter` (`apps/web/src/lib/tags.ts`).
 
-一笔账挂多个标签时，统计里每个标签都记**整笔金额**（不拆分）。只把 `entry.type` 和 `tag.kind` 一致的算进去。
+If an entry has several tags, stats attribute the **full amount** to each tag (no split). Only pairs where `entry.type` matches `tag.kind` count.
 
-## 时间
+## Time
 
-日期、月份、图表横轴都按**本地时区**，不要用 UTC 的 `getUTC*` 去切「天」。`dayKey` / `monthKey` / `inMonth` 都走本地 `Date`。
+Dates, months, and chart axes use the **device local timezone**. Do not slice “days” with UTC `getUTC*`. `dayKey` / `monthKey` / `inMonth` all use local `Date`.
 
-当前月的日均按「本月已过天数」除；当年的月均按「今年已过月数」除。未来月/年除数为 0，均值为 0。
+Daily average for the current month divides by elapsed days in that month. Monthly average for the current year divides by elapsed months. Future months/years have divisor 0, so the average is 0.
 
-## Dexie 版本
+## Dexie versions
 
-- v1：初始表。
-- v2：`tags` 增加 `kind` 索引。升级时按该标签在收入/支出流水上的使用次数归类：收入笔数更多 → `income`，否则 `expense`。未用过的默认支出。
-- v3：`changes` 增加 `seq`；新增 `meta` 存同步会话。
+- v1: initial stores.
+- v2: `kind` index on `tags`. Upgrade classifies by how often the tag appears on income vs expense entries: more income → `income`, otherwise `expense`. Unused tags default to expense.
+- v3: `seq` on `changes`; `meta` for the sync session.
 
-再改 schema 必须加新 `version`，并写 `upgrade`。**不要清用户的 IndexedDB 来「修好」迁移。**
+Schema changes need a new `version` and an `upgrade`. **Do not wipe the user’s IndexedDB to “fix” a migration.**
 
-## 跨端
+## Platforms
 
-| 端 | 状态 | 怎么出 |
+| Surface | Status | How |
 | --- | --- | --- |
-| 浏览器 | 已有 | `npm run dev` / `npm run build` |
-| iPhone | 已接 | `npm run ios`，Xcode 装到真机或模拟器 |
-| iPad | 已接 | 同一个 iOS 工程，宽屏走侧栏（`md`） |
-| Android | 未接 | Capacitor Android（WebView） |
-| 同步服务 | 已接 | `npm run server`，Linux + SQLite |
+| Browser | Ready | `npm run dev` / `npm run build` |
+| iPhone | Wired | `npm run ios`, Xcode to device or simulator |
+| iPad | Wired | Same iOS project; wide layout uses the sidebar (`md`) |
+| Android | Not yet | Capacitor Android (WebView) |
+| Sync server | Wired | `npm run server`, Linux + SQLite |
 
-不要另起 React Native / Flutter。共享层在 `@tagledger/shared`；业务和界面继续留在 `apps/web`。原生壳只负责窗口、安全区、以后可能的推送和文件备份。
+Do not start a React Native / Flutter app. Shared types stay in `@tagledger/shared`; product and UI stay in `apps/web`. The native shell owns the window, safe areas, and later maybe push and file backup.
 
-布局已经按宽度分了两套，接原生时沿用，不要为 iPad 再开一套页面：
+Layout is already split by width. Reuse it when wrapping native; do not build a second iPad UI:
 
-- 窄屏（手机、窄浏览器）：底栏（流水 / 统计 / 记一笔 / 标签 / 设置）
-- `md` 及以上（iPad、桌面）：左侧栏
+- Narrow (phone, narrow browser): bottom bar (ledger / stats / new entry / tags / settings)
+- `md` and up (iPad, desktop): left sidebar
 
-接 Capacitor / 真机时注意：
+Capacitor / device notes:
 
-- 预留安全区（刘海、Home Indicator、状态栏），底栏和全屏 Overlay 都要避开。
-- 金额键盘、记一笔是自定义键盘，不要让系统键盘把布局顶飞；输入框该 `readOnly` / `inputMode` 的保持现状。
-- IndexedDB 在 iOS WKWebView 可用，但 WebView 被系统清缓存时数据可能丢。同步连上后，清掉本地只要再填那三样就能拉回。
-- `localStorage` 的 `deviceId` 同样会随 WebView 数据一起没。同步身份以设备 token 为准；丢了重新连接即可。
-- 交互按触摸来：不要依赖 hover 才能看见的操作。图表 hover 金额在触屏上要有点按等价物。
-- 日期按**设备本地时区**，同一笔 `occurredAt` 在旅行跨时区时不要用 UTC 重切「天」。
-- iOS / Android 的返回手势、系统返回键要能关掉 Overlay，不能只靠点遮罩。
-- 打包后没有 Vite 开发服务器。`seedIfNeeded` 只在「未连接同步、且一本账都没有」时写入示例。
-- App Store / Play 上架、签名、隐私清单还没做。
+- Respect safe areas (notch, Home Indicator, status bar). Bottom bar and full-screen overlays must clear them.
+- Amount keypad and new-entry are custom; do not let the system keyboard shove the layout. Keep `readOnly` / `inputMode` as they are.
+- IndexedDB works in iOS WKWebView, but the system may evict it. After sync is connected, wiping local data is recoverable by entering the three connect fields again.
+- `localStorage` `deviceId` dies with WebView data too. Sync identity is the device token; reconnect if it is gone.
+- Design for touch. Do not hide actions behind hover. Chart hover amounts need a tap equivalent on touch screens.
+- Dates use the **device local timezone**. Do not re-slice a trip’s `occurredAt` with UTC.
+- iOS back swipe and Android back must dismiss Overlay; a tap on the dimmer is not enough.
+- Packaged builds have no Vite server. `seedIfNeeded` only writes samples when sync is **not** connected and there is no book.
+- App Store / Play listing, signing, and privacy manifests are not in this repo.
 
-## 产品边界（当前）
+## Product bounds (now)
 
-- 只有一本书，不做多账本切换。
-- 不做账户/钱包、不做分类树、不做邮箱登录。同步用 target key + 用户 token。
-- 可安装的 iOS 包已经接上（`npm run ios`）。Android 还没接。日常改界面仍可先用浏览器。
+- One book. No book switcher.
+- No accounts/wallets, no category tree, no email login. Sync is target key + user token.
+- Installable iOS via `npm run ios`. Android is not wired. Day-to-day UI work can stay in the browser.

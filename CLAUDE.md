@@ -1,75 +1,91 @@
-# TagLedger — 给助手
+# TagLedger — for agents
 
-这个文件是仓库约定。改代码前先读，和 `README.md` 冲突时以这里的硬性规则为准。
+Repo conventions. Read this before changing code. If it conflicts with `README.md`, these hard rules win.
 
-## 这是什么
+## What this is
 
-个人账本。扁平标签，没有分类树，没有钱包。同一套 React UI 跑在浏览器和 Capacitor（iOS）。同步服务在 `apps/server`，Linux + SQLite。不要另起 React Native / Flutter。
+A personal ledger. Flat tags, no category tree, no wallets. One React UI on the browser and Capacitor (iOS). Sync server is `apps/server`, Linux + SQLite. Do not start a React Native / Flutter app.
 
-界面中文。金额内部是整数分。
+The UI is Chinese. Amounts are integer cents.
 
-## 命令
+## Commands
 
 ```bash
 npm install
-npm run dev              # 前端 http://127.0.0.1:5173/
-npm run dev:lan          # 前端绑局域网，给真机 live reload
-npm run build            # 编 web
-npm run server           # 同步服务（tsx watch）
-npm run server:start     # 同步服务（不 watch）
-npm run ios              # build + cap sync ios + 打开 Xcode
-npm run ios:live         # 真机对着本机 Vite
+npm run dev              # web http://127.0.0.1:5173/
+npm run dev:lan          # bind Vite to LAN for device live reload
+npm run build            # build web
+npm run server           # sync server (tsx watch)
+npm run server:start     # sync server (no watch)
+npm run ios              # build + cap sync ios + open Xcode
+npm run ios:live         # device against this machine's Vite
 ```
 
-共享包 `@tagledger/shared` 不需要单独 build。Vite alias 到 `packages/shared/src/index.ts`；服务端用 tsx 直接 import。
+`@tagledger/shared` does not need its own build. Vite aliases it to `packages/shared/src/index.ts`; the server imports it with tsx.
 
-## 目录
+## Layout
 
-- `apps/web`：UI、Dexie、同步客户端、Capacitor iOS
-- `apps/server`：Hono 同步服务
-- `packages/shared`：类型、LWW、token 长度常量
+- `apps/web`: UI, Dexie, sync client, Capacitor iOS
+- `apps/server`: Hono sync server
+- `packages/shared`: types, LWW, token length constants
 
-## 硬性规则
+## Hard rules
 
-### 用户数据
+### User data
 
-- 本地账本是用户数据。改结构走 Dexie `version` + `upgrade`，不要 `indexedDB.deleteDatabase('tagledger')`，除非用户明确要求清空。
-- 所有写入走 `apps/web/src/db/mutations.ts`。保持 `rev`、软删、`changes` 一致。不要直接 `db.tags.put` 绕过。
-- 新 change 的 `seq` 必须是 `null`，由服务端确认后再写序号。
-- 已连接同步时不要跑 `seedIfNeeded` 的示例账。
+- The local ledger is user data. Schema changes go through Dexie `version` + `upgrade`. Do not `indexedDB.deleteDatabase('tagledger')` unless the user explicitly asks to wipe.
+- All writes go through `apps/web/src/db/mutations.ts`. Keep `rev`, soft delete, and `changes` in lockstep. Do not `db.tags.put` around that path.
+- New changes must have `seq: null`. The server assigns seq when it acks.
+- Do not run the `seedIfNeeded` sample book when sync is already connected.
 
-### 金额和时间
+### Money and time
 
-- 金额用分。展示 `formatYuan`；输入用 `centsToYuanInput` / `yuanToCents`，不要把逗号写进输入态。
-- 切「天 / 月 / 年」用本地 `Date`（`dayKey` / `monthKey` / `inMonth`），不要 `getUTC*`。
+- Amounts are cents. Display with `formatYuan`. Inputs use `centsToYuanInput` / `yuanToCents`; do not put commas into the input state.
+- Slice day / month / year with local `Date` (`dayKey` / `monthKey` / `inMonth`). Do not use `getUTC*`.
 
 ### UI
 
-- Overlay 挂 `document.body`，进出有动画，返回手势要能关掉。新弹层跟现有 `Overlay`。
-- 窄屏底栏，`md` 及以上侧栏。不要为 iPad 再开一套页面。
-- 标签创建默认 `kind: 'expense'`。从记一笔或标签页添加时必须传入当前类型。
-- `updateTag` 不能改 `kind`。
-- 转账 `type: 'transfer'` 在类型里有，界面没有入口，当 0 处理。
-- 图表是自制 SVG/CSS。折线 `preserveAspectRatio="none"`；圆点、虚线、金额用 HTML 叠，避免被拉扁。
+- Overlay mounts on `document.body`, animates in/out, and must close on the system back gesture. New sheets use the existing `Overlay`.
+- Narrow: bottom bar. `md` and up: sidebar. Do not build a second iPad UI.
+- Creating a tag defaults to `kind: 'expense'`. From new-entry or the tags screen you must pass the current type.
+- `updateTag` cannot change `kind`.
+- Transfer `type: 'transfer'` exists in types but has no UI. Treat it as 0.
+- Charts are hand-rolled SVG/CSS. Lines use `preserveAspectRatio="none"`. Dots, dashes, and amounts are HTML overlays so they are not stretched.
 
-### 同步
+### Sync
 
-- 一台服务器多个空间。进门三样：服务器地址、`TAGLEDGER_TARGET_KEY`、用户自己设的 token。
-- 用户 token 哈希后才是 `space_key`（HMAC-SHA256 + pepper）。服务端不存明文 token。
-- 连接成功后只拿设备 token 调 `/v1/sync`。A/B 那套双 token 已经废弃，不要加回去。
-- 冲突：`incomingWins`（`updatedAt`，相同再 `rev`）。服务端不要用入库时间覆盖客户端的 `updatedAt`。
-- 两边都有数据必须让用户选 `local` / `cloud` / `both`，不要自动合。
-- 同名标签不自动合并。
-- 不要把用户 token、target key 写进日志或 commit。`apps/server/data/`、`.env`、`*.sqlite` 已 gitignore。
-- 远端 change 写入本地时带上 `seq`，不要再当新的本地变更追加（否则回声）。
+- One server, many spaces. Gate is three fields: server URL, `TAGLEDGER_TARGET_KEY`, user-chosen token.
+- The user token is hashed into `space_key` (HMAC-SHA256 + pepper). The server never stores the plaintext token.
+- After connect, call `/v1/sync` with the device token only. The old dual-token pair is gone; do not bring it back.
+- Conflicts: `incomingWins` (`updatedAt`, then `rev`). The server must not overwrite the client's `updatedAt` with receive time.
+- If both sides have data, the user must pick `local` / `cloud` / `both`. Do not auto-merge.
+- Do not auto-merge tags that share a name.
+- Never log or commit user tokens or the target key. `apps/server/data/`, `.env`, and `*.sqlite` are gitignored.
+- When applying a remote change, persist its `seq`. Do not append it as a new local change (that echoes).
 
 ### Dexie
 
-当前到 v3（`changes.seq` + `meta`）。再改必须加新 version 和 upgrade。
+Current version is v3 (`changes.seq` + `meta`). Further schema changes need a new version and an upgrade.
 
-## 产品边界
+### Git commit
 
-- 一本账，不做多账本切换。
-- 不做账户/钱包、分类树、邮箱登录。
-- Android 未接。上架、签名、隐私清单不在当前范围。
-- 同步不做端到端加密（自建服务器 + TLS）。
+Commit messages follow Conventional Commits: `type(scope): summary`.
+
+- `type`: `feat` / `fix` / `docs` / `refactor` / `chore` / `test` / `style`
+- `scope` is a short name: `web`, `server`, `shared`, `ios`, `sync`
+- Summary is present tense, one short line, what or why — not a vague "update"
+
+```
+feat(sync): add connect flow with target key
+fix(web): keep overlay back gesture on iOS
+docs: describe Dexie v3 meta table
+```
+
+Do not write multi-paragraph prose commits. Do not commit unless the user asked.
+
+## Product bounds
+
+- One book. No book switcher.
+- No accounts/wallets, category tree, or email login.
+- Android is not wired. Store listing, signing, and privacy manifests are out of scope.
+- Sync is not end-to-end encrypted (self-hosted server + TLS).
