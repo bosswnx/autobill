@@ -2,7 +2,7 @@
 
 基于标签的个人账本。扁平标签，没有分类树，也没有钱包。一本书、一笔可改的**存款**。
 
-**目标平台：浏览器、iPhone、iPad、Android。** 同一套 React UI，不按端各写一份。浏览器和 iOS（iPhone / iPad）已经接上；Android 还没接。跨设备同步走自建 Linux 服务：每台设备和服务器都保存全量记录，用追加变更对账。
+**目标平台：浏览器、iPhone、iPad、macOS、Android。** 同一套 React UI，不按端各写一份。浏览器、iOS（iPhone / iPad）和 macOS（Tauri）已经接上；Android 还没接。跨设备同步走自建 Linux 服务：每台设备和服务器都保存全量记录，用追加变更对账。
 
 界面是中文。金额内部用**分**（`amountCents`），展示时用 `formatYuan`：整数不带小数，有余数才显示；整数部分每三位加逗号。
 
@@ -14,7 +14,7 @@
 - 前端：React 19 + Vite + TypeScript + Tailwind CSS v4
 - 本地库：Dexie（IndexedDB）+ `dexie-react-hooks`
 - 同步服务：Hono + SQLite（`better-sqlite3`），可部署在 Linux
-- 原生壳：Capacitor（iOS 同时覆盖 iPhone 和 iPad）
+- 原生壳：Capacitor（iOS）和 Tauri（macOS）
 - 图标：Lucide
 
 共享类型在 `@tagledger/shared`。Vite 和同步服务都直接吃源码，改类型不用先 build。
@@ -22,7 +22,7 @@
 ## 目录
 
 ```
-apps/web/                 前端 + Capacitor 壳
+apps/web/                 前端 + Capacitor + Tauri 壳
   src/App.tsx             导航：流水 / 统计 / 标签 / 设置 + 记一笔
   src/screens/            LedgerScreen、StatsScreen、TagsScreen、EntrySheet、SettingsScreen、LoginScreen
   src/components/         图表、标签、金额键盘、Overlay、月份/年份切换
@@ -30,8 +30,9 @@ apps/web/                 前端 + Capacitor 壳
   src/sync/               同步引擎：连接、推拉、冲突三选一
   src/hooks/useLedger.ts  活查询
   src/lib/                金额、时间、标签筛选、统计计算、键盘
-  capacitor.config.ts     原生壳配置
+  capacitor.config.ts     iOS 壳配置
   ios/                    Xcode 工程（iPhone / iPad）
+  src-tauri/              Tauri macOS 壳
 apps/server/              同步服务（Linux）
   src/index.ts            HTTP：/healthz、/v1/connect、/v1/sync、/v1/replace
   src/db.ts               SQLite 日志与物化实体
@@ -60,7 +61,7 @@ npm run build
 npm run serve
 ```
 
-先编 web，再在同一个端口上同时跑 API 和网页（默认 `http://0.0.0.0:8787`）。新浏览器第一次打开这个地址会先看到登录页（服务器密钥 + 用户 token）。手机 App 和本地 Vite 仍从设置里按服务器地址连接。
+先编 web，再在同一个端口上同时跑 API 和网页（默认 `http://0.0.0.0:8787`）。新浏览器第一次打开这个地址会先看到登录页（服务器密钥 + 用户 token）。手机 App、Mac 应用和本地 Vite 仍从设置里按服务器地址连接。
 
 只跑 API、不编网页：`npm run server`。已经编过、只想启动：`npm run server:start`（有 `apps/web/dist` 就会托管网页）。
 
@@ -127,6 +128,28 @@ npm run ios:live
 
 Bundle ID 是 `app.tagledger`。上架、隐私清单、证书还没做，现在只覆盖本机安装。
 
+### macOS（可安装的 App）
+
+同一套 React UI，Tauri 打进 WKWebView。这是又一台本地优先的设备：账本在这台 Mac 的 Dexie 里，再从设置里连接同步（服务器地址、服务器密钥、用户 token）。不会走托管网页那套登录页。
+
+需要本机有 [Rust](https://rustup.rs/)（`rustc` 在 PATH 里）和 Xcode。第一次编译会比较慢。
+
+```bash
+npm run macos
+```
+
+会打开桌面窗口，前端走 Vite `http://127.0.0.1:1420`（和 `npm run dev` 的 5173 分开）。
+
+打 `TagLedger.app` 和 dmg：
+
+```bash
+npm run macos:build
+```
+
+产物在 `apps/web/src-tauri/target/release/bundle/`。公证和 Developer ID 签名还没做。
+
+Windows / Linux 壳还没接。
+
 ## 数据模型
 
 实体都带 `id / rev / createdAt / updatedAt / deletedAt`，删除是软删。写操作走 `mutations.ts`，并往 `changes` 表追加一条。设备 id 存在 `localStorage`（`tagledger.deviceId`）。
@@ -173,7 +196,7 @@ IndexedDB 库名：`tagledger`。
 ## 页面
 
 **流水**  
-按月看账。顶部：存款、支出、收入、结余。可按详细信息搜索，可按标签筛选。
+按月看账。顶部：支出、收入、结余、存款（只看、不改）。可按详细信息搜索，可按标签筛选。
 
 **记一笔 / 改一笔**  
 支出和收入各用一套标签，只展示、只可选当前类型。切换类型会丢掉另一类已选标签。搜索框回车可按当前类型新建标签。金额是自定义键盘（数字、小数点、加减乘除、等号、清零）。详细信息空着时，标题用「用得最多的已选标签」，否则是支出/收入。
@@ -188,7 +211,7 @@ IndexedDB 库名：`tagledger`。
 新浏览器第一次访问：服务器密钥 + 用户 token，通过后进入账本。之后靠 IndexedDB 里的设备 token，不用每次填。
 
 **设置**  
-连接/断开同步（手机 App 和本地 Vite）、立即同步、两边都有数据时的三选一。
+改存款。连接/断开同步（手机 App、Mac 应用和本地 Vite）、立即同步、两边都有数据时的三选一。
 
 ## 标签筛选（流水）
 

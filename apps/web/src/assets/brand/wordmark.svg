@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="320" viewBox="0 0 1200 320" role="img" aria-labelledby="title desc">
+  <title id="title">Tag Ledger horizontal logo</title>
+  <desc id="desc">Horizontal Tag Ledger brand lockup with the tag-ledger symbol and wordmark.</desc>
+  <g transform="translate(36 36)">
+    <rect width="248" height="248" rx="58" fill="#F7F6F3"/>
+    <path d="M40 86C40 73 51 62 64 62H139C145 62 151 64 155 69L207 121C215 129 215 142 207 150L155 202C151 207 145 209 139 209H64C51 209 40 198 40 185V86Z" fill="#343430"/>
+    <circle cx="169" cy="136" r="14" fill="#F7F6F3"/>
+    <circle cx="78" cy="111" r="6" fill="#FF4D4F"/>
+    <rect x="93" y="105" width="54" height="12" rx="6" fill="#F7F6F3"/>
+    <circle cx="78" cy="161" r="6" fill="#0F8F7F"/>
+    <rect x="93" y="155" width="61" height="12" rx="6" fill="#F7F6F3"/>
+  </g>
+  <text x="332" y="177" fill="#343430" font-size="112" font-weight="700" letter-spacing="-4" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI',Arial,sans-serif">Tag</text>
+  <text x="526" y="177" fill="#343430" font-size="112" font-weight="430" letter-spacing="-4" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI',Arial,sans-serif">Ledger</text>
+  <text x="338" y="228" fill="#8B8B86" font-size="28" font-weight="500" letter-spacing="4" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI',Arial,sans-serif">TAG-BASED PERSONAL FINANCE</text>
+</svg>

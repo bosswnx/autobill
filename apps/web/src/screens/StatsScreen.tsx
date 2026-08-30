@@ -4,6 +4,7 @@ import { BarChart, LineChart, TagAmountList } from '../components/Charts'
 import { MonthPager } from '../components/MonthPager'
 import { YearPager } from '../components/YearPager'
 import { useBookEntries } from '../hooks/useLedger'
+import { useI18n } from '../i18n'
 import { formatYuan } from '../lib/money'
 import { buildPeriodStats, type StatsMode } from '../lib/stats'
 import { monthKey, yearKey } from '../lib/time'
@@ -15,6 +16,7 @@ type Props = {
 }
 
 export function StatsScreen({ book, tags, savings }: Props) {
+  const { t } = useI18n()
   const [mode, setMode] = useState<StatsMode>('month')
   const [month, setMonth] = useState(monthKey())
   const [year, setYear] = useState(yearKey())
@@ -26,15 +28,15 @@ export function StatsScreen({ book, tags, savings }: Props) {
   )
 
   const monthly = mode === 'month'
-  const avgExpenseLabel = monthly ? '日均支出' : '月均支出'
-  const avgIncomeLabel = monthly ? '日均收入' : '月均收入'
+  const avgExpenseLabel = monthly ? t.stats.avgExpenseDay : t.stats.avgExpenseMonth
+  const avgIncomeLabel = monthly ? t.stats.avgIncomeDay : t.stats.avgIncomeMonth
 
   return (
     <div className="flex flex-col gap-8">
       <header className="flex flex-col gap-5">
         <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-2">
           <h1 className="shrink-0 whitespace-nowrap text-[40px] leading-none font-bold tracking-[-0.03em]">
-            统计
+            {t.stats.title}
           </h1>
           <div className="ml-auto flex shrink-0 items-center gap-1.5">
             <ModeSwitch
@@ -55,8 +57,8 @@ export function StatsScreen({ book, tags, savings }: Props) {
           </div>
         </div>
         <div className="stats-metrics grid w-full grid-cols-2 gap-x-10 gap-y-5 min-[520px]:grid-cols-4">
-          <Stat label="总支出" value={formatYuan(stats.expense, { sign: 'never' })} tone="expense" />
-          <Stat label="总收入" value={formatYuan(stats.income, { sign: 'never' })} tone="income" />
+          <Stat label={t.stats.totalExpense} value={formatYuan(stats.expense, { sign: 'never' })} tone="expense" />
+          <Stat label={t.stats.totalIncome} value={formatYuan(stats.income, { sign: 'never' })} tone="income" />
           <Stat
             className="min-[520px]:col-start-1 min-[520px]:row-start-2"
             label={avgExpenseLabel}
@@ -71,39 +73,40 @@ export function StatsScreen({ book, tags, savings }: Props) {
           />
           <Stat
             className="min-[520px]:col-start-3 min-[520px]:row-start-1"
-            label="结余"
+            label={t.stats.net}
             value={formatYuan(stats.net, { sign: stats.net < 0 ? 'auto' : 'never' })}
             tone={stats.net < 0 ? 'expense' : 'income'}
           />
           <Stat
             className="min-[520px]:col-start-4 min-[520px]:row-start-1"
-            label="总资产"
+            label={t.stats.assets}
             value={formatYuan(savings, { sign: 'never' })}
             tone="ink"
           />
         </div>
       </header>
 
-      <ChartBlock title={monthly ? '支出' : '每月支出'}>
+      <ChartBlock title={monthly ? t.stats.expense : t.stats.monthlyExpense}>
         <BarChart points={stats.expenseSeries} color="#e03e3e" />
       </ChartBlock>
-      <ChartBlock title={monthly ? '收入' : '每月收入'}>
+      <ChartBlock title={monthly ? t.stats.income : t.stats.monthlyIncome}>
         <BarChart points={stats.incomeSeries} color="#0f7b6c" />
       </ChartBlock>
-      <ChartBlock title="资产">
+      <ChartBlock title={t.stats.assetChart}>
         <LineChart points={stats.assetSeries} color="#787774" />
       </ChartBlock>
-      <ChartBlock title="支出标签">
-        <TagAmountList items={stats.expenseTags} empty="这个时段没有支出标签" />
+      <ChartBlock title={t.stats.expenseTags}>
+        <TagAmountList items={stats.expenseTags} empty={t.stats.emptyExpenseTags} />
       </ChartBlock>
-      <ChartBlock title="收入标签">
-        <TagAmountList items={stats.incomeTags} empty="这个时段没有收入标签" />
+      <ChartBlock title={t.stats.incomeTags}>
+        <TagAmountList items={stats.incomeTags} empty={t.stats.emptyIncomeTags} />
       </ChartBlock>
     </div>
   )
 }
 
 function ModeSwitch({ mode, onChange }: { mode: StatsMode; onChange: (mode: StatsMode) => void }) {
+  const { t } = useI18n()
   return (
     <div className="w-[4.25rem] shrink-0 overflow-hidden rounded-md bg-hover p-[3px]">
       <div className="relative grid grid-cols-2">
@@ -120,7 +123,7 @@ function ModeSwitch({ mode, onChange }: { mode: StatsMode; onChange: (mode: Stat
               mode === item ? 'text-ink' : 'text-muted hover:text-ink'
             }`}
           >
-            {item === 'month' ? '月' : '年'}
+            {item === 'month' ? t.stats.modeMonth : t.stats.modeYear}
           </button>
         ))}
       </div>

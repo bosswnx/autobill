@@ -1,15 +1,16 @@
 import type { Book, Entry, EntryType, Tag } from '@tagledger/shared'
-import { ENTRY_TYPE_LABEL } from '@tagledger/shared'
 import { useMemo, useState, type ReactNode } from 'react'
 import { AmountKeypad } from '../components/AmountKeypad'
+import { CompactPicker } from '../components/DateTimePickers'
 import { Overlay } from '../components/Overlay'
 import { TagChip } from '../components/TagChip'
 import { createEntry, createTag, deleteEntry, updateEntry } from '../db/mutations'
+import { useI18n } from '../i18n'
 import { amountFromYuan, amountYuan, EMPTY_AMOUNT, type AmountExpr } from '../lib/amountKeypad'
 import { entryTitle } from '../lib/entryTitle'
 import { centsToYuanInput, yuanToCents } from '../lib/money'
 import { firstSortedTagName, sortByUsage, tagsOfKind } from '../lib/tags'
-import { fromDateTimeInput, nowIso, toDateInput, toTimeInput } from '../lib/time'
+import { formatCompactDate, fromDateTimeInput, nowIso, toDateInput, toTimeInput } from '../lib/time'
 
 type Props = {
   book: Book
@@ -23,6 +24,7 @@ const fieldClass =
   'w-full rounded-md border border-line bg-page px-3 py-2 text-sm hover:bg-hover focus:border-accent'
 
 export function EntrySheet({ book, tags, usage, entry, onClose }: Props) {
+  const { t } = useI18n()
   const initial = entry?.occurredAt ?? nowIso()
   const [type, setType] = useState<EntryType>(entry?.type === 'income' ? 'income' : 'expense')
   const [amount, setAmount] = useState<AmountExpr>(
@@ -59,12 +61,12 @@ export function EntrySheet({ book, tags, usage, entry, onClose }: Props) {
   async function save() {
     const yuan = amountYuan(amount)
     if (yuan === null && amount.op) {
-      setError('请输入金额')
+      setError(t.entry.amountRequired)
       return
     }
     const amountCents = yuanToCents(yuan ?? '0')
     if (amountCents === null) {
-      setError('请输入金额')
+      setError(t.entry.amountRequired)
       return
     }
 
@@ -105,20 +107,20 @@ export function EntrySheet({ book, tags, usage, entry, onClose }: Props) {
           <span className="h-1 w-9 rounded-full bg-black/20" />
         </div>
         <div className="flex items-center justify-between gap-3 px-5 pt-2 sm:pt-4">
-          <h2 className="shrink-0 text-lg font-semibold">{entry ? '改一笔' : '记一笔'}</h2>
+          <h2 className="shrink-0 text-lg font-semibold">{entry ? t.entry.edit : t.entry.create}</h2>
           <div className="flex min-w-0 items-center justify-end gap-1.5">
             <CompactPicker
               type="date"
               value={date}
               display={formatCompactDate(date)}
-              ariaLabel="日期"
+              ariaLabel={t.entry.date}
               onChange={setDate}
             />
             <CompactPicker
               type="time"
               value={time}
               display={time}
-              ariaLabel="时间"
+              ariaLabel={t.entry.time}
               onChange={setTime}
             />
           </div>
@@ -147,14 +149,14 @@ export function EntrySheet({ book, tags, usage, entry, onClose }: Props) {
                     type === item ? 'text-ink' : 'text-muted hover:text-ink'
                   }`}
                 >
-                  {ENTRY_TYPE_LABEL[item]}
+                  {t.entryType[item]}
                 </button>
               ))}
             </div>
           </div>
 
           <div className="mt-4">
-            <div className="text-xs text-faint">标签</div>
+            <div className="text-xs text-faint">{t.entry.tags}</div>
             {tagSearchOpen && (
               <div className="anim-page mt-2">
                 <input
@@ -171,7 +173,7 @@ export function EntrySheet({ book, tags, usage, entry, onClose }: Props) {
                       setTagQuery('')
                     }
                   }}
-                  placeholder="搜索或回车创建"
+                  placeholder={t.entry.tagSearchPlaceholder}
                   className={fieldClass}
                 />
                 {tagQuery.trim() && !exactMatch && (
@@ -180,7 +182,7 @@ export function EntrySheet({ book, tags, usage, entry, onClose }: Props) {
                     onClick={() => void addTagFromQuery()}
                     className="mt-2 text-sm text-accent"
                   >
-                    创建 {tagQuery.trim()}
+                    {t.entry.createNamed(tagQuery.trim())}
                   </button>
                 )}
               </div>
@@ -188,7 +190,7 @@ export function EntrySheet({ book, tags, usage, entry, onClose }: Props) {
             <div className="mt-2 flex flex-wrap items-center gap-1.5">
               <button
                 type="button"
-                aria-label="搜索或创建标签"
+                aria-label={t.entry.tagSearchAria}
                 aria-expanded={tagSearchOpen}
                 onClick={() => {
                   if (tagSearchOpen) setTagQuery('')
@@ -219,7 +221,7 @@ export function EntrySheet({ book, tags, usage, entry, onClose }: Props) {
             </div>
           </div>
 
-          <Field label="详细信息（选填）" className="mt-4">
+          <Field label={t.entry.note} className="mt-4">
             <input
               value={note}
               onChange={(event) => setNote(event.target.value)}
@@ -229,7 +231,7 @@ export function EntrySheet({ book, tags, usage, entry, onClose }: Props) {
           </Field>
 
           <div className="mt-4">
-            <div className="text-xs text-faint">金额</div>
+            <div className="text-xs text-faint">{t.entry.amount}</div>
             <div className="mt-1">
               <AmountKeypad expr={amount} onChange={setAmount} />
             </div>
@@ -248,14 +250,14 @@ export function EntrySheet({ book, tags, usage, entry, onClose }: Props) {
                 close()
               }}
             >
-              删除
+              {t.common.delete}
             </button>
           ) : (
             <span />
           )}
           <div className="flex gap-1">
             <button type="button" className="rounded px-3 py-1.5 text-sm text-muted hover:bg-hover" onClick={close}>
-              取消
+              {t.common.cancel}
             </button>
             <button
               type="button"
@@ -267,7 +269,7 @@ export function EntrySheet({ book, tags, usage, entry, onClose }: Props) {
               }
               className="rounded-md bg-accent px-4 py-1.5 text-sm text-accent-ink hover:brightness-95 disabled:opacity-40"
             >
-              {saving ? '保存中…' : '保存'}
+              {saving ? t.common.saving : t.common.save}
             </button>
           </div>
         </div>
@@ -299,42 +301,6 @@ function Field({
     <label className={`block min-w-0 ${className ?? ''}`}>
       <span className="block text-xs text-faint">{label}</span>
       <div className="mt-1 min-w-0 overflow-hidden">{children}</div>
-    </label>
-  )
-}
-
-function formatCompactDate(value: string): string {
-  const [, month, day] = value.split('-')
-  if (!month || !day) return value
-  return `${Number(month)}月${Number(day)}日`
-}
-
-function CompactPicker({
-  type,
-  value,
-  display,
-  ariaLabel,
-  onChange,
-}: {
-  type: 'date' | 'time'
-  value: string
-  display: string
-  ariaLabel: string
-  onChange: (value: string) => void
-}) {
-  return (
-    <label className="relative inline-flex min-w-0 cursor-pointer items-center overflow-hidden rounded-md bg-[#f4f3f0] px-2 py-1 text-xs text-muted transition-colors duration-150 hover:bg-[#ebeae6] hover:text-ink">
-      <span className="pointer-events-none truncate tabular-nums">{display}</span>
-      <input
-        type={type}
-        value={value}
-        aria-label={ariaLabel}
-        onChange={(event) => {
-          if (!event.target.value) return
-          onChange(event.target.value)
-        }}
-        className="absolute inset-0 cursor-pointer opacity-0"
-      />
     </label>
   )
 }

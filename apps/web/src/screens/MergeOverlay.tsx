@@ -1,5 +1,6 @@
 import type { MergeChoice } from '@tagledger/shared'
 import { Overlay } from '../components/Overlay'
+import { useI18n } from '../i18n'
 
 export function MergeOverlay({
   busy,
@@ -10,6 +11,7 @@ export function MergeOverlay({
   onPick: (choice: MergeChoice) => void
   onClose: () => void
 }) {
+  const { t } = useI18n()
   return (
     <Overlay onClose={onClose}>
       {() => (
@@ -17,25 +19,25 @@ export function MergeOverlay({
           data-overlay-scroll
           className="anim-panel max-h-full w-full max-w-sm overflow-y-auto rounded-xl border border-line bg-page p-5"
         >
-          <h2 className="text-lg font-semibold">两边都有账本</h2>
-          <p className="mt-1 text-sm text-muted">这台设备和云端都有数据。选一种处理方式，不会自动合并成一本乱账。</p>
+          <h2 className="text-lg font-semibold">{t.merge.title}</h2>
+          <p className="mt-1 text-sm text-muted">{t.merge.hint}</p>
           <div className="mt-4 flex flex-col gap-2">
             <MergeButton
               disabled={busy}
-              title="用本机覆盖云端"
-              detail="云端现有记录会清掉，换成这台设备上的账。"
+              title={t.merge.localTitle}
+              detail={t.merge.localDetail}
               onClick={() => onPick('local')}
             />
             <MergeButton
               disabled={busy}
-              title="用云端覆盖本机"
-              detail="这台设备上的记录会清掉，换成云端那本账。"
+              title={t.merge.cloudTitle}
+              detail={t.merge.cloudDetail}
               onClick={() => onPick('cloud')}
             />
             <MergeButton
               disabled={busy}
-              title="两边都留"
-              detail="流水和标签都会保留。同名标签可能出现两份，存款以较新的设置为准。"
+              title={t.merge.bothTitle}
+              detail={t.merge.bothDetail}
               onClick={() => onPick('both')}
             />
           </div>

@@ -13,5 +13,9 @@ export default defineConfig({
   server: {
     host: '127.0.0.1',
     port: 5173,
+    strictPort: Boolean(process.env.TAURI_ENV_PLATFORM),
+    watch: {
+      ignored: ['**/src-tauri/**'],
+    },
   },
 })

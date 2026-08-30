@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react'
-import { formatMonthTitle, monthKey, shiftMonth } from '../lib/time'
+import { useI18n } from '../i18n'
+import { formatMonthShort, formatMonthTitle, formatYearTitle, monthKey, shiftMonth } from '../lib/time'
 import { Overlay } from './Overlay'
 
 type Props = {
@@ -22,6 +23,7 @@ function supportsNativeMonthInput(): boolean {
 }
 
 export function MonthPager({ month, onChange }: Props) {
+  const { t } = useI18n()
   const [open, setOpen] = useState(false)
   const native = useMemo(supportsNativeMonthInput, [])
   const currentMonth = monthKey()
@@ -33,7 +35,7 @@ export function MonthPager({ month, onChange }: Props) {
         type="button"
         className="flex size-7 items-center justify-center rounded text-lg text-muted transition-colors duration-150 hover:bg-hover"
         onClick={() => onChange(shiftMonth(month, -1))}
-        aria-label="上个月"
+        aria-label={t.pickers.prevMonth}
       >
         ‹
       </button>
@@ -50,7 +52,7 @@ export function MonthPager({ month, onChange }: Props) {
         type="button"
         className="flex size-7 items-center justify-center rounded text-lg text-muted transition-colors duration-150 hover:bg-hover"
         onClick={() => onChange(shiftMonth(month, 1))}
-        aria-label="下个月"
+        aria-label={t.pickers.nextMonth}
       >
         ›
       </button>
@@ -87,6 +89,7 @@ function MonthPickerPanel({
   onChange: (month: string) => void
   close: () => void
 }) {
+  const { t } = useI18n()
   function pick(next: string) {
     onChange(next)
     close()
@@ -94,7 +97,7 @@ function MonthPickerPanel({
 
   return (
     <div className="anim-panel w-full max-w-sm rounded-xl border border-line bg-page p-5">
-      <h2 className="text-lg font-semibold">选择月份</h2>
+      <h2 className="text-lg font-semibold">{t.pickers.monthTitle}</h2>
       {native ? (
         <NativeMonthField value={month} onPick={pick} />
       ) : (
@@ -109,10 +112,10 @@ function MonthPickerPanel({
             isCurrent ? 'text-faint' : 'text-ink hover:bg-hover'
           }`}
         >
-          本月
+          {t.pickers.thisMonth}
         </button>
         <button type="button" className="rounded px-3 py-1.5 text-sm text-muted hover:bg-hover" onClick={close}>
-          取消
+          {t.common.cancel}
         </button>
       </div>
     </div>
@@ -120,6 +123,7 @@ function MonthPickerPanel({
 }
 
 function NativeMonthField({ value, onPick }: { value: string; onPick: (month: string) => void }) {
+  const { t } = useI18n()
   return (
     <input
       type="month"
@@ -129,12 +133,13 @@ function NativeMonthField({ value, onPick }: { value: string; onPick: (month: st
         onPick(event.target.value)
       }}
       className={`mt-4 ${fieldClass}`}
-      aria-label="月份"
+      aria-label={t.pickers.monthAria}
     />
   )
 }
 
 function FallbackMonthGrid({ month, onPick }: { month: string; onPick: (month: string) => void }) {
+  const { t } = useI18n()
   const selectedYear = Number(month.slice(0, 4))
   const selectedMonth = Number(month.slice(5, 7))
   const [pickingYear, setPickingYear] = useState(false)
@@ -150,7 +155,7 @@ function FallbackMonthGrid({ month, onPick }: { month: string; onPick: (month: s
           onClick={() =>
             pickingYear ? setViewYear((year) => year - YEAR_PAGE) : setViewYear((year) => year - 1)
           }
-          aria-label={pickingYear ? '上一页年份' : '上一年'}
+          aria-label={pickingYear ? t.pickers.prevYearPage : t.pickers.prevYear}
         >
           ‹
         </button>
@@ -164,7 +169,7 @@ function FallbackMonthGrid({ month, onPick }: { month: string; onPick: (month: s
             onClick={() => setPickingYear(true)}
             className="rounded px-1.5 py-0.5 text-sm font-semibold transition-colors duration-150 hover:bg-hover"
           >
-            {viewYear}年
+            {formatYearTitle(String(viewYear))}
           </button>
         )}
         <button
@@ -173,7 +178,7 @@ function FallbackMonthGrid({ month, onPick }: { month: string; onPick: (month: s
           onClick={() =>
             pickingYear ? setViewYear((year) => year + YEAR_PAGE) : setViewYear((year) => year + 1)
           }
-          aria-label={pickingYear ? '下一页年份' : '下一年'}
+          aria-label={pickingYear ? t.pickers.nextYearPage : t.pickers.nextYear}
         >
           ›
         </button>
@@ -212,7 +217,7 @@ function FallbackMonthGrid({ month, onPick }: { month: string; onPick: (month: s
                   active ? 'bg-accent text-accent-ink' : 'text-ink hover:bg-hover'
                 }`}
               >
-                {item}月
+                {formatMonthShort(item)}
               </button>
             )
           })}

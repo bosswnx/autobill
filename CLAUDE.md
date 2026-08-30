@@ -4,9 +4,9 @@ Repo conventions. Read this before changing code. If it conflicts with `README.m
 
 ## What this is
 
-A personal ledger. Flat tags, no category tree, no wallets. One React UI on the browser and Capacitor (iOS). Sync server is `apps/server`, Linux + SQLite. Do not start a React Native / Flutter app.
+A personal ledger. Flat tags, no category tree, no wallets. One React UI on the browser, Capacitor (iOS), and Tauri (macOS). Sync server is `apps/server`, Linux + SQLite. Do not start a React Native / Flutter app.
 
-The UI is Chinese. Amounts are integer cents.
+The UI is Chinese and English. Language lives in Settings; default is Chinese. The Chinese product name is 标签记账 — never show “TagLedger” in the zh locale. Amounts are integer cents.
 
 ## Commands
 
@@ -20,13 +20,15 @@ npm run server:start     # sync server (no watch)
 npm run serve            # build web, then start API + web on one port
 npm run ios              # build + cap sync ios + open Xcode
 npm run ios:live         # device against this machine's Vite
+npm run macos            # Tauri window against Vite (needs Rust)
+npm run macos:build      # .app + dmg
 ```
 
 `@tagledger/shared` does not need its own build. Vite aliases it to `packages/shared/src/index.ts`; the server imports it with tsx.
 
 ## Layout
 
-- `apps/web`: UI, Dexie, sync client, Capacitor iOS
+- `apps/web`: UI, Dexie, sync client, Capacitor iOS, Tauri macOS
 - `apps/server`: Hono sync server
 - `packages/shared`: types, LWW, token length constants
 
@@ -58,7 +60,7 @@ npm run ios:live         # device against this machine's Vite
 - One server, many spaces. Gate is three fields: server URL, `TAGLEDGER_TARGET_KEY`, user-chosen token.
 - The user token is hashed into `space_key` (HMAC-SHA256 + pepper). The server never stores the plaintext token.
 - After connect, call `/v1/sync` with the device token only. The old dual-token pair is gone; do not bring it back.
-- A hosted browser (page served from the API origin) with no device token must show the login page first: target key + user token. Do not seed the sample book in that case. Native / Vite stay optional-connect in Settings.
+- A hosted browser (page served from the API origin) with no device token must show the login page first: target key + user token. Do not seed the sample book in that case. Native / Vite / Tauri stay optional-connect in Settings.
 - Conflicts: `incomingWins` (`updatedAt`, then `rev`). The server must not overwrite the client's `updatedAt` with receive time.
 - If both sides have data, the user must pick `local` / `cloud` / `both`. Do not auto-merge.
 - Do not auto-merge tags that share a name.
@@ -74,7 +76,7 @@ Current version is v3 (`changes.seq` + `meta`). Further schema changes need a ne
 Commit messages follow Conventional Commits: `type(scope): summary`.
 
 - `type`: `feat` / `fix` / `docs` / `refactor` / `chore` / `test` / `style`
-- `scope` is a short name: `web`, `server`, `shared`, `ios`, `sync`
+- `scope` is a short name: `web`, `server`, `shared`, `ios`, `macos`, `sync`
 - Summary is present tense, one short line, what or why — not a vague "update"
 
 ```
@@ -90,4 +92,5 @@ Do not write multi-paragraph prose commits. Do not commit unless the user asked.
 - One book. No book switcher.
 - No accounts/wallets, category tree, or email login.
 - Android is not wired. Store listing, signing, and privacy manifests are out of scope.
+- Windows and Linux desktop shells are not wired.
 - Sync is not end-to-end encrypted (self-hosted server + TLS).

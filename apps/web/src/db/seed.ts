@@ -1,5 +1,6 @@
 import { createBook, createEntry, createTag } from './mutations'
 import { db } from './database'
+import { getMessages } from '../i18n'
 import { hasLocalData, isConnected } from '../sync/session'
 
 let seeding: Promise<void> | null = null
@@ -11,7 +12,7 @@ export async function seedIfNeeded(): Promise<void> {
 
 export async function ensureBookIfEmpty(): Promise<void> {
   if (await hasLocalData()) return
-  await createBook('日常', 'CNY')
+  await createBook(getMessages().seed.bookName, 'CNY')
 }
 
 async function seedOnce(): Promise<void> {
@@ -19,14 +20,15 @@ async function seedOnce(): Promise<void> {
   const count = await db.books.count()
   if (count > 0) return
 
-  const book = await createBook('日常', 'CNY')
+  const seed = getMessages().seed
+  const book = await createBook(seed.bookName, 'CNY')
 
-  const food = await createTag(book.id, '餐饮', '#c45c26', null, 'expense')
-  const coffee = await createTag(book.id, '咖啡', '#8b5a2b', null, 'expense')
-  const transit = await createTag(book.id, '交通', '#3d5a80', null, 'expense')
-  const salary = await createTag(book.id, '工资', '#2f6f4e', null, 'income')
-  await createTag(book.id, '日用', '#6b705c', null, 'expense')
-  await createTag(book.id, '购物', '#9b4d6c', null, 'expense')
+  const food = await createTag(book.id, seed.tags.food, '#c45c26', null, 'expense')
+  const coffee = await createTag(book.id, seed.tags.coffee, '#8b5a2b', null, 'expense')
+  const transit = await createTag(book.id, seed.tags.transit, '#3d5a80', null, 'expense')
+  const salary = await createTag(book.id, seed.tags.salary, '#2f6f4e', null, 'income')
+  await createTag(book.id, seed.tags.daily, '#6b705c', null, 'expense')
+  await createTag(book.id, seed.tags.shopping, '#9b4d6c', null, 'expense')
 
   const now = new Date()
   const yesterday = new Date(now)
@@ -41,7 +43,7 @@ async function seedOnce(): Promise<void> {
     accountId: '',
     toAccountId: null,
     tagIds: [coffee.id, food.id],
-    note: '瑞幸',
+    note: seed.notes.luckin,
     occurredAt: yesterday.toISOString(),
   })
 
@@ -53,7 +55,7 @@ async function seedOnce(): Promise<void> {
     accountId: '',
     toAccountId: null,
     tagIds: [transit.id],
-    note: '地铁',
+    note: seed.notes.metro,
     occurredAt: now.toISOString(),
   })
 
@@ -69,7 +71,7 @@ async function seedOnce(): Promise<void> {
     accountId: '',
     toAccountId: null,
     tagIds: [salary.id],
-    note: '工资',
+    note: seed.notes.salary,
     occurredAt: payday.toISOString(),
   })
 }

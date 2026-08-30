@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024" role="img" aria-labelledby="title desc">
+  <title id="title">Tag Ledger macOS icon</title>
+  <desc id="desc">App icon on the macOS 824pt grid with transparent margins so the Dock plate matches other apps.</desc>
+  <defs>
+    <clipPath id="plate">
+      <rect x="100" y="100" width="824" height="824" rx="185" ry="185"/>
+    </clipPath>
+  </defs>
+  <g clip-path="url(#plate)">
+    <g transform="translate(100 100) scale(0.8046875)">
+    <rect width="1024" height="1024" fill="#F7F6F3"/>
+    <g transform="translate(0 48) rotate(-7 512 512)">
+      <path d="M238 332C238 286 276 248 322 248H604C626 248 648 257 664 273L794 403C827 436 827 490 794 523L664 653C648 669 626 678 604 678H322C276 678 238 640 238 594V332Z" fill="#343430"/>
+      <circle cx="694" cy="463" r="42" fill="#F7F6F3"/>
+      <circle cx="344" cy="390" r="17" fill="#FF4D4F"/>
+      <rect x="384" y="374" width="220" height="32" rx="16" fill="#F7F6F3"/>
+      <circle cx="344" cy="463" r="17" fill="#A8A8A2"/>
+      <rect x="384" y="447" width="168" height="32" rx="16" fill="#F7F6F3"/>
+      <circle cx="344" cy="536" r="17" fill="#0F8F7F"/>
+      <rect x="384" y="520" width="244" height="32" rx="16" fill="#F7F6F3"/>
+    </g>
+    </g>
+  </g>
+</svg>

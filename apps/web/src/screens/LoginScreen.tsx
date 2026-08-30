@@ -5,6 +5,9 @@ import { describeSyncError } from '../sync/api'
 import { connectToServer, finishConnect } from '../sync/engine'
 import { hasLocalData } from '../sync/session'
 import { ensureBookIfEmpty } from '../db/seed'
+import { BrandMark } from '../components/BrandMark'
+import { LanguageSwitch } from '../components/LanguageSwitch'
+import { useI18n } from '../i18n'
 import { MergeOverlay } from './MergeOverlay'
 
 const INPUT =
@@ -17,6 +20,7 @@ export function LoginScreen({
   serverUrl: string
   onLoggedIn: () => void
 }) {
+  const { t } = useI18n()
   const [targetKey, setTargetKey] = useState('')
   const [userToken, setUserToken] = useState('')
   const [error, setError] = useState('')
@@ -31,11 +35,11 @@ export function LoginScreen({
 
   async function submit() {
     if (!targetKey.trim()) {
-      setError('请填写服务器密钥')
+      setError(t.sync.targetKeyRequired)
       return
     }
     if (userToken.trim().length < MIN_USER_TOKEN_LENGTH) {
-      setError(`用户 token 至少 ${MIN_USER_TOKEN_LENGTH} 位`)
+      setError(t.sync.tokenMin(MIN_USER_TOKEN_LENGTH))
       return
     }
     setBusy(true)
@@ -63,18 +67,14 @@ export function LoginScreen({
     <div className="flex min-h-svh flex-col items-center justify-center px-5 py-[calc(2rem+var(--sat))] pb-[calc(2rem+var(--sab))] pl-[calc(1.25rem+var(--sal))] pr-[calc(1.25rem+var(--sar))]">
       <div className="anim-page w-full max-w-sm">
         <div className="mb-8 flex items-center gap-2">
-          <span className="flex size-8 items-center justify-center rounded-md bg-ink text-sm font-semibold text-page">
-            T
-          </span>
+          <BrandMark className="size-8 shrink-0" />
           <div>
-            <div className="text-sm font-medium">TagLedger</div>
-            <div className="text-[11px] text-faint">同步服务器</div>
+            <div className="text-sm font-medium">{t.appName}</div>
+            <div className="text-[11px] text-faint">{t.login.subtitle}</div>
           </div>
         </div>
-        <h1 className="text-[40px] leading-none font-bold tracking-[-0.03em]">登录</h1>
-        <p className="mt-3 text-sm leading-relaxed text-muted">
-          第一次用这个浏览器打开时，要用服务器密钥和你的用户 token 验证身份。通过之后，这个浏览器就是一台终端。
-        </p>
+        <h1 className="text-[40px] leading-none font-bold tracking-[-0.03em]">{t.login.title}</h1>
+        <p className="mt-3 text-sm leading-relaxed text-muted">{t.login.hint}</p>
         <form
           className="mt-8 flex flex-col gap-4"
           onSubmit={(event) => {
@@ -83,7 +83,7 @@ export function LoginScreen({
           }}
         >
           <label className="block">
-            <span className="text-xs text-faint">服务器密钥</span>
+            <span className="text-xs text-faint">{t.sync.targetKey}</span>
             <input
               type="password"
               value={targetKey}
@@ -96,12 +96,12 @@ export function LoginScreen({
             />
           </label>
           <label className="block">
-            <span className="text-xs text-faint">用户 token</span>
+            <span className="text-xs text-faint">{t.sync.userToken}</span>
             <input
               type="password"
               value={userToken}
               onChange={(event) => setUserToken(event.target.value)}
-              placeholder={`至少 ${MIN_USER_TOKEN_LENGTH} 位，自己设、自己保管`}
+              placeholder={t.sync.tokenPlaceholder(MIN_USER_TOKEN_LENGTH)}
               autoCapitalize="none"
               autoCorrect="off"
               spellCheck={false}
@@ -115,9 +115,12 @@ export function LoginScreen({
             disabled={busy}
             className="rounded-md bg-accent px-3 py-2 text-sm text-accent-ink disabled:opacity-40"
           >
-            {busy ? '验证中…' : '进入'}
+            {busy ? t.login.verifying : t.login.enter}
           </button>
         </form>
+        <div className="mt-10 flex justify-center">
+          <LanguageSwitch />
+        </div>
       </div>
       {pending ? (
         <MergeOverlay

@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 64 64" role="img" aria-labelledby="title">
+  <title id="title">Tag Ledger favicon</title>
+  <rect width="64" height="64" rx="14" fill="#F7F6F3"/>
+  <path d="M10 20C10 16.7 12.7 14 16 14H36.4C38 14 39.5 14.6 40.6 15.7L53.3 28.4C55.3 30.4 55.3 33.6 53.3 35.6L40.6 48.3C39.5 49.4 38 50 36.4 50H16C12.7 50 10 47.3 10 44V20Z" fill="#343430"/>
+  <circle cx="43.5" cy="32" r="4.2" fill="#F7F6F3"/>
+  <circle cx="18.5" cy="25" r="1.6" fill="#FF4D4F"/>
+  <rect x="22" y="23.5" width="13" height="3" rx="1.5" fill="#F7F6F3"/>
+  <circle cx="18.5" cy="39" r="1.6" fill="#0F8F7F"/>
+  <rect x="22" y="37.5" width="15" height="3" rx="1.5" fill="#F7F6F3"/>
+</svg>

@@ -1,4 +1,5 @@
 import type { ConnectRequest, ConnectResponse, SyncRequest, SyncResponse } from '@tagledger/shared'
+import { getMessages } from '../i18n'
 
 export class SyncApiError extends Error {
   code: string
@@ -9,29 +10,25 @@ export class SyncApiError extends Error {
   }
 }
 
+const ERROR_CODES: Record<string, keyof ReturnType<typeof getMessages>['sync']['errors']> = {
+  invalid_target_key: 'invalidTargetKey',
+  invalid_user_token: 'invalidUserToken',
+  unauthorized: 'unauthorized',
+  rate_limited: 'rateLimited',
+  payload_too_large: 'payloadTooLarge',
+  invalid_change: 'invalidChange',
+  network: 'network',
+  failed: 'failed',
+}
+
 export function describeSyncError(error: unknown): string {
-  if (error instanceof SyncApiError) {
-    switch (error.code) {
-      case 'invalid_target_key':
-        return '服务器密钥不对'
-      case 'invalid_user_token':
-        return '用户 token 至少 8 位'
-      case 'unauthorized':
-        return '同步凭证失效，请重新登录'
-      case 'rate_limited':
-        return '尝试太频繁，稍后再试'
-      case 'payload_too_large':
-        return '这次要同步的数据太大'
-      case 'invalid_change':
-        return '有一条本地记录服务端无法接受'
-      case 'network':
-        return '连不上服务器'
-      default:
-        return error.message || '同步失败'
-    }
-  }
+  const t = getMessages()
+  const code =
+    error instanceof SyncApiError ? error.code : typeof error === 'string' ? error : null
+  if (code && code in ERROR_CODES) return t.sync.errors[ERROR_CODES[code]]
   if (error instanceof Error && error.message) return error.message
-  return '同步失败'
+  if (typeof error === 'string') return error
+  return t.sync.errors.failed
 }
 
 export function detectHostedOrigin(): Promise<string | null> {
@@ -39,6 +36,8 @@ export function detectHostedOrigin(): Promise<string | null> {
   return fetch(`${window.location.origin}/healthz`, { signal: AbortSignal.timeout(2500) })
     .then(async (response) => {
       if (!response.ok) return null
+      const type = response.headers.get('content-type') ?? ''
+      if (!type.includes('application/json')) return null
       const body = (await response.json()) as { ok?: boolean }
       return body.ok ? window.location.origin : null
     })
@@ -81,7 +80,7 @@ async function post<T>(
       signal: AbortSignal.timeout(timeoutMs),
     })
   } catch {
-    throw new SyncApiError('network', '连不上服务器')
+    throw new SyncApiError('network', 'network')
   }
   if (!response.ok) {
     const code = await readErrorCode(response)

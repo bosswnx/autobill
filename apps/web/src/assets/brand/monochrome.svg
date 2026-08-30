@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512" role="img" aria-labelledby="title desc">
+  <title id="title">Tag Ledger monochrome symbol</title>
+  <desc id="desc">Single-color Tag Ledger symbol for system menus, printing, and template tinting.</desc>
+  <defs>
+    <mask id="cutouts">
+      <rect width="512" height="512" fill="#000"/>
+      <path d="M74 162C74 132 98 108 128 108H296C310 108 323 114 333 124L427 218C448 239 448 273 427 294L333 388C323 398 310 404 296 404H128C98 404 74 380 74 350V162Z" fill="#fff"/>
+      <circle cx="352" cy="256" r="25" fill="#000"/>
+      <circle cx="140" cy="206" r="10" fill="#000"/>
+      <rect x="166" y="196" width="116" height="20" rx="10" fill="#000"/>
+      <circle cx="140" cy="256" r="10" fill="#000"/>
+      <rect x="166" y="246" width="88" height="20" rx="10" fill="#000"/>
+      <circle cx="140" cy="306" r="10" fill="#000"/>
+      <rect x="166" y="296" width="128" height="20" rx="10" fill="#000"/>
+    </mask>
+  </defs>
+  <rect width="512" height="512" fill="currentColor" mask="url(#cutouts)"/>
+</svg>

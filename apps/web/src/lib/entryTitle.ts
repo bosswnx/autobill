@@ -1,5 +1,5 @@
 import type { EntryType } from '@tagledger/shared'
-import { ENTRY_TYPE_LABEL } from '@tagledger/shared'
+import { getMessages } from '../i18n'
 
 export function entryTitle(
   note: string,
@@ -9,5 +9,5 @@ export function entryTitle(
   const trimmed = note.trim()
   if (trimmed) return trimmed
   if (firstTagName) return firstTagName
-  return ENTRY_TYPE_LABEL[type]
+  return getMessages().entryType[type]
 }

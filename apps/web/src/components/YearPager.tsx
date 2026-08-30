@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useI18n } from '../i18n'
 import { formatYearTitle, shiftYear, yearKey } from '../lib/time'
 import { Overlay } from './Overlay'
 
@@ -14,6 +15,7 @@ function pageStart(year: number): number {
 }
 
 export function YearPager({ year, onChange }: Props) {
+  const { t } = useI18n()
   const [open, setOpen] = useState(false)
   const selected = Number(year)
   const [viewStart, setViewStart] = useState(pageStart(selected))
@@ -30,7 +32,7 @@ export function YearPager({ year, onChange }: Props) {
         type="button"
         className="flex size-7 items-center justify-center rounded text-lg text-muted transition-colors duration-150 hover:bg-hover"
         onClick={() => onChange(shiftYear(year, -1))}
-        aria-label="上一年"
+        aria-label={t.pickers.prevYear}
       >
         ‹
       </button>
@@ -50,7 +52,7 @@ export function YearPager({ year, onChange }: Props) {
         type="button"
         className="flex size-7 items-center justify-center rounded text-lg text-muted transition-colors duration-150 hover:bg-hover"
         onClick={() => onChange(shiftYear(year, 1))}
-        aria-label="下一年"
+        aria-label={t.pickers.nextYear}
       >
         ›
       </button>
@@ -58,13 +60,13 @@ export function YearPager({ year, onChange }: Props) {
         <Overlay captureBack={false} onClose={() => setOpen(false)} className="overlay-pad items-center">
           {(close) => (
             <div className="anim-panel w-full max-w-sm rounded-xl border border-line bg-page p-5">
-              <h2 className="text-lg font-semibold">选择年份</h2>
+              <h2 className="text-lg font-semibold">{t.pickers.yearTitle}</h2>
               <div className="mt-4 mb-2 flex items-center justify-between">
                 <button
                   type="button"
                   className="flex size-8 items-center justify-center rounded text-lg text-muted hover:bg-hover"
                   onClick={() => setViewStart((start) => start - YEAR_PAGE)}
-                  aria-label="上一页年份"
+                  aria-label={t.pickers.prevYearPage}
                 >
                   ‹
                 </button>
@@ -75,7 +77,7 @@ export function YearPager({ year, onChange }: Props) {
                   type="button"
                   className="flex size-8 items-center justify-center rounded text-lg text-muted hover:bg-hover"
                   onClick={() => setViewStart((start) => start + YEAR_PAGE)}
-                  aria-label="下一页年份"
+                  aria-label={t.pickers.nextYearPage}
                 >
                   ›
                 </button>
@@ -112,14 +114,14 @@ export function YearPager({ year, onChange }: Props) {
                     isCurrent ? 'text-faint' : 'text-ink hover:bg-hover'
                   }`}
                 >
-                  本年
+                  {t.pickers.thisYear}
                 </button>
                 <button
                   type="button"
                   className="rounded px-3 py-1.5 text-sm text-muted hover:bg-hover"
                   onClick={close}
                 >
-                  取消
+                  {t.common.cancel}
                 </button>
               </div>
             </div>

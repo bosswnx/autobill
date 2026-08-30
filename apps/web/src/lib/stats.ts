@@ -1,4 +1,5 @@
 import type { Entry, Tag } from '@tagledger/shared'
+import { getLocale } from '../i18n'
 import {
   dayKey,
   daysInMonth,
@@ -138,7 +139,7 @@ function rankTags(
     .filter((tag) => tag.kind === kind)
     .map((tag) => ({ tag, cents: amounts.get(tag.id) ?? 0 }))
     .filter((item) => item.cents > 0)
-    .sort((a, b) => b.cents - a.cents || a.tag.name.localeCompare(b.tag.name, 'zh'))
+    .sort((a, b) => b.cents - a.cents || a.tag.name.localeCompare(b.tag.name, getLocale()))
 }
 
 function monthBuckets(month: string): { key: string; label: string; endMs: number }[] {

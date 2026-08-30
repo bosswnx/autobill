@@ -1,5 +1,6 @@
 import { TAG_COLOR_PALETTE } from '@tagledger/shared'
 import { Overlay } from './Overlay'
+import { useI18n } from '../i18n'
 
 type Props = {
   value: string
@@ -8,14 +9,15 @@ type Props = {
 }
 
 export function ColorPicker({ value, onClose, onPick }: Props) {
+  const { t } = useI18n()
   return (
     <Overlay onClose={onClose} className="overlay-pad z-[60] items-center">
       {(close) => (
         <div className="anim-panel w-full max-w-xs rounded-xl border border-line bg-page p-4">
           <div className="flex items-center justify-between">
-            <h2 className="text-base font-semibold">选择颜色</h2>
+            <h2 className="text-base font-semibold">{t.colorPicker.title}</h2>
             <button type="button" className="rounded px-2 py-1 text-sm text-muted hover:bg-hover" onClick={close}>
-              关闭
+              {t.common.close}
             </button>
           </div>
           <div className="mt-4 flex flex-wrap gap-2">

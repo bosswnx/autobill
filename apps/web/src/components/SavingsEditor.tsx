@@ -1,92 +1,68 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { setSavings } from '../db/mutations'
-import { centsToYuanInput, formatYuan, yuanToCents } from '../lib/money'
-import { Overlay } from './Overlay'
+import { useI18n } from '../i18n'
+import { centsToYuanInput, yuanToCents } from '../lib/money'
 
-type Props = {
-  bookId: string
-  savings: number
-  onClose: () => void
-}
-
-export function SavingsEditor({ bookId, savings, onClose }: Props) {
+export function SavingsSection({ bookId, savings }: { bookId: string; savings: number }) {
+  const { t } = useI18n()
   const [value, setValue] = useState(centsToYuanInput(savings))
   const [error, setError] = useState('')
   const [saving, setSaving] = useState(false)
+  const [saved, setSaved] = useState(false)
+
+  useEffect(() => {
+    setValue(centsToYuanInput(savings))
+  }, [savings])
 
   async function submit() {
     const cents = yuanToCents(value)
     if (cents === null) {
-      setError('请输入金额')
-      return false
+      setError(t.savings.amountRequired)
+      setSaved(false)
+      return
     }
     setSaving(true)
+    setError('')
     try {
       await setSavings(bookId, cents)
-      return true
+      setSaved(true)
     } finally {
       setSaving(false)
     }
   }
 
   return (
-    <Overlay onClose={onClose}>
-      {(close) => (
-        <div
-          data-overlay-scroll
-          className="anim-panel max-h-full w-full max-w-sm overflow-y-auto rounded-xl border border-line bg-page p-5"
-        >
-          <h2 className="text-lg font-semibold">现在的存款</h2>
-          <p className="mt-1 text-sm text-muted">填你手头现在有多少。之后记账会自动加减。</p>
-          <div className="mt-4 flex items-baseline gap-1 border-b border-line pb-2">
-            <span className="text-xl text-faint">¥</span>
-            <input
-              autoFocus
-              inputMode="decimal"
-              value={value}
-              onChange={(event) => setValue(event.target.value)}
-              className="w-full bg-transparent text-3xl font-semibold tracking-tight"
-            />
-          </div>
-          {error && <p className="mt-2 text-sm text-expense">{error}</p>}
-          <div className="mt-5 flex justify-end gap-1">
-            <button type="button" className="rounded px-3 py-1.5 text-sm text-muted hover:bg-hover" onClick={close}>
-              取消
-            </button>
-            <button
-              type="button"
-              disabled={saving}
-              className="rounded-md bg-accent px-3 py-1.5 text-sm text-accent-ink disabled:opacity-40"
-              onClick={() =>
-                void submit().then((ok) => {
-                  if (ok) close()
-                })
-              }
-            >
-              保存
-            </button>
-          </div>
+    <section className="flex flex-col gap-4">
+      <h2 className="text-sm font-medium text-muted">{t.savings.title}</h2>
+      <p className="text-sm leading-relaxed text-muted">{t.savings.hint}</p>
+      <label className="block">
+        <span className="text-xs text-faint">{t.savings.current}</span>
+        <div className="mt-1 flex items-center gap-2">
+          <span className="text-sm text-faint">¥</span>
+          <input
+            inputMode="decimal"
+            value={value}
+            onChange={(event) => {
+              setValue(event.target.value)
+              setSaved(false)
+              setError('')
+            }}
+            className="w-full rounded-md border border-line bg-page px-3 py-2 text-sm placeholder:text-faint hover:bg-hover focus:border-accent"
+          />
         </div>
-      )}
-    </Overlay>
-  )
-}
-
-export function SavingsButton({
-  savings,
-  onClick,
-}: {
-  savings: number
-  onClick: () => void
-}) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      className="flex items-baseline gap-2 rounded text-left transition-colors duration-150 hover:bg-hover"
-    >
-      <span className="text-faint">存款</span>
-      <span className="font-medium tabular-nums">{formatYuan(savings)}</span>
-    </button>
+      </label>
+      {error ? <p className="text-sm text-expense">{error}</p> : null}
+      {saved ? <p className="text-sm text-income">{t.common.saved}</p> : null}
+      <div>
+        <button
+          type="button"
+          disabled={saving}
+          className="rounded-md bg-accent px-3 py-1.5 text-sm text-accent-ink disabled:opacity-40"
+          onClick={() => void submit()}
+        >
+          {saving ? t.common.saving : t.common.save}
+        </button>
+      </div>
+    </section>
   )
 }

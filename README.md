@@ -2,7 +2,7 @@
 
 A tag-based personal ledger. Flat tags, no category tree, no wallets. One book, and one editable **savings** figure.
 
-**Targets: browser, iPhone, iPad, Android.** One React UI, not a separate app per platform. Browser and iOS (iPhone / iPad) are working; Android is not wired up yet. Cross-device sync is a self-hosted Linux service: every device and the server keep a full copy and reconcile by appending changes.
+**Targets: browser, iPhone, iPad, macOS, Android.** One React UI, not a separate app per platform. Browser, iOS (iPhone / iPad), and macOS (Tauri) are working; Android is not wired up yet. Cross-device sync is a self-hosted Linux service: every device and the server keep a full copy and reconcile by appending changes.
 
 The UI is Chinese. Amounts are stored as **cents** (`amountCents`). Display uses `formatYuan`: no decimal when the value is a whole yuan; otherwise show the remainder. Integer groups of three get commas.
 
@@ -14,7 +14,7 @@ The UI is Chinese. Amounts are stored as **cents** (`amountCents`). Display uses
 - Client: React 19 + Vite + TypeScript + Tailwind CSS v4
 - Local store: Dexie (IndexedDB) + `dexie-react-hooks`
 - Sync server: Hono + SQLite (`better-sqlite3`), deployable on Linux
-- Native shell: Capacitor (one iOS project for iPhone and iPad)
+- Native shell: Capacitor (iOS) and Tauri (macOS)
 - Icons: Lucide
 
 Shared types live in `@tagledger/shared`. Vite and the sync server import the source directly; you do not need to build the package first.
@@ -22,7 +22,7 @@ Shared types live in `@tagledger/shared`. Vite and the sync server import the so
 ## Layout
 
 ```
-apps/web/                 Web app + Capacitor shell
+apps/web/                 Web app + Capacitor + Tauri shells
   src/App.tsx             Nav: ledger / stats / tags / settings + new entry
   src/screens/            LedgerScreen, StatsScreen, TagsScreen, EntrySheet, SettingsScreen, LoginScreen
   src/components/         Charts, tags, amount keypad, Overlay, month/year pagers
@@ -30,8 +30,9 @@ apps/web/                 Web app + Capacitor shell
   src/sync/               Sync engine: connect, push/pull, three-way merge
   src/hooks/useLedger.ts  Live queries
   src/lib/                Money, time, tag filters, stats, keypad
-  capacitor.config.ts    Native shell config
+  capacitor.config.ts    iOS shell config
   ios/                    Xcode project (iPhone / iPad)
+  src-tauri/              Tauri macOS shell
 apps/server/              Sync server (Linux)
   src/index.ts            HTTP: /healthz, /v1/connect, /v1/sync, /v1/replace
   src/db.ts               SQLite log and materialized entities
@@ -60,7 +61,7 @@ Builds web. Shared is consumed from source via the Vite alias.
 npm run serve
 ```
 
-Builds the web app, then starts the API **and** the same UI on one port (`http://0.0.0.0:8787`). A new browser hitting that URL sees a login page (server key + user token) before the ledger. Phone apps and other Vite/local clients still connect from Settings, by URL.
+Builds the web app, then starts the API **and** the same UI on one port (`http://0.0.0.0:8787`). A new browser hitting that URL sees a login page (server key + user token) before the ledger. Phone apps, the Mac app, and other Vite/local clients still connect from Settings, by URL.
 
 Dev-only API (no web build): `npm run server`. Production without rebuilding: `npm run server:start` (serves `apps/web/dist` if it exists).
 
@@ -127,6 +128,28 @@ Phone and computer must be on the same Wi-Fi. `ios:live` writes `CAP_SERVER_URL`
 
 Bundle ID is `app.tagledger`. App Store, privacy manifests, and certificates are not in this repo yet. Local install only.
 
+### macOS (installable app)
+
+The same React UI is wrapped in WKWebView by Tauri. This is another local-first device: Dexie on this Mac, then connect from Settings (server URL, server key, user token). It does not open the hosted login page.
+
+Needs [Rust](https://rustup.rs/) (`rustc` on PATH) and Xcode. First compile is slow.
+
+```bash
+npm run macos
+```
+
+Opens a desktop window against Vite on `http://127.0.0.1:1420` (separate from `npm run dev` on 5173).
+
+To produce `TagLedger.app` and a dmg:
+
+```bash
+npm run macos:build
+```
+
+Output is under `apps/web/src-tauri/target/release/bundle/`. Notarization and Developer ID signing are not in this repo yet.
+
+Windows and Linux shells are not wired.
+
 ## Data model
 
 Every entity has `id / rev / createdAt / updatedAt / deletedAt`. Deletes are soft. Writes go through `mutations.ts` and append a row to `changes`. Device id is in `localStorage` (`tagledger.deviceId`).
@@ -173,7 +196,7 @@ API:
 ## Screens
 
 **Ledger**  
-Month view. Header: savings, expense, income, net. Search notes; filter by tags.
+Month view. Header: expense, income, net, savings (read-only). Search notes; filter by tags.
 
 **New / edit entry**  
 Expense and income each have their own tag set; only the current type is shown and selectable. Switching type drops tags of the other kind. Enter in the search box creates a tag of the current type. Amount uses a custom keypad (digits, decimal, + − × ÷, equals, clear). If the note is empty, the title is the most-used selected tag; otherwise “expense” or “income”.
@@ -188,7 +211,7 @@ Month / year. Month: daily expense/income bars, asset line, tag amount bars. Yea
 First visit from a new browser: server key + user token, then the ledger. Later visits reuse the device token in IndexedDB.
 
 **Settings**  
-Connect / disconnect sync (native and local Vite), sync now, and the three-way choice when both sides have data.
+Set current savings. Connect / disconnect sync (native, Mac, and local Vite), sync now, and the three-way choice when both sides have data.
 
 ## Tag filter (ledger)
 

@@ -1,10 +1,6 @@
 import { useMemo, useState } from 'react'
-import {
-  iconsInCategory,
-  LUCIDE_CATEGORY_IDS,
-  LUCIDE_CATEGORY_LABEL,
-  searchLucideIcons,
-} from '../lib/lucideCategories'
+import { useI18n } from '../i18n'
+import { iconsInCategory, LUCIDE_CATEGORY_IDS, searchLucideIcons } from '../lib/lucideCategories'
 import { Overlay } from './Overlay'
 import { TagIcon } from './TagIcon'
 
@@ -23,6 +19,7 @@ type Props = {
 }
 
 export function IconPicker({ value, onClose, onPick }: Props) {
+  const { t } = useI18n()
   const [query, setQuery] = useState('')
   const [category, setCategory] = useState(() => categoryFor(value))
   const [picked, setPicked] = useState<string | null>(value)
@@ -38,14 +35,14 @@ export function IconPicker({ value, onClose, onPick }: Props) {
       {(close) => (
         <div className="anim-panel flex max-h-[min(80%,36rem)] w-full max-w-lg flex-col overflow-hidden rounded-xl border border-line bg-page">
           <div className="px-4 pt-4">
-            <h2 className="text-base font-semibold">选择图标</h2>
+            <h2 className="text-base font-semibold">{t.iconPicker.title}</h2>
           </div>
           <div className="px-4 pt-3">
             <input
               autoFocus
               value={query}
               onChange={(event) => setQuery(event.target.value)}
-              placeholder="搜索图标名称"
+              placeholder={t.iconPicker.searchPlaceholder}
               className="w-full rounded-md border border-line bg-page px-3 py-2 text-sm placeholder:text-faint hover:bg-hover focus:border-accent"
             />
           </div>
@@ -60,7 +57,7 @@ export function IconPicker({ value, onClose, onPick }: Props) {
                     category === id ? 'bg-active text-ink' : 'text-muted hover:bg-hover hover:text-ink'
                   }`}
                 >
-                  {LUCIDE_CATEGORY_LABEL[id] ?? id}
+                  {t.iconCategory[id] ?? id}
                 </button>
               ))}
             </div>
@@ -74,7 +71,7 @@ export function IconPicker({ value, onClose, onPick }: Props) {
                   picked === null ? 'bg-active text-ink' : 'text-muted hover:bg-hover'
                 }`}
               >
-                无
+                {t.common.none}
               </button>
               {icons.map((name) => (
                 <button
@@ -91,12 +88,12 @@ export function IconPicker({ value, onClose, onPick }: Props) {
               ))}
             </div>
             {icons.length === 0 && (
-              <p className="py-8 text-center text-sm text-muted">没有匹配的图标</p>
+              <p className="py-8 text-center text-sm text-muted">{t.iconPicker.empty}</p>
             )}
           </div>
           <div className="flex justify-end gap-1 px-4 py-3">
             <button type="button" className="rounded px-3 py-1.5 text-sm text-muted hover:bg-hover" onClick={close}>
-              取消
+              {t.common.cancel}
             </button>
             <button
               type="button"
@@ -106,7 +103,7 @@ export function IconPicker({ value, onClose, onPick }: Props) {
                 close()
               }}
             >
-              保存
+              {t.common.save}
             </button>
           </div>
         </div>

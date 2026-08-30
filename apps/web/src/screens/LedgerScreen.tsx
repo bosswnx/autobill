@@ -1,8 +1,7 @@
 import type { Entry, Tag } from '@tagledger/shared'
-import { TAG_KIND_LABEL } from '@tagledger/shared'
 import { MonthPager } from '../components/MonthPager'
-import { SavingsButton } from '../components/SavingsEditor'
 import { TagChip } from '../components/TagChip'
+import { useI18n } from '../i18n'
 import { entryTitle } from '../lib/entryTitle'
 import { formatYuan } from '../lib/money'
 import { firstSortedTagName, sortByUsage, tagsOfKind } from '../lib/tags'
@@ -23,7 +22,6 @@ type Props = {
   tags: Tag[]
   usage: Record<string, number>
   savings: number
-  onEditSavings: () => void
   filterTagIds: string[]
   onToggleTag: (id: string) => void
   onClearTags: () => void
@@ -40,7 +38,6 @@ export function LedgerScreen({
   tags,
   usage,
   savings,
-  onEditSavings,
   filterTagIds,
   onToggleTag,
   onClearTags,
@@ -51,23 +48,24 @@ export function LedgerScreen({
   const tagMap = new Map(tags.map((tag) => [tag.id, tag]))
   const sortedTags = sortByUsage(tags, usage)
   const groups = groupByDay(entries)
+  const { t } = useI18n()
 
   return (
     <div className="flex flex-col gap-8">
       <header className="flex flex-col gap-5">
         <div className="flex items-start justify-between gap-4">
-          <h1 className="shrink-0 whitespace-nowrap text-[40px] leading-none font-bold tracking-[-0.03em]">流水</h1>
+          <h1 className="shrink-0 whitespace-nowrap text-[40px] leading-none font-bold tracking-[-0.03em]">{t.ledger.title}</h1>
           <MonthPager month={month} onChange={onMonthChange} />
         </div>
         <div className="grid grid-cols-2 gap-x-8 gap-y-3 text-sm">
-          <Stat label="支出" value={formatYuan(stats.expense, { sign: 'never' })} tone="expense" />
-          <Stat label="收入" value={formatYuan(stats.income, { sign: 'never' })} tone="income" />
+          <Stat label={t.ledger.expense} value={formatYuan(stats.expense, { sign: 'never' })} tone="expense" />
+          <Stat label={t.ledger.income} value={formatYuan(stats.income, { sign: 'never' })} tone="income" />
           <Stat
-            label="结余"
+            label={t.ledger.net}
             value={formatYuan(stats.net, { sign: stats.net < 0 ? 'auto' : 'never' })}
             tone={stats.net < 0 ? 'expense' : 'income'}
           />
-          <SavingsButton savings={savings} onClick={onEditSavings} />
+          <Stat label={t.ledger.savings} value={formatYuan(savings, { sign: 'never' })} />
         </div>
       </header>
 
@@ -75,7 +73,7 @@ export function LedgerScreen({
         <input
           value={query}
           onChange={(event) => onQueryChange(event.target.value)}
-          placeholder="搜索详细信息"
+          placeholder={t.ledger.searchPlaceholder}
           className="w-full rounded-md border border-line bg-page px-3 py-2 text-sm placeholder:text-faint hover:bg-hover focus:border-accent"
         />
         <div className="flex flex-col gap-2">
@@ -84,7 +82,7 @@ export function LedgerScreen({
             if (group.length === 0) return null
             return (
               <div key={kind} className="flex flex-wrap items-center gap-1.5">
-                <span className="mr-1 text-xs text-faint">{TAG_KIND_LABEL[kind]}</span>
+                <span className="mr-1 text-xs text-faint">{t.tagKind[kind]}</span>
                 {group.map((tag) => (
                   <TagChip
                     key={tag.id}
@@ -98,7 +96,7 @@ export function LedgerScreen({
           })}
           {filterTagIds.length > 0 && (
             <button type="button" className="self-start px-1 text-xs text-muted hover:text-ink" onClick={onClearTags}>
-              清除
+              {t.ledger.clearFilters}
             </button>
           )}
         </div>
@@ -155,12 +153,16 @@ function Stat({
 }: {
   label: string
   value: string
-  tone: 'expense' | 'income'
+  tone?: 'expense' | 'income'
 }) {
   return (
     <div className="flex items-baseline gap-2">
       <span className="text-faint">{label}</span>
-      <span className={`font-medium ${tone === 'expense' ? 'text-expense' : 'text-income'}`}>
+      <span
+        className={`font-medium tabular-nums ${
+          tone === 'expense' ? 'text-expense' : tone === 'income' ? 'text-income' : ''
+        }`}
+      >
         {value}
       </span>
     </div>
@@ -220,11 +222,12 @@ function EntryRow({
 }
 
 function EmptyState({ filtered }: { filtered: boolean }) {
+  const { t } = useI18n()
   return (
     <div className="px-2 py-16 text-center">
-      <p className="text-base font-medium">{filtered ? '没有符合条件的记录' : '这个月还是空的'}</p>
+      <p className="text-base font-medium">{filtered ? t.ledger.emptyFilteredTitle : t.ledger.emptyTitle}</p>
       <p className="mt-1 text-sm text-muted">
-        {filtered ? '换一组标签，或者清掉筛选再看。' : '先记一笔，标签可以边写边加。'}
+        {filtered ? t.ledger.emptyFilteredHint : t.ledger.emptyHint}
       </p>
     </div>
   )

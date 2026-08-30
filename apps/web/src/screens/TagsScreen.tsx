@@ -1,5 +1,5 @@
 import type { Tag, TagKind } from '@tagledger/shared'
-import { TAG_COLOR_PALETTE, TAG_KIND_LABEL } from '@tagledger/shared'
+import { TAG_COLOR_PALETTE } from '@tagledger/shared'
 import { Plus } from 'lucide-react'
 import { useMemo, useState } from 'react'
 import { ColorPicker } from '../components/ColorPicker'
@@ -8,6 +8,7 @@ import { Overlay } from '../components/Overlay'
 import { TagChip } from '../components/TagChip'
 import { resolveTagIcon, TagIcon } from '../components/TagIcon'
 import { createTag, deleteTag, updateTag } from '../db/mutations'
+import { useI18n } from '../i18n'
 
 type Props = {
   bookId: string
@@ -23,6 +24,7 @@ const SELECT_CLASS =
   'rounded-md border border-line bg-page px-3 py-2 text-sm hover:bg-hover focus:border-accent'
 
 export function TagsScreen({ bookId, tags, usage, onFilterTag }: Props) {
+  const { t, locale } = useI18n()
   const [query, setQuery] = useState('')
   const [sortKey, setSortKey] = useState<SortKey>('count')
   const [sortDir, setSortDir] = useState<SortDir>('desc')
@@ -39,11 +41,11 @@ export function TagsScreen({ bookId, tags, usage, onFilterTag }: Props) {
       if (sortKey === 'count') {
         const byCount = (usage[a.id] ?? 0) - (usage[b.id] ?? 0)
         if (byCount) return byCount * dir
-        return a.name.localeCompare(b.name, 'zh')
+        return a.name.localeCompare(b.name, locale)
       }
-      return a.name.localeCompare(b.name, 'zh') * dir
+      return a.name.localeCompare(b.name, locale) * dir
     })
-  }, [tags, usage, query, sortKey, sortDir])
+  }, [tags, usage, query, sortKey, sortDir, locale])
 
   const expenseTags = visible.filter((tag) => tag.kind === 'expense')
   const incomeTags = visible.filter((tag) => tag.kind === 'income')
@@ -51,38 +53,38 @@ export function TagsScreen({ bookId, tags, usage, onFilterTag }: Props) {
   return (
     <div className="flex flex-col gap-8">
       <header>
-        <h1 className="shrink-0 whitespace-nowrap text-[40px] leading-none font-bold tracking-[-0.03em]">标签</h1>
+        <h1 className="shrink-0 whitespace-nowrap text-[40px] leading-none font-bold tracking-[-0.03em]">{t.tags.title}</h1>
       </header>
 
       <div className="flex flex-col gap-3 sm:flex-row">
         <input
           value={query}
           onChange={(event) => setQuery(event.target.value)}
-          placeholder="搜索标签"
+          placeholder={t.tags.searchPlaceholder}
           className="flex-1 rounded-md border border-line bg-page px-3 py-2 text-sm placeholder:text-faint hover:bg-hover focus:border-accent"
         />
         <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-muted">
-          <span>依</span>
+          <span>{t.tags.sortBy}</span>
           <select
             value={sortKey}
             onChange={(event) => setSortKey(event.target.value as SortKey)}
             className={SELECT_CLASS}
-            aria-label="排序依据"
+            aria-label={t.tags.sortByAria}
           >
-            <option value="count">数量</option>
-            <option value="name">名称</option>
+            <option value="count">{t.tags.sortCount}</option>
+            <option value="name">{t.tags.sortName}</option>
           </select>
-          <span>进行</span>
+          {t.tags.sortThen ? <span>{t.tags.sortThen}</span> : null}
           <select
             value={sortDir}
             onChange={(event) => setSortDir(event.target.value as SortDir)}
             className={SELECT_CLASS}
-            aria-label="排序方向"
+            aria-label={t.tags.sortDirAria}
           >
-            <option value="desc">降序</option>
-            <option value="asc">升序</option>
+            <option value="desc">{t.tags.sortDesc}</option>
+            <option value="asc">{t.tags.sortAsc}</option>
           </select>
-          <span>排序</span>
+          {t.tags.sortSuffix ? <span>{t.tags.sortSuffix}</span> : null}
         </div>
       </div>
 
@@ -105,8 +107,8 @@ export function TagsScreen({ bookId, tags, usage, onFilterTag }: Props) {
 
       {creating && (
         <TagFormDialog
-          title={`添加${TAG_KIND_LABEL[creating]}标签`}
-          submitLabel="添加"
+          title={t.tags.addKind[creating]}
+          submitLabel={t.tags.add}
           initial={{
             name: '',
             color: nextTagColor(tags.filter((tag) => tag.kind === creating)),
@@ -122,8 +124,8 @@ export function TagsScreen({ bookId, tags, usage, onFilterTag }: Props) {
 
       {editing && (
         <TagFormDialog
-          title={`编辑${TAG_KIND_LABEL[editing.kind]}标签`}
-          submitLabel="保存"
+          title={t.tags.editKind[editing.kind]}
+          submitLabel={t.common.save}
           initial={{
             name: editing.name,
             color: editing.color,
@@ -159,15 +161,16 @@ function TagKindSection({
   onAdd: () => void
   onEdit: (tag: Tag) => void
 }) {
+  const { t } = useI18n()
   return (
     <section className="flex flex-col gap-3">
       <div className="flex items-center gap-2">
-        <h2 className="text-sm font-medium">{TAG_KIND_LABEL[kind]}</h2>
+        <h2 className="text-sm font-medium">{t.tagKind[kind]}</h2>
         <AddTagButton kind={kind} onClick={onAdd} />
       </div>
       <div className="flex flex-wrap items-center gap-2">
         {tags.length === 0 ? (
-          <p className="text-sm text-muted">{empty ? '还没有标签' : '没有匹配的标签'}</p>
+          <p className="text-sm text-muted">{empty ? t.tags.empty : t.tags.emptyFiltered}</p>
         ) : (
           tags.map((tag) => (
             <TagChip key={tag.id} tag={tag} count={usage[tag.id] ?? 0} onClick={() => onEdit(tag)} />
@@ -179,11 +182,12 @@ function TagKindSection({
 }
 
 function AddTagButton({ kind, onClick }: { kind: TagKind; onClick: () => void }) {
+  const { t } = useI18n()
   return (
     <button
       type="button"
       onClick={onClick}
-      aria-label={`添加${TAG_KIND_LABEL[kind]}标签`}
+      aria-label={t.tags.addKind[kind]}
       className="flex size-[22px] items-center justify-center rounded bg-[#f4f3f0] text-muted transition-colors duration-150 hover:bg-[#ebeae6] hover:text-ink"
     >
       <Plus size={14} strokeWidth={1.5} />
@@ -222,6 +226,7 @@ function TagFormDialog({
   const [icon, setIcon] = useState<string | null>(initial.icon)
   const [picking, setPicking] = useState<null | 'icon' | 'color'>(null)
   const [saving, setSaving] = useState(false)
+  const { t } = useI18n()
   const canSubmit = !requireName || Boolean(name.trim())
 
   async function submit() {
@@ -248,9 +253,9 @@ function TagFormDialog({
           >
             <div className="flex items-start justify-between gap-3">
               <h2 className="text-lg font-semibold">{title}</h2>
-              {usage !== undefined ? <span className="text-xs text-faint">{usage} 笔</span> : null}
+              {usage !== undefined ? <span className="text-xs text-faint">{t.tags.entryCount(usage)}</span> : null}
             </div>
-            <label className="mt-4 block text-xs text-faint">名称</label>
+            <label className="mt-4 block text-xs text-faint">{t.tags.name}</label>
             <input
               autoFocus
               value={name}
@@ -263,29 +268,29 @@ function TagFormDialog({
                   })
                 }
               }}
-              placeholder="例如：餐饮"
+              placeholder={t.tags.namePlaceholder}
               className="mt-1 w-full rounded-md border border-line bg-page px-3 py-2 text-sm placeholder:text-faint hover:bg-hover focus:border-accent"
             />
             <div className="mt-4 flex items-start gap-8">
               <div>
-                <div className="text-xs text-faint">图标</div>
+                <div className="text-xs text-faint">{t.tags.icon}</div>
                 <button
                   type="button"
                   onClick={() => setPicking('icon')}
                   className="mt-1 flex size-8 items-center justify-center rounded-md border border-line text-ink transition-colors duration-150 hover:bg-hover"
-                  aria-label="选择图标"
+                  aria-label={t.tags.pickIcon}
                 >
-                  {icon ? <TagIcon name={icon} size={16} /> : <span className="text-xs text-faint">无</span>}
+                  {icon ? <TagIcon name={icon} size={16} /> : <span className="text-xs text-faint">{t.common.none}</span>}
                 </button>
               </div>
               <div>
-                <div className="text-xs text-faint">颜色</div>
+                <div className="text-xs text-faint">{t.tags.color}</div>
                 <button
                   type="button"
                   onClick={() => setPicking('color')}
                   className="mt-1 size-8 rounded-full border border-line"
                   style={{ background: color }}
-                  aria-label="选择颜色"
+                  aria-label={t.tags.pickColor}
                 />
               </div>
             </div>
@@ -298,7 +303,7 @@ function TagFormDialog({
                       className="rounded px-2 py-1 text-sm text-expense hover:bg-hover"
                       onClick={() => void onDelete().then(close)}
                     >
-                      删除
+                      {t.common.delete}
                     </button>
                   ) : null}
                   {onView ? (
@@ -307,14 +312,14 @@ function TagFormDialog({
                       className="rounded px-2 py-1 text-sm text-muted hover:bg-hover"
                       onClick={onView}
                     >
-                      查看流水
+                      {t.tags.viewLedger}
                     </button>
                   ) : null}
                 </div>
               ) : null}
               <div className="flex gap-1">
                 <button type="button" className="rounded px-3 py-1.5 text-sm text-muted hover:bg-hover" onClick={close}>
-                  取消
+                  {t.common.cancel}
                 </button>
                 <button
                   type="button"

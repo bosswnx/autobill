@@ -9,6 +9,8 @@ data
 *.sqlite-wal
 .env
 apps/server/data
+**/src-tauri/target
+**/src-tauri/gen
 **/DerivedData
 **/xcuserdata
 *.xcuserstate

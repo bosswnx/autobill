@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useI18n } from '../i18n'
 import { formatYuan } from '../lib/money'
 import { canHover } from '../lib/pointer'
 import type { SeriesPoint, TagAmount } from '../lib/stats'
@@ -63,9 +64,10 @@ export function BarChart({
 }
 
 export function LineChart({ points, color }: { points: SeriesPoint[]; color: string }) {
+  const { t } = useI18n()
   const [hover, setHover] = useState<number | null>(null)
   if (points.length === 0) {
-    return <p className="py-10 text-center text-sm text-muted">还没有数据</p>
+    return <p className="py-10 text-center text-sm text-muted">{t.stats.noData}</p>
   }
 
   const values = points.map((point) => point.cents)

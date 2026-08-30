@@ -1,5 +1,4 @@
 import { useEffect, useState, type ReactNode } from 'react'
-import { SavingsButton, SavingsEditor } from './components/SavingsEditor'
 import { seedIfNeeded } from './db/seed'
 import { detectHostedOrigin } from './sync/api'
 import { initSync, subscribeSync } from './sync/engine'
@@ -13,7 +12,9 @@ import {
   useTagUsage,
   useTags,
 } from './hooks/useLedger'
+import { BrandMark } from './components/BrandMark'
 import { monthKey } from './lib/time'
+import { useI18n } from './i18n'
 import { EntrySheet } from './screens/EntrySheet'
 import { LedgerScreen } from './screens/LedgerScreen'
 import { LoginScreen } from './screens/LoginScreen'
@@ -32,7 +33,7 @@ export default function App() {
   const [filterTagIds, setFilterTagIds] = useState<string[]>([])
   const [query, setQuery] = useState('')
   const [editor, setEditor] = useState<null | { entryId?: string }>(null)
-  const [editingSavings, setEditingSavings] = useState(false)
+  const { t } = useI18n()
 
   useEffect(() => {
     void (async () => {
@@ -67,7 +68,7 @@ export default function App() {
   if (boot === 'loading') {
     return (
       <div className="flex min-h-svh items-center justify-center text-sm text-muted">
-        正在打开账本…
+        {t.boot.opening}
       </div>
     )
   }
@@ -76,7 +77,7 @@ export default function App() {
     if (!hostedOrigin) {
       return (
         <div className="flex min-h-svh items-center justify-center text-sm text-muted">
-          正在打开账本…
+          {t.boot.opening}
         </div>
       )
     }
@@ -93,23 +94,17 @@ export default function App() {
   }
 
   return (
-    <div className="min-h-svh pl-[var(--sal)] pr-[var(--sar)] md:grid md:grid-cols-[240px_1fr]">
-      <aside className="hidden bg-sidebar px-2 pb-3 pt-[calc(0.75rem+var(--sat))] md:flex md:flex-col">
-        <div className="mb-2 flex items-center gap-2 rounded px-2 py-1.5">
-          <span className="flex size-5 items-center justify-center rounded bg-ink text-[10px] font-semibold text-page">
-            T
-          </span>
-          <div className="min-w-0">
-            <div className="truncate text-sm font-medium">{book?.name ?? 'TagLedger'}</div>
-            <div className="truncate text-[11px] text-faint">TagLedger</div>
-          </div>
+    <div className="min-h-svh pl-[var(--sal)] pr-[var(--sar)]">
+      <aside className="hidden bg-sidebar px-2 pb-3 pt-[calc(0.75rem+var(--sat))] md:fixed md:inset-y-0 md:left-[var(--sal)] md:flex md:w-[var(--sidebar-width)] md:flex-col md:overflow-y-auto">
+        <div className="mb-2 flex items-center gap-2 px-2 py-1.5">
+          <BrandMark className="size-5 shrink-0" />
+          <div className="truncate text-sm font-medium">{t.appName}</div>
         </div>
-        <SavingsButton savings={savings} onClick={() => book && setEditingSavings(true)} />
         <nav className="mt-2 flex flex-col gap-0.5">
-          <NavButton current={screen} id="ledger" label="流水" onClick={setScreen} icon={<ListIcon />} />
-          <NavButton current={screen} id="stats" label="统计" onClick={setScreen} icon={<ChartIcon />} />
-          <NavButton current={screen} id="tags" label="标签" onClick={setScreen} icon={<TagIcon />} />
-          <NavButton current={screen} id="settings" label="设置" onClick={setScreen} icon={<GearIcon />} />
+          <NavButton current={screen} id="ledger" label={t.nav.ledger} onClick={setScreen} icon={<ListIcon />} />
+          <NavButton current={screen} id="stats" label={t.nav.stats} onClick={setScreen} icon={<ChartIcon />} />
+          <NavButton current={screen} id="tags" label={t.nav.tags} onClick={setScreen} icon={<TagIcon />} />
+          <NavButton current={screen} id="settings" label={t.nav.settings} onClick={setScreen} icon={<GearIcon />} />
         </nav>
         <button
           type="button"
@@ -117,12 +112,12 @@ export default function App() {
           className="mt-2 flex items-center gap-2 rounded px-2 py-1.5 text-left text-sm text-muted transition-colors duration-150 hover:bg-hover"
         >
           <PlusIcon />
-          记一笔
+          {t.nav.addEntry}
         </button>
       </aside>
 
-      <div className="flex min-h-svh flex-col">
-        <main className="mx-auto w-full max-w-3xl flex-1 px-5 pb-[calc(7rem+var(--sab))] pt-[calc(2.5rem+var(--sat))] md:px-16 md:pb-16 md:pt-[calc(3rem+var(--sat))]">
+      <div className="flex min-h-svh flex-col md:ml-[var(--sidebar-width)]">
+        <main className="mx-auto w-full max-w-[var(--content-max)] flex-1 px-5 pb-[calc(7rem+var(--sab))] pt-[calc(2.5rem+var(--sat))] md:px-16 md:pb-16 md:pt-[calc(3rem+var(--sat))]">
           <div key={screen} className="anim-page">
           {screen === 'ledger' && book && (
             <LedgerScreen
@@ -133,7 +128,6 @@ export default function App() {
               tags={tags}
               usage={usage}
               savings={savings}
-              onEditSavings={() => setEditingSavings(true)}
               filterTagIds={filterTagIds}
               onToggleTag={(id) =>
                 setFilterTagIds((current) =>
@@ -172,7 +166,7 @@ export default function App() {
             <NavButton
               current={screen}
               id="ledger"
-              label="流水"
+              label={t.nav.ledger}
               onClick={setScreen}
               icon={<ListIcon size={22} />}
               stacked
@@ -180,7 +174,7 @@ export default function App() {
             <NavButton
               current={screen}
               id="stats"
-              label="统计"
+              label={t.nav.stats}
               onClick={setScreen}
               icon={<ChartIcon size={22} />}
               stacked
@@ -188,7 +182,7 @@ export default function App() {
             <button
               type="button"
               onClick={() => book && setEditor({})}
-              aria-label="记一笔"
+              aria-label={t.nav.addEntry}
               className="flex h-full items-center justify-center rounded-md px-1 py-1 text-accent transition-colors duration-150 hover:bg-hover"
             >
               <TabPlusIcon />
@@ -196,7 +190,7 @@ export default function App() {
             <NavButton
               current={screen}
               id="tags"
-              label="标签"
+              label={t.nav.tags}
               onClick={setScreen}
               icon={<TagIcon size={22} />}
               stacked
@@ -204,7 +198,7 @@ export default function App() {
             <NavButton
               current={screen}
               id="settings"
-              label="设置"
+              label={t.nav.settings}
               onClick={setScreen}
               icon={<GearIcon size={22} />}
               stacked
@@ -222,27 +216,21 @@ export default function App() {
           onClose={() => setEditor(null)}
         />
       )}
-      {editingSavings && book && (
-        <SavingsEditor
-          bookId={book.id}
-          savings={savings}
-          onClose={() => setEditingSavings(false)}
-        />
-      )}
     </div>
   )
 }
 
 function MissingBook({ onSettings }: { onSettings: () => void }) {
+  const { t } = useI18n()
   return (
     <div className="flex flex-col gap-3 pt-8">
-      <p className="text-sm text-muted">还没有账本。去设置里连接同步，或重新打开应用创建本地账本。</p>
+      <p className="text-sm text-muted">{t.missingBook.body}</p>
       <button
         type="button"
         onClick={onSettings}
         className="self-start rounded-md bg-accent px-3 py-1.5 text-sm text-accent-ink"
       >
-        去设置
+        {t.missingBook.goSettings}
       </button>
     </div>
   )
@@ -293,10 +281,11 @@ function EntryEditor({
   onClose: () => void
 }) {
   const entry = useEntry(entryId)
+  const { t } = useI18n()
   if (entryId && !entry) {
     return (
       <div className="fixed inset-0 z-50 flex items-center justify-center bg-overlay text-sm text-muted">
-        加载中…
+        {t.common.loading}
       </div>
     )
   }

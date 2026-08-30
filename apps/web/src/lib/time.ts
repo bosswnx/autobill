@@ -1,3 +1,5 @@
+import { getLocale, getMessages } from '../i18n'
+
 export function nowIso(): string {
   return new Date().toISOString()
 }
@@ -18,12 +20,37 @@ export function shiftMonth(key: string, delta: number): string {
 
 export function formatMonthTitle(key: string, now = new Date()): string {
   const [year, month] = key.split('-')
-  if (year === yearKey(now)) return `${Number(month)}月`
-  return `${year}年${Number(month)}月`
+  const date = new Date(Number(year), Number(month) - 1, 1)
+  const tag = getMessages().intl
+  if (year === yearKey(now)) {
+    return date.toLocaleString(tag, { month: 'short' })
+  }
+  return date.toLocaleString(tag, { month: 'short', year: 'numeric' })
 }
 
 export function formatYearTitle(year: string): string {
-  return `${year}年`
+  if (getLocale() === 'zh') return `${year}年`
+  return year
+}
+
+export function formatCompactDate(value: string): string {
+  const [year, month, day] = value.split('-').map(Number)
+  if (!year || !month || !day) return value
+  return new Date(year, month - 1, day).toLocaleString(getMessages().intl, {
+    month: 'short',
+    day: 'numeric',
+  })
+}
+
+export function formatMonthYear(year: number, month: number): string {
+  return new Date(year, month - 1, 1).toLocaleString(getMessages().intl, {
+    month: 'long',
+    year: 'numeric',
+  })
+}
+
+export function formatMonthShort(month: number): string {
+  return new Date(2000, month - 1, 1).toLocaleString(getMessages().intl, { month: 'short' })
 }
 
 export function shiftYear(year: string, delta: number): string {
@@ -72,19 +99,24 @@ export function dayKey(iso: string): string {
 }
 
 export function formatDayHeading(iso: string): string {
+  const t = getMessages()
   const date = new Date(iso)
   const today = new Date()
   const yesterday = new Date()
   yesterday.setDate(today.getDate() - 1)
   const dated = formatDayWithWeek(date)
-  if (sameDay(date, today)) return `今天 ${dated}`
-  if (sameDay(date, yesterday)) return `昨天 ${dated}`
+  if (sameDay(date, today)) return `${t.common.today} ${dated}`
+  if (sameDay(date, yesterday)) return `${t.common.yesterday} ${dated}`
   return dated
 }
 
 function formatDayWithWeek(date: Date): string {
-  const week = ['日', '一', '二', '三', '四', '五', '六'][date.getDay()]
-  return `${date.getMonth() + 1}月${date.getDate()}日 周${week}`
+  const t = getMessages()
+  if (getLocale() === 'zh') {
+    const week = t.pickers.weekdays[date.getDay()]
+    return `${date.getMonth() + 1}月${date.getDate()}日 周${week}`
+  }
+  return date.toLocaleString(t.intl, { weekday: 'short', month: 'short', day: 'numeric' })
 }
 
 export function formatClock(iso: string): string {

@@ -15,6 +15,8 @@
   --color-expense: #e03e3e;
   --color-income: #0f7b6c;
   --color-overlay: rgb(15 15 15 / 40%);
+  --sidebar-width: 180px;
+  --content-max: 48rem;
 }
 
 :root {
@@ -22,6 +24,7 @@
   --sab: max(env(safe-area-inset-bottom, 0px), var(--safe-area-inset-bottom, 0px));
   --sal: max(env(safe-area-inset-left, 0px), var(--safe-area-inset-left, 0px));
   --sar: max(env(safe-area-inset-right, 0px), var(--safe-area-inset-right, 0px));
+  --desktop-min-width: calc(var(--sidebar-width) + var(--content-max));
 }
 
 html,
@@ -36,6 +39,15 @@ body {
   overscroll-behavior: none;
 }
 
+html {
+  overflow-x: hidden;
+  overflow-y: auto;
+}
+
+body {
+  width: 100vw;
+}
+
 html.overlay-open,
 html.overlay-open body {
   overflow: hidden;
@@ -45,8 +57,7 @@ html.overlay-open body {
 html.overlay-open body {
   position: fixed;
   left: 0;
-  right: 0;
-  width: 100%;
+  width: 100vw;
 }
 
 html.overlay-open #root {
@@ -85,6 +96,12 @@ body::before {
 
 #root {
   min-height: 100svh;
+}
+
+html.is-tauri,
+html.is-tauri body,
+html.is-tauri #root {
+  min-width: var(--desktop-min-width);
 }
 
 button,
@@ -135,6 +152,33 @@ textarea {
 
 ::selection {
   background: rgb(35 131 226 / 18%);
+}
+
+html {
+  scrollbar-width: thin;
+  scrollbar-color: transparent transparent;
+}
+
+html.is-scrolling {
+  scrollbar-color: rgb(55 53 47 / 28%) transparent;
+}
+
+html::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+html::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+html::-webkit-scrollbar-thumb {
+  background: transparent;
+  border-radius: 999px;
+}
+
+html.is-scrolling::-webkit-scrollbar-thumb {
+  background: rgb(55 53 47 / 22%);
 }
 
 @keyframes overlay-in {

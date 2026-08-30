@@ -3,10 +3,10 @@ import { MAX_CHANGES_PER_SYNC } from '@tagledger/shared'
 import { Capacitor } from '@capacitor/core'
 import { db } from '../db/database'
 import { deviceId } from '../lib/id'
+import { isTauri } from '../lib/runtime'
 import { nowIso } from '../lib/time'
 import {
   connect as apiConnect,
-  describeSyncError,
   replaceRemote,
   SyncApiError,
   syncPullPush,
@@ -48,6 +48,12 @@ function setUi(patch: Partial<SyncUi>): void {
 export function deviceName(): string {
   if (Capacitor.isNativePlatform()) {
     return Capacitor.getPlatform() === 'ios' ? 'iOS' : 'Android'
+  }
+  if (isTauri()) {
+    if (/Mac/i.test(navigator.userAgent)) return 'macOS'
+    if (/Windows/i.test(navigator.userAgent)) return 'Windows'
+    if (/Linux/i.test(navigator.userAgent)) return 'Linux'
+    return '桌面'
   }
   return '浏览器'
 }
@@ -146,9 +152,9 @@ export async function runSync(): Promise<void> {
     setUi({ lastError: null })
     if (allOutgoing.length > outgoing.length) queued = true
   } catch (error) {
-    const message = describeSyncError(error)
-    await saveSession({ lastError: message }).catch(() => undefined)
-    setUi({ lastError: message })
+    const code = error instanceof SyncApiError ? error.code : 'failed'
+    await saveSession({ lastError: code }).catch(() => undefined)
+    setUi({ lastError: code })
     if (error instanceof SyncApiError && error.code === 'unauthorized') {
       await clearSession()
     }

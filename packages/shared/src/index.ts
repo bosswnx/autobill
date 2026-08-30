@@ -123,22 +123,3 @@ export const TAG_COLOR_PALETTE = [
   '#365314',
 ] as const
 
-export const ACCOUNT_KIND_LABEL: Record<AccountKind, string> = {
-  cash: '现金',
-  bank: '银行卡',
-  alipay: '支付宝',
-  wechat: '微信',
-  credit: '信用卡',
-  other: '其他',
-}
-
-export const ENTRY_TYPE_LABEL: Record<EntryType, string> = {
-  expense: '支出',
-  income: '收入',
-  transfer: '转账',
-}
-
-export const TAG_KIND_LABEL: Record<TagKind, string> = {
-  expense: '支出',
-  income: '收入',
-}

@@ -1,4 +1,5 @@
 import { useEffect, useRef } from 'react'
+import { catalogs, useI18n } from '../i18n'
 import type { AmountExpr } from '../lib/amountKeypad'
 import {
   applyAmountKey,
@@ -21,6 +22,7 @@ const NUM = `${KEY} bg-[#f4f3f0] text-ink hover:bg-[#ebeae6]`
 const OP = `${KEY} bg-[#ecebe7] text-muted hover:bg-[#e3e2de] hover:text-ink`
 
 export function AmountKeypad({ expr, onChange }: Props) {
+  const { t } = useI18n()
   const shown = displayAmount(expr)
   const exprRef = useRef(expr)
   const onChangeRef = useRef(onChange)
@@ -92,7 +94,7 @@ export function AmountKeypad({ expr, onChange }: Props) {
           .
         </Key>
         <Key className={OP} onClick={() => onChange(pressClear())}>
-          清零
+          {t.keypad.clear}
         </Key>
         <Key className={OP} onClick={() => onChange(pressOp(expr, '+'))}>
           +
@@ -137,5 +139,11 @@ function isActionButton(target: EventTarget | null): boolean {
   const button = target.closest('button')
   if (!button) return false
   const label = button.textContent?.trim()
-  return label === '保存' || label === '删除' || label === '关闭'
+  if (!label) return false
+  return Object.values(catalogs).some(
+    (messages) =>
+      label === messages.common.save ||
+      label === messages.common.delete ||
+      label === messages.common.close,
+  )
 }
