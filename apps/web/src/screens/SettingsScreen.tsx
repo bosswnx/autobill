@@ -1,9 +1,9 @@
-import type { ConnectResponse, MergeChoice } from '@tagledger/shared'
+import type { ConnectResponse } from '@tagledger/shared'
 import { MIN_USER_TOKEN_LENGTH } from '@tagledger/shared'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { useEffect, useState } from 'react'
-import { Overlay } from '../components/Overlay'
 import { db } from '../db/database'
+import { ensureBookIfEmpty } from '../db/seed'
 import { describeSyncError, detectHostedOrigin, normalizeServerUrl } from '../sync/api'
 import {
   connectToServer,
@@ -14,12 +14,14 @@ import {
   subscribeSync,
 } from '../sync/engine'
 import { hasLocalData } from '../sync/session'
+import { MergeOverlay } from './MergeOverlay'
 
 const INPUT =
   'mt-1 w-full rounded-md border border-line bg-page px-3 py-2 text-sm placeholder:text-faint hover:bg-hover focus:border-accent'
 
 export function SettingsScreen() {
-  const session = useLiveQuery(() => db.meta.get('sync'))
+  const rows = useLiveQuery(() => db.meta.toArray())
+  const session = rows?.find((row) => row.key === 'sync')
   const [ui, setUi] = useState(getSyncUi())
 
   useEffect(() => subscribeSync(() => setUi(getSyncUi())), [])
@@ -31,7 +33,7 @@ export function SettingsScreen() {
           设置
         </h1>
       </header>
-      {session?.deviceToken ? (
+      {rows === undefined ? null : session?.deviceToken ? (
         <ConnectedCard
           host={hostOf(session.serverUrl)}
           lastSyncedAt={session.lastSyncedAt}
@@ -145,7 +147,7 @@ function ConnectForm() {
       return
     }
     if (!targetKey.trim()) {
-      setError('请填写 target key')
+      setError('请填写服务器密钥')
       return
     }
     if (userToken.trim().length < MIN_USER_TOKEN_LENGTH) {
@@ -166,6 +168,7 @@ function ConnectForm() {
         return
       }
       await finishConnect(url, connected, null)
+      await ensureBookIfEmpty()
     } catch (err) {
       setError(describeSyncError(err))
     } finally {
@@ -178,8 +181,8 @@ function ConnectForm() {
       <h2 className="text-sm font-medium text-muted">同步</h2>
       <p className="text-sm leading-relaxed text-muted">
         {hosted
-          ? '这个网页就在同步服务器上。填这台服务器的 target key 和你的用户 token，就能把浏览器当一台终端。'
-          : '连上自建服务器后，浏览器和手机共用一本账。需要三样：服务器地址、这台服务器的 target key、你自己设的用户 token。同一台服务器上，用户 token 就是你的空间，不要和别人重复。'}
+          ? '这个网页就在同步服务器上。填这台服务器的密钥和你的用户 token，就能把浏览器当一台终端。'
+          : '连上自建服务器后，浏览器和手机共用一本账。需要三样：服务器地址、这台服务器的密钥、你自己设的用户 token。同一台服务器上，用户 token 就是你的空间，不要和别人重复。'}
       </p>
       {hosted ? null : (
       <label className="block">
@@ -196,7 +199,7 @@ function ConnectForm() {
       </label>
       )}
       <label className="block">
-        <span className="text-xs text-faint">Target key</span>
+        <span className="text-xs text-faint">服务器密钥</span>
         <input
           type="password"
           value={targetKey}
@@ -237,6 +240,7 @@ function ConnectForm() {
           onPick={(choice) => {
             setBusy(true)
             void finishConnect(pending.url, pending.connected, choice)
+              .then(() => ensureBookIfEmpty())
               .then(() => setPending(null))
               .catch((err) => setError(describeSyncError(err)))
               .finally(() => setBusy(false))
@@ -247,74 +251,6 @@ function ConnectForm() {
         />
       ) : null}
     </section>
-  )
-}
-
-function MergeOverlay({
-  busy,
-  onPick,
-  onClose,
-}: {
-  busy: boolean
-  onPick: (choice: MergeChoice) => void
-  onClose: () => void
-}) {
-  return (
-    <Overlay onClose={onClose}>
-      {() => (
-        <div
-          data-overlay-scroll
-          className="anim-panel max-h-full w-full max-w-sm overflow-y-auto rounded-xl border border-line bg-page p-5"
-        >
-          <h2 className="text-lg font-semibold">两边都有账本</h2>
-          <p className="mt-1 text-sm text-muted">这台设备和云端都有数据。选一种处理方式，不会自动合并成一本乱账。</p>
-          <div className="mt-4 flex flex-col gap-2">
-            <MergeButton
-              disabled={busy}
-              title="用本机覆盖云端"
-              detail="云端现有记录会清掉，换成这台设备上的账。"
-              onClick={() => onPick('local')}
-            />
-            <MergeButton
-              disabled={busy}
-              title="用云端覆盖本机"
-              detail="这台设备上的记录会清掉，换成云端那本账。"
-              onClick={() => onPick('cloud')}
-            />
-            <MergeButton
-              disabled={busy}
-              title="两边都留"
-              detail="流水和标签都会保留。同名标签可能出现两份，存款以较新的设置为准。"
-              onClick={() => onPick('both')}
-            />
-          </div>
-        </div>
-      )}
-    </Overlay>
-  )
-}
-
-function MergeButton({
-  title,
-  detail,
-  disabled,
-  onClick,
-}: {
-  title: string
-  detail: string
-  disabled: boolean
-  onClick: () => void
-}) {
-  return (
-    <button
-      type="button"
-      disabled={disabled}
-      onClick={onClick}
-      className="rounded-lg border border-line px-3 py-3 text-left transition-colors duration-150 hover:bg-hover disabled:opacity-40"
-    >
-      <div className="text-sm font-medium">{title}</div>
-      <div className="mt-0.5 text-xs leading-relaxed text-faint">{detail}</div>
-    </button>
   )
 }
 

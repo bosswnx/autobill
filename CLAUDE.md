@@ -58,6 +58,7 @@ npm run ios:live         # device against this machine's Vite
 - One server, many spaces. Gate is three fields: server URL, `TAGLEDGER_TARGET_KEY`, user-chosen token.
 - The user token is hashed into `space_key` (HMAC-SHA256 + pepper). The server never stores the plaintext token.
 - After connect, call `/v1/sync` with the device token only. The old dual-token pair is gone; do not bring it back.
+- A hosted browser (page served from the API origin) with no device token must show the login page first: target key + user token. Do not seed the sample book in that case. Native / Vite stay optional-connect in Settings.
 - Conflicts: `incomingWins` (`updatedAt`, then `rev`). The server must not overwrite the client's `updatedAt` with receive time.
 - If both sides have data, the user must pick `local` / `cloud` / `both`. Do not auto-merge.
 - Do not auto-merge tags that share a name.

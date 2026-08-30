@@ -1,12 +1,17 @@
 import { createBook, createEntry, createTag } from './mutations'
 import { db } from './database'
-import { isConnected } from '../sync/session'
+import { hasLocalData, isConnected } from '../sync/session'
 
 let seeding: Promise<void> | null = null
 
 export async function seedIfNeeded(): Promise<void> {
   if (!seeding) seeding = seedOnce()
   return seeding
+}
+
+export async function ensureBookIfEmpty(): Promise<void> {
+  if (await hasLocalData()) return
+  await createBook('日常', 'CNY')
 }
 
 async function seedOnce(): Promise<void> {

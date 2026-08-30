@@ -24,7 +24,7 @@ Shared types live in `@tagledger/shared`. Vite and the sync server import the so
 ```
 apps/web/                 Web app + Capacitor shell
   src/App.tsx             Nav: ledger / stats / tags / settings + new entry
-  src/screens/            LedgerScreen, StatsScreen, TagsScreen, EntrySheet, SettingsScreen
+  src/screens/            LedgerScreen, StatsScreen, TagsScreen, EntrySheet, SettingsScreen, LoginScreen
   src/components/         Charts, tags, amount keypad, Overlay, month/year pagers
   src/db/                 Dexie, mutations, first-run seed
   src/sync/               Sync engine: connect, push/pull, three-way merge
@@ -60,7 +60,7 @@ Builds web. Shared is consumed from source via the Vite alias.
 npm run serve
 ```
 
-Builds the web app, then starts the API **and** the same UI on one port (`http://0.0.0.0:8787`). Opening that URL in a browser is a full client: Settings only asks for the target key and user token. Phone apps and other browsers still connect by URL.
+Builds the web app, then starts the API **and** the same UI on one port (`http://0.0.0.0:8787`). A new browser hitting that URL sees a login page (server key + user token) before the ledger. Phone apps and other Vite/local clients still connect from Settings, by URL.
 
 Dev-only API (no web build): `npm run server`. Production without rebuilding: `npm run server:start` (serves `apps/web/dist` if it exists).
 
@@ -76,7 +76,7 @@ For a real deploy, set env vars (see `apps/server/.env.example`):
 | `TAGLEDGER_DATA` | Directory for SQLite and secrets |
 | `TAGLEDGER_WEB` | Optional path to the web `dist` folder |
 
-Terminate TLS with Caddy or nginx. A hosted browser only needs the target key and user token; the server URL is this page.
+Terminate TLS with Caddy or nginx. A hosted browser asks for the target key and user token on a login page; the server URL is this page. After that, this browser is a terminal.
 
 Connecting from another device still needs three things:
 
@@ -84,7 +84,7 @@ Connecting from another device still needs three things:
 2. Target key
 3. A user token you choose (at least 8 characters)
 
-Opening the page **on the server itself** skips the URL; that browser is already a terminal. On a given server, the user token *is* the space. Do not share it. After connect, sync uses a device token; the target key and user token are not sent again.
+Opening the page **on the server itself** shows login first (no URL field). On a given server, the user token *is* the space. Do not share it. After connect, sync uses a device token; the target key and user token are not sent again.
 
 If both sides already have data, the app stops and asks: overwrite cloud with this device, overwrite this device with cloud, or keep both.
 
@@ -184,8 +184,11 @@ Expense and income blocks, each with its own add. The same name may exist once p
 **Stats**  
 Month / year. Month: daily expense/income bars, asset line, tag amount bars. Year swaps days for months. Header: total expense, total income, net, total assets, daily or monthly average. The asset line marks last, high, and low; high/low have dashed guides and ticks.
 
+**Login (hosted server)**  
+First visit from a new browser: server key + user token, then the ledger. Later visits reuse the device token in IndexedDB.
+
 **Settings**  
-Connect / disconnect sync, sync now, and the three-way choice when both sides have data.
+Connect / disconnect sync (native and local Vite), sync now, and the three-way choice when both sides have data.
 
 ## Tag filter (ledger)
 

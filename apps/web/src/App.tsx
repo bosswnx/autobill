@@ -1,7 +1,9 @@
 import { useEffect, useState, type ReactNode } from 'react'
 import { SavingsButton, SavingsEditor } from './components/SavingsEditor'
 import { seedIfNeeded } from './db/seed'
-import { initSync } from './sync/engine'
+import { detectHostedOrigin } from './sync/api'
+import { initSync, subscribeSync } from './sync/engine'
+import { isConnected } from './sync/session'
 import {
   useBook,
   useEntries,
@@ -14,14 +16,17 @@ import {
 import { monthKey } from './lib/time'
 import { EntrySheet } from './screens/EntrySheet'
 import { LedgerScreen } from './screens/LedgerScreen'
+import { LoginScreen } from './screens/LoginScreen'
 import { SettingsScreen } from './screens/SettingsScreen'
 import { StatsScreen } from './screens/StatsScreen'
 import { TagsScreen } from './screens/TagsScreen'
 
 type Screen = 'ledger' | 'tags' | 'stats' | 'settings'
+type Boot = 'loading' | 'login' | 'app'
 
 export default function App() {
-  const [ready, setReady] = useState(false)
+  const [boot, setBoot] = useState<Boot>('loading')
+  const [hostedOrigin, setHostedOrigin] = useState<string | null>(null)
   const [screen, setScreen] = useState<Screen>('ledger')
   const [month, setMonth] = useState(monthKey())
   const [filterTagIds, setFilterTagIds] = useState<string[]>([])
@@ -30,10 +35,27 @@ export default function App() {
   const [editingSavings, setEditingSavings] = useState(false)
 
   useEffect(() => {
-    void seedIfNeeded()
-      .then(() => initSync())
-      .then(() => setReady(true))
+    void (async () => {
+      const origin = await detectHostedOrigin()
+      setHostedOrigin(origin)
+      if (origin && !(await isConnected())) {
+        setBoot('login')
+        return
+      }
+      await seedIfNeeded()
+      initSync()
+      setBoot('app')
+    })()
   }, [])
+
+  useEffect(() => {
+    if (boot !== 'app' || !hostedOrigin) return
+    return subscribeSync(() => {
+      void isConnected().then((ok) => {
+        if (!ok) setBoot('login')
+      })
+    })
+  }, [boot, hostedOrigin])
 
   const book = useBook()
   const tags = useTags(book?.id)
@@ -42,11 +64,31 @@ export default function App() {
   const usage = useTagUsage(book?.id)
   const savings = useSavings(book)
 
-  if (!ready) {
+  if (boot === 'loading') {
     return (
       <div className="flex min-h-svh items-center justify-center text-sm text-muted">
         正在打开账本…
       </div>
+    )
+  }
+
+  if (boot === 'login') {
+    if (!hostedOrigin) {
+      return (
+        <div className="flex min-h-svh items-center justify-center text-sm text-muted">
+          正在打开账本…
+        </div>
+      )
+    }
+    return (
+      <LoginScreen
+        serverUrl={hostedOrigin}
+        onLoggedIn={() => {
+          initSync()
+          setScreen('ledger')
+          setBoot('app')
+        }}
+      />
     )
   }
 

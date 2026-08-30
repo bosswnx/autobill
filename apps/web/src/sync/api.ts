@@ -13,11 +13,11 @@ export function describeSyncError(error: unknown): string {
   if (error instanceof SyncApiError) {
     switch (error.code) {
       case 'invalid_target_key':
-        return 'Target key 不对'
+        return '服务器密钥不对'
       case 'invalid_user_token':
         return '用户 token 至少 8 位'
       case 'unauthorized':
-        return '同步凭证失效，请重新连接'
+        return '同步凭证失效，请重新登录'
       case 'rate_limited':
         return '尝试太频繁，稍后再试'
       case 'payload_too_large':

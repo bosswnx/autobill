@@ -24,7 +24,7 @@
 ```
 apps/web/                 前端 + Capacitor 壳
   src/App.tsx             导航：流水 / 统计 / 标签 / 设置 + 记一笔
-  src/screens/            LedgerScreen、StatsScreen、TagsScreen、EntrySheet、SettingsScreen
+  src/screens/            LedgerScreen、StatsScreen、TagsScreen、EntrySheet、SettingsScreen、LoginScreen
   src/components/         图表、标签、金额键盘、Overlay、月份/年份切换
   src/db/                 Dexie、mutations、首次 seed
   src/sync/               同步引擎：连接、推拉、冲突三选一
@@ -60,7 +60,7 @@ npm run build
 npm run serve
 ```
 
-先编 web，再在同一个端口上同时跑 API 和网页（默认 `http://0.0.0.0:8787`）。用浏览器打开这个地址就是一台终端：设置里只填 target key 和用户 token。手机和其他浏览器仍按服务器地址连接。
+先编 web，再在同一个端口上同时跑 API 和网页（默认 `http://0.0.0.0:8787`）。新浏览器第一次打开这个地址会先看到登录页（服务器密钥 + 用户 token）。手机 App 和本地 Vite 仍从设置里按服务器地址连接。
 
 只跑 API、不编网页：`npm run server`。已经编过、只想启动：`npm run server:start`（有 `apps/web/dist` 就会托管网页）。
 
@@ -76,7 +76,7 @@ npm run serve
 | `TAGLEDGER_DATA` | SQLite 和 secrets 目录 |
 | `TAGLEDGER_WEB` | 可选，网页 `dist` 目录 |
 
-前面用 Caddy / nginx 终止 TLS。打开服务器上的网页时不用填地址，只要 target key 和用户 token。
+前面用 Caddy / nginx 终止 TLS。打开服务器上的网页时先登录：填服务器密钥和用户 token，不用填地址。
 
 从别的设备连上仍需要三样：
 
@@ -84,7 +84,7 @@ npm run serve
 2. Target key
 3. 你自己设的用户 token（至少 8 位）
 
-**直接打开这台服务器上的网页**不用填地址，这个浏览器就是一台终端。同一台服务器上，用户 token 就是你的空间。不要和别人重复。连上之后同步走设备 token，不再传 target key 和用户 token。
+**直接打开这台服务器上的网页**会先登录（不用填地址）。同一台服务器上，用户 token 就是你的空间。不要和别人重复。连上之后同步走设备 token，不再传 target key 和用户 token。
 
 两边都有数据时会停下来让你选：用本机覆盖云端、用云端覆盖本机、两边都留。
 
@@ -184,8 +184,11 @@ IndexedDB 库名：`tagledger`。
 **统计**  
 月 / 年切换。月视图：每天支出/收入柱状图、资产折线、标签金额条。年视图把「天」换成「月」。顶栏：总支出、总收入、结余、总资产、日均或月均。资产线标收尾、最高、最低；最高最低有虚线和对应刻度。
 
+**登录（打开服务器上的网页）**  
+新浏览器第一次访问：服务器密钥 + 用户 token，通过后进入账本。之后靠 IndexedDB 里的设备 token，不用每次填。
+
 **设置**  
-连接/断开同步、立即同步、两边都有数据时的三选一。
+连接/断开同步（手机 App 和本地 Vite）、立即同步、两边都有数据时的三选一。
 
 ## 标签筛选（流水）
 
