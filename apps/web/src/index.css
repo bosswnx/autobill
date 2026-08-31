@@ -44,6 +44,20 @@ html {
   overflow-y: auto;
 }
 
+html.is-ios,
+html.is-ios body {
+  overscroll-behavior-y: auto;
+}
+
+html.is-ios {
+  overflow-x: visible;
+}
+
+html.is-ios [data-overlay-scroll] {
+  overscroll-behavior-y: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
 body {
   width: 100vw;
 }
@@ -82,6 +96,24 @@ body {
   -webkit-tap-highlight-color: transparent;
 }
 
+html.is-native {
+  -webkit-touch-callout: none;
+}
+
+html.is-native,
+html.is-native * {
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+html.is-native input,
+html.is-native textarea,
+html.is-native [contenteditable='true'] {
+  -webkit-user-select: text;
+  user-select: text;
+  -webkit-touch-callout: default;
+}
+
 body::before {
   content: '';
   pointer-events: none;
@@ -94,8 +126,15 @@ body::before {
   background: var(--color-page);
 }
 
+.app-tabbar {
+  background-color: rgb(255 255 255 / 78%);
+  -webkit-backdrop-filter: saturate(180%) blur(24px);
+  backdrop-filter: saturate(180%) blur(24px);
+}
+
 #root {
   min-height: 100svh;
+  overflow-x: hidden;
 }
 
 html.is-tauri,
@@ -142,6 +181,15 @@ input[type='month']::-webkit-date-and-time-value {
 
 button {
   cursor: pointer;
+}
+
+.amount-key[data-pressed='true'] {
+  background-color: #d8d7d3;
+}
+
+.amount-key-op[data-pressed='true'] {
+  background-color: #d0cfcb;
+  color: var(--color-ink);
 }
 
 input,

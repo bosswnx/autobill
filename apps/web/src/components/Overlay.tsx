@@ -4,6 +4,7 @@ import { lockOverlayPage, unlockOverlayPage } from '../lib/overlayLock'
 import { registerOverlayBack } from '../lib/overlayBack'
 
 const EXIT_MS = 150
+const escapeStack: Array<() => void> = []
 
 type Props = {
   onClose: () => void
@@ -35,11 +36,19 @@ export function Overlay({ onClose, children, className, captureBack = true, exit
   }, [captureBack, close])
 
   useEffect(() => {
+    escapeStack.push(close)
     function onKey(event: KeyboardEvent) {
-      if (event.key === 'Escape') close()
+      if (event.key !== 'Escape') return
+      if (escapeStack[escapeStack.length - 1] !== close) return
+      event.preventDefault()
+      close()
     }
     document.addEventListener('keydown', onKey)
-    return () => document.removeEventListener('keydown', onKey)
+    return () => {
+      const index = escapeStack.lastIndexOf(close)
+      if (index !== -1) escapeStack.splice(index, 1)
+      document.removeEventListener('keydown', onKey)
+    }
   }, [close])
 
   useEffect(() => {

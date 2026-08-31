@@ -1,9 +1,10 @@
-import { useState } from 'react'
 import { useI18n } from '../i18n'
+import { useChartScrub } from '../lib/chartScrub'
 import { formatYuan } from '../lib/money'
-import { canHover } from '../lib/pointer'
 import type { SeriesPoint, TagAmount } from '../lib/stats'
-import { TagIcon } from './TagIcon'
+import { TagChip } from './TagChip'
+
+const CHART_TOUCH = 'touch-pan-y select-none'
 
 export function BarChart({
   points,
@@ -13,36 +14,29 @@ export function BarChart({
   color: string
 }) {
   const max = Math.max(0, ...points.map((point) => point.cents))
-  const [hover, setHover] = useState<SeriesPoint | null>(null)
+  const scrub = useChartScrub(points.length)
+  const hover = scrub.index !== null ? points[scrub.index] ?? null : null
   const shown = hover ?? tallest(points)
 
   return (
     <div>
-      <div className="flex h-36 items-end gap-[2px] overflow-visible pt-5">
+      <div
+        ref={scrub.ref}
+        className={`flex h-36 items-end gap-[2px] overflow-visible pt-5 ${CHART_TOUCH}`}
+        {...scrub.pointerProps}
+      >
         {points.map((point) => {
           const ratio = max > 0 ? point.cents / max : 0
           const active = shown?.key === point.key
           const bar = ratio > 0 ? Math.max(ratio * 124, 4) : 0
           return (
-            <button
+            <div
               key={point.key}
-              type="button"
               title={`${point.label} ${formatYuan(point.cents, { sign: 'never' })}`}
-              onMouseEnter={() => {
-                if (canHover()) setHover(point)
-              }}
-              onMouseLeave={() => {
-                if (canHover()) setHover(null)
-              }}
-              onFocus={() => setHover(point)}
-              onBlur={() => {
-                if (canHover()) setHover(null)
-              }}
-              onClick={() => setHover(point)}
-              className="relative flex h-full min-w-0 flex-1 items-end border-0 bg-transparent p-0"
+              className="pointer-events-none relative flex h-full min-w-0 flex-1 items-end"
             >
-              {active && point.cents > 0 ? (
-                <span className="pointer-events-none absolute bottom-full left-1/2 z-10 mb-1 -translate-x-1/2 whitespace-nowrap text-[11px] tabular-nums text-muted">
+              {active && (hover !== null || point.cents > 0) ? (
+                <span className="absolute bottom-full left-1/2 z-10 mb-1 -translate-x-1/2 whitespace-nowrap text-[11px] tabular-nums text-muted">
                   {formatYuan(point.cents, { sign: 'never' })}
                 </span>
               ) : null}
@@ -54,7 +48,7 @@ export function BarChart({
                   opacity: hover && !active ? 0.35 : 1,
                 }}
               />
-            </button>
+            </div>
           )
         })}
       </div>
@@ -65,11 +59,13 @@ export function BarChart({
 
 export function LineChart({ points, color }: { points: SeriesPoint[]; color: string }) {
   const { t } = useI18n()
-  const [hover, setHover] = useState<number | null>(null)
+  const scrub = useChartScrub(points.length)
   if (points.length === 0) {
     return <p className="py-10 text-center text-sm text-muted">{t.stats.noData}</p>
   }
 
+  const hover =
+    scrub.index !== null && scrub.index < points.length ? scrub.index : null
   const values = points.map((point) => point.cents)
   const lo = Math.min(...values)
   const hi = Math.max(...values)
@@ -108,11 +104,15 @@ export function LineChart({ points, color }: { points: SeriesPoint[]; color: str
 
   return (
     <div>
-      <div className="relative h-36 overflow-visible">
+      <div
+        ref={scrub.ref}
+        className={`relative h-36 overflow-visible ${CHART_TOUCH}`}
+        {...scrub.pointerProps}
+      >
         <svg
           viewBox={`0 0 ${width} ${height}`}
           preserveAspectRatio="none"
-          className="h-full w-full"
+          className="pointer-events-none h-full w-full"
         >
           <polygon points={area} fill={color} opacity="0.12" />
           <polyline
@@ -124,23 +124,6 @@ export function LineChart({ points, color }: { points: SeriesPoint[]; color: str
             strokeLinecap="round"
             vectorEffect="non-scaling-stroke"
           />
-          {coords.map((item, index) => (
-            <rect
-              key={item.point.key}
-              x={item.x - width / points.length / 2}
-              y={0}
-              width={width / points.length}
-              height={height}
-              fill="transparent"
-              onMouseEnter={() => {
-                if (canHover()) setHover(index)
-              }}
-              onMouseLeave={() => {
-                if (canHover()) setHover(null)
-              }}
-              onPointerDown={() => setHover(index)}
-            />
-          ))}
         </svg>
         {[...marked.entries()].map(([index, flags]) => (
           <LineMark
@@ -219,9 +202,8 @@ export function TagAmountList({ items, empty }: { items: TagAmount[]; empty: str
     <div className="grid w-full grid-cols-[max-content_minmax(0,1fr)_max-content] items-center gap-x-3 gap-y-2.5">
       {items.map((item) => (
         <div key={item.tag.id} className="contents">
-          <div className="flex items-center justify-end gap-1.5 text-right text-sm">
-            {item.tag.icon ? <TagIcon name={item.tag.icon} /> : null}
-            <span>{item.tag.name}</span>
+          <div className="flex items-center justify-end">
+            <TagChip tag={item.tag} />
           </div>
           <div className="h-2 overflow-hidden rounded-full bg-hover">
             <div

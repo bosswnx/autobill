@@ -117,6 +117,15 @@ export const en: typeof zh = {
       income: 'Edit income tag',
     },
     entryCount: (n: number) => (n === 1 ? '1 entry' : `${n} entries`),
+    deleteTitle: 'Delete tag',
+    deleteHint: 'Choose what happens to tagged entries.',
+    deleteTagOnly: 'Delete tag only',
+    deleteTagOnlyDetail: 'Keep the entries. They just lose this tag.',
+    deleteWithEntries: 'Delete tag and entries',
+    deleteWithEntriesDetail: (n: number) =>
+      n === 0
+        ? 'No entries use this tag.'
+        : `Deletes ${n === 1 ? '1 entry' : `${n} entries`} that use this tag.`,
   },
 
   entry: {
@@ -136,12 +145,14 @@ export const en: typeof zh = {
   settings: {
     title: 'Settings',
     language: 'Language',
+    wipe: 'Erase all data',
+    wipeHint: 'This device’s ledger, tags, and entries will be deleted and cannot be undone. Cloud and other devices are unchanged.',
+    wipeWait: (n: number) => `Wait ${n}s to confirm`,
+    wipeConfirm: 'Erase now',
   },
 
   savings: {
     title: 'Savings',
-    hint: 'Enter how much you have on hand. New entries will add or subtract from this.',
-    current: 'Current savings',
     amountRequired: 'Enter an amount',
   },
 
@@ -158,12 +169,11 @@ export const en: typeof zh = {
       'Disconnect only stops sync on this device. Your local ledger stays. Cloud and other devices are unchanged.',
     hostedHint:
       'This page is served by the sync server. Enter this server’s target key and your user token to use the browser as a device.',
-    connectHint:
-      'Connect to your self-hosted server so the browser and phone share one ledger. You need three things: the server URL, this server’s target key, and a user token you choose. On the same server, the user token is your space — don’t reuse someone else’s.',
+    connectHint: 'Enter a server address to connect and sync the ledger.',
     serverUrl: 'Server URL',
     targetKey: 'Server key',
     userToken: 'User token',
-    tokenPlaceholder: (n: number) => `At least ${n} characters, chosen and kept by you`,
+    tokenPlaceholder: (n: number) => `At least ${n} characters`,
     connect: 'Connect',
     connecting: 'Connecting…',
     urlRequired: 'Enter the server URL',
@@ -241,7 +251,7 @@ export const en: typeof zh = {
   },
 
   keypad: {
-    clear: 'AC',
+    backspaceHint: 'Backspace, hold to clear',
   },
 
   seed: {

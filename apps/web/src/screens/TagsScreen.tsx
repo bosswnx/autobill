@@ -1,7 +1,7 @@
 import type { Tag, TagKind } from '@tagledger/shared'
 import { TAG_COLOR_PALETTE } from '@tagledger/shared'
 import { Plus } from 'lucide-react'
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { ColorPicker } from '../components/ColorPicker'
 import { IconPicker } from '../components/IconPicker'
 import { Overlay } from '../components/Overlay'
@@ -50,6 +50,12 @@ export function TagsScreen({ bookId, tags, usage, onFilterTag }: Props) {
   const expenseTags = visible.filter((tag) => tag.kind === 'expense')
   const incomeTags = visible.filter((tag) => tag.kind === 'income')
 
+  function openEdit(tag: Tag) {
+    const active = document.activeElement
+    if (active instanceof HTMLElement) active.blur()
+    setEditing(tag)
+  }
+
   return (
     <div className="flex flex-col gap-8">
       <header>
@@ -94,7 +100,7 @@ export function TagsScreen({ bookId, tags, usage, onFilterTag }: Props) {
         empty={tags.every((tag) => tag.kind !== 'expense')}
         usage={usage}
         onAdd={() => setCreating('expense')}
-        onEdit={setEditing}
+        onEdit={openEdit}
       />
       <TagKindSection
         kind="income"
@@ -102,7 +108,7 @@ export function TagsScreen({ bookId, tags, usage, onFilterTag }: Props) {
         empty={tags.every((tag) => tag.kind !== 'income')}
         usage={usage}
         onAdd={() => setCreating('income')}
-        onEdit={setEditing}
+        onEdit={openEdit}
       />
 
       {creating && (
@@ -115,6 +121,7 @@ export function TagsScreen({ bookId, tags, usage, onFilterTag }: Props) {
             icon: null,
           }}
           requireName
+          autoFocus
           onClose={() => setCreating(null)}
           onSubmit={async (next) => {
             await createTag(bookId, next.name, next.color, next.icon, creating)
@@ -136,8 +143,8 @@ export function TagsScreen({ bookId, tags, usage, onFilterTag }: Props) {
           onSubmit={async (next) => {
             await updateTag(editing.id, next)
           }}
-          onDelete={async () => {
-            await deleteTag(editing.id)
+          onDelete={async (withEntries) => {
+            await deleteTag(editing.id, { withEntries })
           }}
           onView={() => onFilterTag(editing.id)}
         />
@@ -206,6 +213,7 @@ function TagFormDialog({
   initial,
   usage,
   requireName,
+  autoFocus,
   onClose,
   onSubmit,
   onDelete,
@@ -216,9 +224,10 @@ function TagFormDialog({
   initial: { name: string; color: string; icon: string | null }
   usage?: number
   requireName?: boolean
+  autoFocus?: boolean
   onClose: () => void
   onSubmit: (value: { name: string; color: string; icon: string | null }) => Promise<void>
-  onDelete?: () => Promise<void>
+  onDelete?: (withEntries: boolean) => Promise<void>
   onView?: () => void
 }) {
   const [name, setName] = useState(initial.name)
@@ -226,8 +235,17 @@ function TagFormDialog({
   const [icon, setIcon] = useState<string | null>(initial.icon)
   const [picking, setPicking] = useState<null | 'icon' | 'color'>(null)
   const [saving, setSaving] = useState(false)
+  const [confirmingDelete, setConfirmingDelete] = useState(false)
+  const closeForm = useRef<() => void>(() => {})
+  const panelRef = useRef<HTMLDivElement>(null)
+  const [nameReady, setNameReady] = useState(Boolean(autoFocus))
   const { t } = useI18n()
   const canSubmit = !requireName || Boolean(name.trim())
+
+  useEffect(() => {
+    if (autoFocus) return
+    panelRef.current?.focus()
+  }, [autoFocus])
 
   async function submit() {
     const trimmed = name.trim()
@@ -246,10 +264,14 @@ function TagFormDialog({
   return (
     <>
       <Overlay onClose={onClose} className="overlay-pad items-center">
-        {(close) => (
+        {(close) => {
+          closeForm.current = close
+          return (
           <div
+            ref={panelRef}
+            tabIndex={-1}
             data-overlay-scroll
-            className="anim-panel max-h-full w-full max-w-sm overflow-y-auto rounded-xl border border-line bg-page p-5"
+            className="anim-panel max-h-full w-full max-w-sm overflow-y-auto rounded-xl border border-line bg-page p-5 outline-none"
           >
             <div className="flex items-start justify-between gap-3">
               <h2 className="text-lg font-semibold">{title}</h2>
@@ -257,8 +279,14 @@ function TagFormDialog({
             </div>
             <label className="mt-4 block text-xs text-faint">{t.tags.name}</label>
             <input
-              autoFocus
+              autoFocus={autoFocus}
+              readOnly={!nameReady}
               value={name}
+              onPointerDown={(event) => {
+                if (nameReady) return
+                event.currentTarget.readOnly = false
+                setNameReady(true)
+              }}
               onChange={(event) => setName(event.target.value)}
               onKeyDown={(event) => {
                 if (event.key === 'Enter') {
@@ -269,7 +297,7 @@ function TagFormDialog({
                 }
               }}
               placeholder={t.tags.namePlaceholder}
-              className="mt-1 w-full rounded-md border border-line bg-page px-3 py-2 text-sm placeholder:text-faint hover:bg-hover focus:border-accent"
+              className="mt-1 w-full rounded-md border border-line bg-page px-3 py-2 text-sm placeholder:text-faint hover:bg-hover focus:border-accent read-only:bg-page read-only:opacity-100"
             />
             <div className="mt-4 flex items-start gap-8">
               <div>
@@ -301,7 +329,11 @@ function TagFormDialog({
                     <button
                       type="button"
                       className="rounded px-2 py-1 text-sm text-expense hover:bg-hover"
-                      onClick={() => void onDelete().then(close)}
+                      onClick={() => {
+                        const active = document.activeElement
+                        if (active instanceof HTMLElement) active.blur()
+                        setConfirmingDelete(true)
+                      }}
                     >
                       {t.common.delete}
                     </button>
@@ -336,7 +368,8 @@ function TagFormDialog({
               </div>
             </div>
           </div>
-        )}
+          )
+        }}
       </Overlay>
       {picking === 'icon' && (
         <IconPicker value={icon} onClose={() => setPicking(null)} onPick={setIcon} />
@@ -344,6 +377,82 @@ function TagFormDialog({
       {picking === 'color' && (
         <ColorPicker value={color} onClose={() => setPicking(null)} onPick={setColor} />
       )}
+      {confirmingDelete && onDelete ? (
+        <DeleteTagOverlay
+          usage={usage ?? 0}
+          busy={saving}
+          onClose={() => setConfirmingDelete(false)}
+          onPick={async (withEntries) => {
+            setSaving(true)
+            try {
+              await onDelete(withEntries)
+              setConfirmingDelete(false)
+              closeForm.current()
+            } finally {
+              setSaving(false)
+            }
+          }}
+        />
+      ) : null}
     </>
+  )
+}
+
+function DeleteTagOverlay({
+  usage,
+  busy,
+  onClose,
+  onPick,
+}: {
+  usage: number
+  busy: boolean
+  onClose: () => void
+  onPick: (withEntries: boolean) => void
+}) {
+  const { t } = useI18n()
+  return (
+    <Overlay onClose={onClose} className="overlay-pad z-[60] items-center">
+      {() => (
+        <div
+          data-overlay-scroll
+          className="anim-panel max-h-full w-full max-w-sm overflow-y-auto rounded-xl border border-line bg-page p-5"
+        >
+          <h2 className="text-lg font-semibold">{t.tags.deleteTitle}</h2>
+          <p className="mt-1 text-sm text-muted">{t.tags.deleteHint}</p>
+          <div className="mt-4 flex flex-col gap-2">
+            <button
+              type="button"
+              disabled={busy}
+              onClick={() => onPick(false)}
+              className="rounded-lg border border-line px-3 py-3 text-left transition-colors duration-150 hover:bg-hover disabled:opacity-40"
+            >
+              <div className="text-sm font-medium">{t.tags.deleteTagOnly}</div>
+              <div className="mt-0.5 text-xs leading-relaxed text-faint">{t.tags.deleteTagOnlyDetail}</div>
+            </button>
+            <button
+              type="button"
+              disabled={busy}
+              onClick={() => onPick(true)}
+              className="rounded-lg border border-line px-3 py-3 text-left transition-colors duration-150 hover:bg-hover disabled:opacity-40"
+            >
+              <div className="text-sm font-medium text-expense">{t.tags.deleteWithEntries}</div>
+              <div className="mt-0.5 text-xs leading-relaxed text-faint">
+                {t.tags.deleteWithEntriesDetail(usage)}
+              </div>
+            </button>
+          </div>
+          <div className="mt-4 flex justify-end">
+            <button
+              type="button"
+              disabled={busy}
+              className="rounded px-3 py-1.5 text-sm text-muted hover:bg-hover disabled:opacity-40"
+              onClick={onClose}
+            >
+              {t.common.cancel}
+            </button>
+          </div>
+        </div>
+      )}
+    </Overlay>
   )
 }

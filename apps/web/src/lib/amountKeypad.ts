@@ -65,6 +65,14 @@ export function pressClear(): AmountExpr {
   return EMPTY_AMOUNT
 }
 
+export function pressBackspace(expr: AmountExpr): AmountExpr {
+  if (expr.op && expr.right) return { ...expr, right: expr.right.slice(0, -1) }
+  if (expr.op) return { ...expr, op: null }
+  if (!expr.left) return expr
+  const left = expr.left.slice(0, -1)
+  return left ? { ...expr, left } : EMPTY_AMOUNT
+}
+
 export function applyAmountKey(expr: AmountExpr, key: string): AmountExpr | null {
   if (/^[0-9]$/.test(key)) return pressDigit(expr, key)
   if (key === '.' || key === ',') return pressDot(expr)
@@ -73,7 +81,8 @@ export function applyAmountKey(expr: AmountExpr, key: string): AmountExpr | null
   if (key === '*' || key === 'x' || key === 'X') return pressOp(expr, '*')
   if (key === '/') return pressOp(expr, '/')
   if (key === '=' || key === 'Enter') return pressEquals(expr)
-  if (key === 'Escape' || key === 'c' || key === 'C' || key === 'Delete') return pressClear()
+  if (key === 'Backspace' || key === 'Delete') return pressBackspace(expr)
+  if (key === 'Escape' || key === 'c' || key === 'C') return pressClear()
   return null
 }
 

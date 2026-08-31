@@ -1,5 +1,5 @@
 import type { Book, Entry, EntryType, Tag } from '@tagledger/shared'
-import { useMemo, useState, type ReactNode } from 'react'
+import { useMemo, useRef, useState, type ReactNode } from 'react'
 import { AmountKeypad } from '../components/AmountKeypad'
 import { CompactPicker } from '../components/DateTimePickers'
 import { Overlay } from '../components/Overlay'
@@ -9,6 +9,7 @@ import { useI18n } from '../i18n'
 import { amountFromYuan, amountYuan, EMPTY_AMOUNT, type AmountExpr } from '../lib/amountKeypad'
 import { entryTitle } from '../lib/entryTitle'
 import { centsToYuanInput, yuanToCents } from '../lib/money'
+import { useSwipeToClose } from '../lib/swipeToClose'
 import { firstSortedTagName, sortByUsage, tagsOfKind } from '../lib/tags'
 import { formatCompactDate, fromDateTimeInput, nowIso, toDateInput, toTimeInput } from '../lib/time'
 
@@ -44,6 +45,8 @@ export function EntrySheet({ book, tags, usage, entry, onClose }: Props) {
   const [tagSearchOpen, setTagSearchOpen] = useState(false)
   const [error, setError] = useState('')
   const [saving, setSaving] = useState(false)
+  const closeRef = useRef<() => void>(() => {})
+  const swipe = useSwipeToClose(() => closeRef.current())
 
   const kindTags = useMemo(
     () => sortByUsage(tagsOfKind(tags, type === 'income' ? 'income' : 'expense'), usage),
@@ -101,8 +104,14 @@ export function EntrySheet({ book, tags, usage, entry, onClose }: Props) {
 
   return (
     <Overlay onClose={onClose} exitMs={320} className="items-end sm:items-center sm:overlay-pad">
-      {(close) => (
-      <div className="anim-sheet flex max-h-[92%] w-full max-w-lg flex-col overflow-hidden rounded-t-[20px] bg-page sm:max-h-full sm:rounded-xl sm:border sm:border-line">
+      {(close) => {
+      closeRef.current = close
+      return (
+      <div
+        ref={swipe.sheetRef}
+        {...swipe.pointerProps}
+        className="anim-sheet flex max-h-[92%] w-full max-w-lg touch-pan-y flex-col overflow-hidden rounded-t-[20px] bg-page sm:max-h-full sm:rounded-xl sm:border sm:border-line"
+      >
         <div className="flex justify-center pt-2 pb-1 sm:hidden" aria-hidden>
           <span className="h-1 w-9 rounded-full bg-black/20" />
         </div>
@@ -274,7 +283,8 @@ export function EntrySheet({ book, tags, usage, entry, onClose }: Props) {
           </div>
         </div>
       </div>
-      )}
+      )
+      }}
     </Overlay>
   )
 }

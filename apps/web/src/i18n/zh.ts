@@ -115,6 +115,13 @@ export const zh = {
       income: '编辑收入标签',
     },
     entryCount: (n: number) => `${n} 笔`,
+    deleteTitle: '删除标签',
+    deleteHint: '选一种处理方式。',
+    deleteTagOnly: '只删除标签',
+    deleteTagOnlyDetail: '账单保留，不再带这个标签。',
+    deleteWithEntries: '连同账单一起删除',
+    deleteWithEntriesDetail: (n: number) =>
+      n === 0 ? '目前没有使用这个标签的账单。' : `将删除使用这个标签的 ${n} 笔账单。`,
   },
 
   entry: {
@@ -134,12 +141,14 @@ export const zh = {
   settings: {
     title: '设置',
     language: '语言',
+    wipe: '清空所有数据',
+    wipeHint: '本机的账本、标签和流水都会删掉，无法恢复。云端和其他设备不受影响。',
+    wipeWait: (n: number) => `${n} 秒后可确认`,
+    wipeConfirm: '确认清空',
   },
 
   savings: {
     title: '存款',
-    hint: '填你手头现在有多少。之后记账会自动加减。',
-    current: '现在的存款',
     amountRequired: '请输入金额',
   },
 
@@ -155,12 +164,11 @@ export const zh = {
     disconnectHint: '断开只取消这台设备的同步，本机账本还在。云端和其他设备不受影响。',
     hostedHint:
       '这个网页就在同步服务器上。填这台服务器的密钥和你的用户 token，就能把浏览器当一台终端。',
-    connectHint:
-      '连上自建服务器后，浏览器和手机共用一本账。需要三样：服务器地址、这台服务器的密钥、你自己设的用户 token。同一台服务器上，用户 token 就是你的空间，不要和别人重复。',
+    connectHint: '输入服务器地址可以连接并进行账本的同步',
     serverUrl: '服务器地址',
     targetKey: '服务器密钥',
     userToken: '用户 token',
-    tokenPlaceholder: (n: number) => `至少 ${n} 位，自己设、自己保管`,
+    tokenPlaceholder: (n: number) => `至少${n}位`,
     connect: '连接',
     connecting: '连接中…',
     urlRequired: '请填写服务器地址',
@@ -229,7 +237,7 @@ export const zh = {
   },
 
   keypad: {
-    clear: '清零',
+    backspaceHint: '退格，长按清零',
   },
 
   seed: {

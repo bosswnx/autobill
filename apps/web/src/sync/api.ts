@@ -44,11 +44,14 @@ export function detectHostedOrigin(): Promise<string | null> {
     .catch(() => null)
 }
 
+export function stripServerScheme(input: string): string {
+  return input.replace(/^https?:\/\//i, '')
+}
+
 export function normalizeServerUrl(input: string): string {
-  let url = input.trim().replace(/\/+$/, '')
+  const url = stripServerScheme(input.trim()).replace(/\/+$/, '')
   if (!url) return ''
-  if (!/^https?:\/\//i.test(url)) url = `http://${url}`
-  return url
+  return `https://${url}`
 }
 
 async function readErrorCode(response: Response): Promise<string> {

@@ -21,6 +21,7 @@
   "dependencies": {
     "@capacitor/app": "^8.0.0",
     "@capacitor/core": "^8.0.0",
+    "@capacitor/haptics": "^8.0.2",
     "@capacitor/ios": "^8.0.0",
     "@tagledger/shared": "*",
     "dexie": "^4.2.1",
@@ -32,10 +33,10 @@
   "devDependencies": {
     "@capacitor/cli": "^8.0.0",
     "@tailwindcss/vite": "^4.1.12",
+    "@tauri-apps/cli": "^2",
     "@types/node": "^24.13.3",
     "@types/react": "^19.2.18",
     "@types/react-dom": "^19.2.4",
-    "@tauri-apps/cli": "^2",
     "@vitejs/plugin-react": "^6.1.0",
     "oxlint": "^1.79.0",
     "tailwindcss": "^4.1.12",

@@ -1,15 +1,18 @@
-import { useEffect, useRef } from 'react'
+import { Delete as BackspaceIcon } from 'lucide-react'
+import { useEffect, useRef, type ReactNode } from 'react'
 import { catalogs, useI18n } from '../i18n'
 import type { AmountExpr } from '../lib/amountKeypad'
 import {
   applyAmountKey,
   displayAmount,
+  pressBackspace,
   pressClear,
   pressDigit,
   pressDot,
   pressEquals,
   pressOp,
 } from '../lib/amountKeypad'
+import { tapHaptic } from '../lib/haptic'
 
 type Props = {
   expr: AmountExpr
@@ -17,9 +20,11 @@ type Props = {
 }
 
 const KEY =
-  'flex h-14 items-center justify-center rounded-md text-[22px] font-medium leading-none transition-colors duration-150'
+  'amount-key flex h-14 items-center justify-center rounded-md text-[22px] font-medium leading-none transition-colors duration-150'
 const NUM = `${KEY} bg-[#f4f3f0] text-ink hover:bg-[#ebeae6]`
-const OP = `${KEY} bg-[#ecebe7] text-muted hover:bg-[#e3e2de] hover:text-ink`
+const OP = `${KEY} amount-key-op bg-[#ecebe7] text-muted hover:bg-[#e3e2de] hover:text-ink`
+
+const LONG_PRESS_MS = 450
 
 export function AmountKeypad({ expr, onChange }: Props) {
   const { t } = useI18n()
@@ -93,19 +98,20 @@ export function AmountKeypad({ expr, onChange }: Props) {
         <Key className={NUM} onClick={() => onChange(pressDot(expr))}>
           .
         </Key>
-        <Key className={OP} onClick={() => onChange(pressClear())}>
-          {t.keypad.clear}
+        <Key
+          className={OP}
+          aria-label={t.keypad.backspaceHint}
+          onClick={() => onChange(pressBackspace(expr))}
+          onLongPress={() => onChange(pressClear())}
+        >
+          <BackspaceIcon className="size-[22px]" strokeWidth={2} />
         </Key>
         <Key className={OP} onClick={() => onChange(pressOp(expr, '+'))}>
           +
         </Key>
-        <button
-          type="button"
-          onClick={() => onChange(pressEquals(expr))}
-          className={`${KEY} col-span-4 bg-[#ecebe7] text-ink hover:bg-[#e3e2de]`}
-        >
+        <Key className={`${KEY} amount-key-op col-span-4 bg-[#ecebe7] text-ink hover:bg-[#e3e2de]`} onClick={() => onChange(pressEquals(expr))}>
           =
-        </button>
+        </Key>
       </div>
     </div>
   )
@@ -114,14 +120,66 @@ export function AmountKeypad({ expr, onChange }: Props) {
 function Key({
   className,
   onClick,
+  onLongPress,
   children,
+  'aria-label': ariaLabel,
 }: {
   className: string
   onClick: () => void
-  children: string
+  onLongPress?: () => void
+  children: ReactNode
+  'aria-label'?: string
 }) {
+  const timer = useRef(0)
+  const didLongPress = useRef(false)
+
+  function clearTimer() {
+    if (!timer.current) return
+    window.clearTimeout(timer.current)
+    timer.current = 0
+  }
+
   return (
-    <button type="button" onClick={onClick} className={className}>
+    <button
+      type="button"
+      aria-label={ariaLabel}
+      onContextMenu={(event) => {
+        if (onLongPress) event.preventDefault()
+      }}
+      onClick={() => {
+        if (didLongPress.current) {
+          didLongPress.current = false
+          return
+        }
+        onClick()
+      }}
+      onPointerDown={(event) => {
+        if (event.button !== 0) return
+        event.currentTarget.dataset.pressed = 'true'
+        tapHaptic()
+        didLongPress.current = false
+        if (!onLongPress) return
+        timer.current = window.setTimeout(() => {
+          timer.current = 0
+          didLongPress.current = true
+          onLongPress()
+          tapHaptic()
+        }, LONG_PRESS_MS)
+      }}
+      onPointerUp={(event) => {
+        delete event.currentTarget.dataset.pressed
+        clearTimer()
+      }}
+      onPointerCancel={(event) => {
+        delete event.currentTarget.dataset.pressed
+        clearTimer()
+      }}
+      onPointerLeave={(event) => {
+        delete event.currentTarget.dataset.pressed
+        clearTimer()
+      }}
+      className={className}
+    >
       {children}
     </button>
   )

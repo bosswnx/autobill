@@ -76,7 +76,7 @@ export function LedgerScreen({
           placeholder={t.ledger.searchPlaceholder}
           className="w-full rounded-md border border-line bg-page px-3 py-2 text-sm placeholder:text-faint hover:bg-hover focus:border-accent"
         />
-        <div className="flex flex-col gap-2">
+        <div className="flex flex-col gap-4">
           {(['expense', 'income'] as const).map((kind) => {
             const group = tagsOfKind(sortedTags, kind)
             if (group.length === 0) return null
@@ -199,13 +199,13 @@ function EntryRow({
     >
       <div className="min-w-0">
         <div className="flex items-center gap-2">
-          <span className="truncate text-sm">{title}</span>
+          <span className="truncate text-base md:text-sm">{title}</span>
           <span className="shrink-0 text-xs text-faint">{formatClock(entry.occurredAt)}</span>
         </div>
         {tags.length > 0 && (
           <div className="mt-1.5 flex flex-wrap gap-1">
             {tags.map((tag) => (
-              <TagChip key={tag.id} tag={tag} active={activeTagIds.includes(tag.id)} />
+              <TagChip key={tag.id} tag={tag} active={activeTagIds.includes(tag.id)} size="sm" />
             ))}
           </div>
         )}

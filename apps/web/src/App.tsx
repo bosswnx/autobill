@@ -1,4 +1,6 @@
+import { ChartColumn, Menu, Plus, Settings, Tag } from 'lucide-react'
 import { useEffect, useState, type ReactNode } from 'react'
+import { createPortal } from 'react-dom'
 import { seedIfNeeded } from './db/seed'
 import { detectHostedOrigin } from './sync/api'
 import { initSync, subscribeSync } from './sync/engine'
@@ -101,17 +103,17 @@ export default function App() {
           <div className="truncate text-sm font-medium">{t.appName}</div>
         </div>
         <nav className="mt-2 flex flex-col gap-0.5">
-          <NavButton current={screen} id="ledger" label={t.nav.ledger} onClick={setScreen} icon={<ListIcon />} />
-          <NavButton current={screen} id="stats" label={t.nav.stats} onClick={setScreen} icon={<ChartIcon />} />
-          <NavButton current={screen} id="tags" label={t.nav.tags} onClick={setScreen} icon={<TagIcon />} />
-          <NavButton current={screen} id="settings" label={t.nav.settings} onClick={setScreen} icon={<GearIcon />} />
+          <NavButton current={screen} id="ledger" label={t.nav.ledger} onClick={setScreen} icon={<Menu size={16} strokeWidth={1.75} />} />
+          <NavButton current={screen} id="stats" label={t.nav.stats} onClick={setScreen} icon={<ChartColumn size={16} strokeWidth={1.75} />} />
+          <NavButton current={screen} id="tags" label={t.nav.tags} onClick={setScreen} icon={<Tag size={16} strokeWidth={1.75} />} />
+          <NavButton current={screen} id="settings" label={t.nav.settings} onClick={setScreen} icon={<Settings size={16} strokeWidth={1.75} />} />
         </nav>
         <button
           type="button"
           onClick={() => book && setEditor({})}
           className="mt-2 flex items-center gap-2 rounded px-2 py-1.5 text-left text-sm text-muted transition-colors duration-150 hover:bg-hover"
         >
-          <PlusIcon />
+          <Plus size={16} strokeWidth={1.75} />
           {t.nav.addEntry}
         </button>
       </aside>
@@ -161,14 +163,15 @@ export default function App() {
           </div>
         </main>
 
-        <nav className="fixed inset-x-0 bottom-0 z-40 border-t border-line bg-page/95 px-2 pb-[max(0.375rem,var(--sab))] pt-1 md:hidden">
+        {createPortal(
+        <nav className="app-tabbar fixed inset-x-0 bottom-0 z-40 border-t border-line px-2 pb-[max(0.375rem,var(--sab))] pt-1 md:hidden">
           <div className="grid grid-cols-5">
             <NavButton
               current={screen}
               id="ledger"
               label={t.nav.ledger}
               onClick={setScreen}
-              icon={<ListIcon size={22} />}
+              icon={<Menu size={22} strokeWidth={1.75} />}
               stacked
             />
             <NavButton
@@ -176,7 +179,7 @@ export default function App() {
               id="stats"
               label={t.nav.stats}
               onClick={setScreen}
-              icon={<ChartIcon size={22} />}
+              icon={<ChartColumn size={22} strokeWidth={1.75} />}
               stacked
             />
             <button
@@ -185,14 +188,14 @@ export default function App() {
               aria-label={t.nav.addEntry}
               className="flex h-full items-center justify-center rounded-md px-1 py-1 text-accent transition-colors duration-150 hover:bg-hover"
             >
-              <TabPlusIcon />
+              <Plus size={22} strokeWidth={1.75} />
             </button>
             <NavButton
               current={screen}
               id="tags"
               label={t.nav.tags}
               onClick={setScreen}
-              icon={<TagIcon size={22} />}
+              icon={<Tag size={22} strokeWidth={1.75} />}
               stacked
             />
             <NavButton
@@ -200,11 +203,13 @@ export default function App() {
               id="settings"
               label={t.nav.settings}
               onClick={setScreen}
-              icon={<GearIcon size={22} />}
+              icon={<Settings size={22} strokeWidth={1.75} />}
               stacked
             />
           </div>
-        </nav>
+        </nav>,
+        document.body,
+        )}
       </div>
 
       {editor && book && (
@@ -290,63 +295,4 @@ function EntryEditor({
     )
   }
   return <EntrySheet book={book} tags={tags} usage={usage} entry={entry} onClose={onClose} />
-}
-
-function ChartIcon({ size = 16 }: { size?: number }) {
-  return (
-    <svg width={size} height={size} viewBox="0 0 16 16" fill="none" aria-hidden>
-      <path d="M3 12V8M7 12V4M11 12V6.5M14 13H2" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
-    </svg>
-  )
-}
-
-function ListIcon({ size = 16 }: { size?: number }) {
-  return (
-    <svg width={size} height={size} viewBox="0 0 16 16" fill="none" aria-hidden>
-      <path d="M3 4h10M3 8h10M3 12h7" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
-    </svg>
-  )
-}
-
-function TagIcon({ size = 16 }: { size?: number }) {
-  return (
-    <svg width={size} height={size} viewBox="0 0 16 16" fill="none" aria-hidden>
-      <path
-        d="M2.5 8.3 8.2 2.6a1 1 0 0 1 .7-.3h3.6v3.6a1 1 0 0 1-.3.7L6.5 12.3a1 1 0 0 1-1.4 0L2.5 9.7a1 1 0 0 1 0-1.4Z"
-        stroke="currentColor"
-        strokeWidth="1.4"
-      />
-      <circle cx="11" cy="5" r="0.8" fill="currentColor" />
-    </svg>
-  )
-}
-
-function GearIcon({ size = 16 }: { size?: number }) {
-  return (
-    <svg width={size} height={size} viewBox="0 0 16 16" fill="none" aria-hidden>
-      <path
-        d="M6.4 1.8h3.2l.4 1.6a4.8 4.8 0 0 1 1.3.8l1.6-.5 1.6 2.8-1.2 1.2a4.8 4.8 0 0 1 0 1.6l1.2 1.2-1.6 2.8-1.6-.5a4.8 4.8 0 0 1-1.3.8l-.4 1.6H6.4l-.4-1.6a4.8 4.8 0 0 1-1.3-.8l-1.6.5L1.5 10.6l1.2-1.2a4.8 4.8 0 0 1 0-1.6L1.5 6.6l1.6-2.8 1.6.5a4.8 4.8 0 0 1 1.3-.8l.4-1.6Z"
-        stroke="currentColor"
-        strokeWidth="1.4"
-        strokeLinejoin="round"
-      />
-      <circle cx="8" cy="8" r="1.8" stroke="currentColor" strokeWidth="1.4" />
-    </svg>
-  )
-}
-
-function TabPlusIcon() {
-  return (
-    <svg width="22" height="22" viewBox="0 0 16 16" fill="none" aria-hidden>
-      <path d="M8 3.5v9M3.5 8h9" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
-    </svg>
-  )
-}
-
-function PlusIcon() {
-  return (
-    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden>
-      <path d="M8 3.5v9M3.5 8h9" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
-    </svg>
-  )
 }

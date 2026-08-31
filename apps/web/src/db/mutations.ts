@@ -128,17 +128,37 @@ export async function updateTag(
   await appendChange(next.bookId, 'tag', next.id, next.rev, next)
 }
 
-export async function deleteTag(id: string): Promise<void> {
+export async function deleteTag(id: string, opts?: { withEntries?: boolean }): Promise<void> {
   const current = await db.tags.get(id)
   if (!current) return
-  const next: Tag = {
-    ...current,
-    deletedAt: nowIso(),
-    rev: current.rev + 1,
-    updatedAt: nowIso(),
-  }
-  await db.tags.put(next)
-  await appendChange(next.bookId, 'tag', next.id, next.rev, next)
+  const now = nowIso()
+  const tagged = opts?.withEntries
+    ? (await db.entries.where('bookId').equals(current.bookId).toArray()).filter(
+        (entry) => !entry.deletedAt && entry.tagIds.includes(id),
+      )
+    : []
+
+  await db.transaction('rw', db.tags, db.entries, db.changes, async () => {
+    const next: Tag = {
+      ...current,
+      deletedAt: now,
+      rev: current.rev + 1,
+      updatedAt: now,
+    }
+    await db.tags.put(next)
+    await appendChange(next.bookId, 'tag', next.id, next.rev, next)
+
+    for (const entry of tagged) {
+      const deleted: Entry = {
+        ...entry,
+        deletedAt: now,
+        rev: entry.rev + 1,
+        updatedAt: now,
+      }
+      await db.entries.put(deleted)
+      await appendChange(deleted.bookId, 'entry', deleted.id, deleted.rev, deleted)
+    }
+  })
 }
 
 export type EntryDraft = {

@@ -5,6 +5,14 @@ export async function initNative(): Promise<void> {
   if (!Capacitor.isNativePlatform()) return
 
   document.documentElement.classList.add('is-native', `is-${Capacitor.getPlatform()}`)
+  document.documentElement.style.setProperty('-webkit-touch-callout', 'none')
+
+  document.addEventListener('selectstart', (event) => {
+    const target = event.target
+    if (!(target instanceof Element)) return
+    if (target.closest('input, textarea, [contenteditable="true"]')) return
+    event.preventDefault()
+  })
 
   try {
     await SystemBars.setStyle({ style: SystemBarsStyle.Light })
