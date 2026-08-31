@@ -1,4 +1,5 @@
-import { useState } from 'react'
+import { useEffect, useLayoutEffect, useRef, useState } from 'react'
+import { tapHaptic } from '../lib/haptic'
 import { useI18n } from '../i18n'
 import { daysInMonth, formatMonthYear, nowIso, toDateInput, toTimeInput } from '../lib/time'
 import { Overlay } from './Overlay'
@@ -180,9 +181,19 @@ function TimePickerPanel({
   return (
     <div className="anim-panel w-full max-w-sm rounded-xl border border-line bg-page p-5">
       <h2 className="text-lg font-semibold">{t.pickers.timeTitle}</h2>
-      <div className="mt-6 flex flex-col gap-3">
-        <Stepper label={t.pickers.hour} value={hour} onShift={(delta) => setHour(wrap(hour + delta, 24))} />
-        <Stepper label={t.pickers.minute} value={minute} onShift={(delta) => setMinute(wrap(minute + delta, 60))} />
+      <div className="mt-4 flex items-center justify-center gap-14">
+        <div className="relative">
+          <WheelColumn length={24} value={hour} onChange={setHour} ariaLabel={t.pickers.hour} />
+          <span className="pointer-events-none absolute top-1/2 left-full ml-1.5 -translate-y-1/2 text-sm text-muted">
+            {t.pickers.hour}
+          </span>
+        </div>
+        <div className="relative">
+          <WheelColumn length={60} value={minute} onChange={setMinute} ariaLabel={t.pickers.minute} />
+          <span className="pointer-events-none absolute top-1/2 left-full ml-1.5 -translate-y-1/2 text-sm text-muted">
+            {t.pickers.minute}
+          </span>
+        </div>
       </div>
       <div className="mt-5 flex items-center justify-between">
         <button
@@ -218,36 +229,129 @@ function TimePickerPanel({
   )
 }
 
-function Stepper({
-  label,
+const WHEEL_ITEM = 40
+const WHEEL_VISIBLE = 5
+const WHEEL_COPIES = 5
+
+function WheelColumn({
+  length,
   value,
-  onShift,
+  onChange,
+  ariaLabel,
 }: {
-  label: string
+  length: number
   value: number
-  onShift: (delta: number) => void
+  onChange: (value: number) => void
+  ariaLabel: string
 }) {
-  const { t } = useI18n()
+  const scroller = useRef<HTMLDivElement>(null)
+  const fromScroll = useRef(false)
+  const lastValue = useRef(value)
+
+  function valueOf(scrollTop: number): number {
+    const index = Math.round(scrollTop / WHEEL_ITEM)
+    return wrap(index, length)
+  }
+
+  function scrollToValue(next: number, behavior: ScrollBehavior) {
+    const el = scroller.current
+    if (!el) return
+    const index = Math.round(el.scrollTop / WHEEL_ITEM)
+    const copy = Math.min(WHEEL_COPIES - 2, Math.max(1, Math.floor(index / length) || Math.floor(WHEEL_COPIES / 2)))
+    el.scrollTo({ top: (copy * length + wrap(next, length)) * WHEEL_ITEM, behavior })
+  }
+
+  useLayoutEffect(() => {
+    const el = scroller.current
+    if (!el) return
+    el.scrollTop = (Math.floor(WHEEL_COPIES / 2) * length + wrap(value, length)) * WHEEL_ITEM
+    lastValue.current = value
+  }, [length])
+
+  useEffect(() => {
+    if (fromScroll.current) {
+      fromScroll.current = false
+      return
+    }
+    if (lastValue.current === value) return
+    lastValue.current = value
+    scrollToValue(value, 'smooth')
+  }, [value, length])
+
+  useEffect(() => {
+    const wheel = scroller.current
+    if (!wheel) return
+    let settle = 0
+
+    function recenter() {
+      const target = scroller.current
+      if (!target) return
+      const index = Math.round(target.scrollTop / WHEEL_ITEM)
+      const copy = Math.floor(index / length)
+      if (copy !== 0 && copy !== WHEEL_COPIES - 1) return
+      const mid = Math.floor(WHEEL_COPIES / 2)
+      target.scrollTop = (mid * length + wrap(index, length)) * WHEEL_ITEM
+    }
+
+    function onScroll() {
+      const target = scroller.current
+      if (!target) return
+      const next = valueOf(target.scrollTop)
+      if (next !== lastValue.current) {
+        lastValue.current = next
+        fromScroll.current = true
+        onChange(next)
+        tapHaptic()
+      }
+      window.clearTimeout(settle)
+      settle = window.setTimeout(recenter, 80)
+    }
+
+    wheel.addEventListener('scroll', onScroll, { passive: true })
+    return () => {
+      wheel.removeEventListener('scroll', onScroll)
+      window.clearTimeout(settle)
+    }
+  }, [length, onChange])
+
+  const items = Array.from({ length: WHEEL_COPIES * length }, (_, index) => wrap(index, length))
+
   return (
-    <div className="flex items-center justify-center gap-3">
-      <span className="w-10 text-xs text-faint">{label}</span>
-      <button
-        type="button"
-        className="flex size-8 items-center justify-center rounded text-lg text-muted hover:bg-hover"
-        onClick={() => onShift(-1)}
-        aria-label={t.pickers.stepperDec(label)}
+    <div
+      className="relative w-14 overflow-hidden"
+      style={{ height: WHEEL_ITEM * WHEEL_VISIBLE }}
+    >
+      <div className="pointer-events-none absolute inset-x-0 top-1/2 z-10 h-10 -translate-y-1/2 rounded-lg bg-[rgb(55_53_47/8%)]" />
+      <div
+        ref={scroller}
+        data-overlay-scroll
+        tabIndex={0}
+        role="listbox"
+        aria-label={ariaLabel}
+        aria-valuenow={value}
+        className="picker-wheel h-full overflow-y-auto overscroll-contain outline-none"
+        onKeyDown={(event) => {
+          if (event.key === 'ArrowUp') {
+            event.preventDefault()
+            onChange(wrap(value - 1, length))
+          } else if (event.key === 'ArrowDown') {
+            event.preventDefault()
+            onChange(wrap(value + 1, length))
+          }
+        }}
       >
-        ‹
-      </button>
-      <div className="w-12 text-center text-2xl font-semibold tabular-nums">{pad2(value)}</div>
-      <button
-        type="button"
-        className="flex size-8 items-center justify-center rounded text-lg text-muted hover:bg-hover"
-        onClick={() => onShift(1)}
-        aria-label={t.pickers.stepperInc(label)}
-      >
-        ›
-      </button>
+        {items.map((item, index) => (
+          <div
+            key={index}
+            role="option"
+            aria-selected={item === value}
+            className="picker-wheel-item flex w-full cursor-pointer items-center justify-center text-xl font-medium tabular-nums text-ink"
+            onClick={() => onChange(item)}
+          >
+            {pad2(item)}
+          </div>
+        ))}
+      </div>
     </div>
   )
 }

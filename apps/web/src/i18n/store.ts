@@ -1,5 +1,6 @@
 import { en } from './en'
 import { zh } from './zh'
+import { setDesktopWindowTitle } from '../lib/runtime'
 
 export type Locale = 'zh' | 'en'
 export type Messages = typeof zh
@@ -36,6 +37,7 @@ function applyDocumentLocale(locale: Locale): void {
   const messages = catalogs[locale]
   document.documentElement.lang = messages.htmlLang
   document.title = messages.appName
+  void setDesktopWindowTitle(messages.appName)
 }
 
 export function getLocale(): Locale {

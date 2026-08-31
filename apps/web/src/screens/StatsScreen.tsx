@@ -80,7 +80,7 @@ export function StatsScreen({ book, tags, savings }: Props) {
           <Stat
             className="min-[520px]:col-start-4 min-[520px]:row-start-1"
             label={t.stats.assets}
-            value={formatYuan(savings, { sign: 'never' })}
+            value={formatYuan(savings, { sign: savings < 0 ? 'auto' : 'never' })}
             tone="ink"
           />
         </div>

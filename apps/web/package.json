@@ -24,6 +24,7 @@
     "@capacitor/haptics": "^8.0.2",
     "@capacitor/ios": "^8.0.0",
     "@tagledger/shared": "*",
+    "@tauri-apps/api": "^2",
     "dexie": "^4.2.1",
     "dexie-react-hooks": "^4.2.0",
     "lucide-react": "^1.37.0",

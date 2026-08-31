@@ -7,9 +7,10 @@ export function yuanToCents(input: string): number | null {
 }
 
 export function centsToYuanInput(cents: number): string {
+  const sign = cents < 0 ? '-' : ''
   const abs = Math.abs(cents)
-  if (abs % 100 === 0) return String(abs / 100)
-  return (abs / 100).toFixed(2)
+  if (abs % 100 === 0) return `${sign}${abs / 100}`
+  return `${sign}${(abs / 100).toFixed(2)}`
 }
 
 export function formatYuan(cents: number, opts?: { sign?: 'auto' | 'never' | 'always' }): string {

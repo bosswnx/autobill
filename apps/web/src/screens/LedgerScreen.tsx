@@ -65,7 +65,10 @@ export function LedgerScreen({
             value={formatYuan(stats.net, { sign: stats.net < 0 ? 'auto' : 'never' })}
             tone={stats.net < 0 ? 'expense' : 'income'}
           />
-          <Stat label={t.ledger.savings} value={formatYuan(savings, { sign: 'never' })} />
+          <Stat
+            label={t.ledger.savings}
+            value={formatYuan(savings, { sign: savings < 0 ? 'auto' : 'never' })}
+          />
         </div>
       </header>
 

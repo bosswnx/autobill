@@ -4,7 +4,7 @@ const liveReload = process.env.CAP_SERVER_URL
 
 const config: CapacitorConfig = {
   appId: 'app.tagledger',
-  appName: 'TagLedger',
+  appName: '标签记账',
   webDir: 'dist',
   backgroundColor: '#ffffff',
   ios: {

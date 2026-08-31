@@ -341,6 +341,28 @@ html.is-scrolling::-webkit-scrollbar-thumb {
   animation: page-in 180ms ease-out both;
 }
 
+.picker-wheel {
+  --picker-item: 40px;
+  padding-block: calc(var(--picker-item) * 2);
+  scroll-snap-type: y mandatory;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
+  scrollbar-width: none;
+  touch-action: pan-y;
+  mask-image: linear-gradient(to bottom, transparent, #000 30%, #000 70%, transparent);
+  -webkit-mask-image: linear-gradient(to bottom, transparent, #000 30%, #000 70%, transparent);
+}
+
+.picker-wheel::-webkit-scrollbar {
+  display: none;
+}
+
+.picker-wheel-item {
+  height: var(--picker-item);
+  scroll-snap-align: center;
+  touch-action: pan-y;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .anim-overlay,
   .anim-overlay.is-leaving,

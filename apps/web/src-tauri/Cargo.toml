@@ -1,7 +1,7 @@
 [package]
 name = "tagledger"
 version = "0.0.0"
-description = "TagLedger"
+description = "标签记账"
 authors = ["you"]
 edition = "2021"
 rust-version = "1.77"

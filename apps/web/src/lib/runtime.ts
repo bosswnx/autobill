@@ -7,6 +7,16 @@ export function initDesktop(): void {
   document.documentElement.classList.add('is-tauri', 'is-desktop')
 }
 
+export async function setDesktopWindowTitle(title: string): Promise<void> {
+  if (!isTauri()) return
+  try {
+    const { getCurrentWindow } = await import('@tauri-apps/api/window')
+    await getCurrentWindow().setTitle(title)
+  } catch {
+    /* older shell */
+  }
+}
+
 export function initOverlayScroll(): void {
   let timer = 0
   const root = document.documentElement
