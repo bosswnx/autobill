@@ -1,7 +1,17 @@
 <!doctype html>
-<html lang="zh-CN">
+<html lang="zh-CN" class="layout-phone">
   <head>
     <meta charset="UTF-8" />
+    <script>
+      (() => {
+        const tauri = '__TAURI_INTERNALS__' in window
+        const shortest = Math.min(screen.width, screen.height)
+        const landscape = innerWidth > innerHeight
+        const desktop = tauri || (shortest >= 600 && landscape)
+        document.documentElement.classList.toggle('layout-desktop', desktop)
+        document.documentElement.classList.toggle('layout-phone', !desktop)
+      })()
+    </script>
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />

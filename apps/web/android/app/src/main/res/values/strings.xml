@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">标签记账</string>
+    <string name="title_activity_main">标签记账</string>
+    <string name="package_name">app.tagledger</string>
+    <string name="custom_url_scheme">app.tagledger</string>
+</resources>

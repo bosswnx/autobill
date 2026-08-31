@@ -134,6 +134,7 @@ export const zh = {
     note: '详细信息（选填）',
     amount: '金额',
     amountRequired: '请输入金额',
+    amountNegative: '金额不能为负数',
     date: '日期',
     time: '时间',
   },

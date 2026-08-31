@@ -60,14 +60,19 @@ export function EntrySheet({ book, tags, usage, entry, onClose }: Props) {
 
   const exactMatch = kindTags.some((tag) => tag.name === tagQuery.trim())
   const detailPlaceholder = entryTitle('', type, firstSortedTagName(tagIds, kindTags, usage))
+  const yuan = amountYuan(amount)
+  const amountCents = yuan === null ? (amount.op ? null : yuanToCents('0')) : yuanToCents(yuan)
+  const amountNegative = amountCents !== null && amountCents < 0
 
   async function save() {
-    const yuan = amountYuan(amount)
+    if (amountNegative) {
+      setError(t.entry.amountNegative)
+      return
+    }
     if (yuan === null && amount.op) {
       setError(t.entry.amountRequired)
       return
     }
-    const amountCents = yuanToCents(yuan ?? '0')
     if (amountCents === null) {
       setError(t.entry.amountRequired)
       return
@@ -117,13 +122,17 @@ export function EntrySheet({ book, tags, usage, entry, onClose }: Props) {
         </div>
         <div className="flex items-center justify-between gap-3 px-5 pt-2 sm:pt-4">
           <h2 className="shrink-0 text-lg font-semibold">{entry ? t.entry.edit : t.entry.create}</h2>
-          <div className="flex min-w-0 items-center justify-end gap-1.5">
+        </div>
+
+        <div className="flex items-stretch justify-between gap-3 px-5 pt-3">
+          <div className="flex min-w-0 items-stretch justify-start gap-1.5">
             <CompactPicker
               type="date"
               value={date}
               display={formatCompactDate(date)}
               ariaLabel={t.entry.date}
               onChange={setDate}
+              className="h-full"
             />
             <CompactPicker
               type="time"
@@ -131,12 +140,10 @@ export function EntrySheet({ book, tags, usage, entry, onClose }: Props) {
               display={time}
               ariaLabel={t.entry.time}
               onChange={setTime}
+              className="h-full"
             />
           </div>
-        </div>
-
-        <div data-overlay-scroll className="flex-1 overflow-y-auto px-5 py-3">
-          <div className="overflow-hidden rounded-md bg-hover p-[3px]">
+          <div className="ml-auto shrink-0 overflow-hidden rounded-md bg-hover p-[3px]">
             <div className="relative grid grid-cols-2">
               <span
                 className="pointer-events-none absolute inset-y-0 w-1/2 rounded bg-page transition-transform duration-200 ease-out"
@@ -154,7 +161,7 @@ export function EntrySheet({ book, tags, usage, entry, onClose }: Props) {
                     setTagIds((current) => current.filter((id) => allowed.has(id)))
                     setTagQuery('')
                   }}
-                  className={`relative z-10 py-1.5 text-sm transition-colors duration-200 ${
+                  className={`relative z-10 whitespace-nowrap px-3 py-1.5 text-sm transition-colors duration-200 ${
                     type === item ? 'text-ink' : 'text-muted hover:text-ink'
                   }`}
                 >
@@ -163,9 +170,10 @@ export function EntrySheet({ book, tags, usage, entry, onClose }: Props) {
               ))}
             </div>
           </div>
+        </div>
 
-          <div className="mt-4">
-            <div className="text-xs text-faint">{t.entry.tags}</div>
+        <div data-overlay-scroll className="flex-1 overflow-y-auto px-5 py-3">
+          <div className="text-xs text-faint">{t.entry.tags}</div>
             {tagSearchOpen && (
               <div className="anim-page mt-2">
                 <input
@@ -228,7 +236,6 @@ export function EntrySheet({ book, tags, usage, entry, onClose }: Props) {
                 />
               ))}
             </div>
-          </div>
 
           <Field label={t.entry.note} className="mt-4">
             <input
@@ -246,7 +253,11 @@ export function EntrySheet({ book, tags, usage, entry, onClose }: Props) {
             </div>
           </div>
 
-          {error && <p className="mt-4 text-sm text-expense">{error}</p>}
+          {amountNegative ? (
+            <p className="mt-4 text-sm text-expense">{t.entry.amountNegative}</p>
+          ) : error ? (
+            <p className="mt-4 text-sm text-expense">{error}</p>
+          ) : null}
         </div>
 
         <div className="flex items-center justify-between gap-3 border-t border-line px-5 py-3 pb-[max(0.75rem,var(--sab))]">
@@ -270,7 +281,7 @@ export function EntrySheet({ book, tags, usage, entry, onClose }: Props) {
             </button>
             <button
               type="button"
-              disabled={saving}
+              disabled={saving || amountNegative}
               onClick={() =>
                 void save().then((ok) => {
                   if (ok) close()

@@ -18,12 +18,14 @@ export function CompactPicker({
   display,
   ariaLabel,
   onChange,
+  className,
 }: {
   type: 'date' | 'time'
   value: string
   display: string
   ariaLabel: string
   onChange: (value: string) => void
+  className?: string
 }) {
   const [open, setOpen] = useState(false)
 
@@ -35,7 +37,7 @@ export function CompactPicker({
         aria-expanded={open}
         aria-haspopup="dialog"
         onClick={() => setOpen(true)}
-        className="inline-flex min-w-0 items-center rounded-md bg-[#f4f3f0] px-2 py-1 text-xs text-muted transition-colors duration-150 hover:bg-[#ebeae6] hover:text-ink"
+        className={`inline-flex min-w-0 items-center rounded-md bg-[#f4f3f0] px-3 text-sm text-muted transition-colors duration-150 hover:bg-[#ebeae6] hover:text-ink ${className ?? ''}`}
       >
         <span className="truncate tabular-nums">{display}</span>
       </button>
@@ -247,6 +249,7 @@ function WheelColumn({
   const scroller = useRef<HTMLDivElement>(null)
   const fromScroll = useRef(false)
   const lastValue = useRef(value)
+  const dragged = useRef(false)
 
   function valueOf(scrollTop: number): number {
     const index = Math.round(scrollTop / WHEEL_ITEM)
@@ -314,6 +317,67 @@ function WheelColumn({
     }
   }, [length, onChange])
 
+  useEffect(() => {
+    const wheel = scroller.current
+    if (!wheel) return
+
+    let dragging = false
+    let lastY = 0
+    const threshold = 4
+
+    function onPointerDown(event: PointerEvent) {
+      const target = scroller.current
+      if (!target || event.pointerType === 'touch' || event.button !== 0) return
+      dragging = true
+      dragged.current = false
+      lastY = event.clientY
+      try {
+        target.setPointerCapture(event.pointerId)
+      } catch {
+        /* synthetic pointer or already released */
+      }
+    }
+
+    function onPointerMove(event: PointerEvent) {
+      const target = scroller.current
+      if (!target || !dragging) return
+      const dy = event.clientY - lastY
+      if (!dragged.current) {
+        if (Math.abs(dy) < threshold) return
+        dragged.current = true
+        target.classList.add('is-dragging')
+      }
+      lastY = event.clientY
+      target.scrollTop -= dy
+      event.preventDefault()
+    }
+
+    function onPointerUp() {
+      const target = scroller.current
+      if (!target || !dragging) return
+      dragging = false
+      target.classList.remove('is-dragging')
+    }
+
+    function onSelectStart(event: Event) {
+      event.preventDefault()
+    }
+
+    wheel.addEventListener('pointerdown', onPointerDown)
+    wheel.addEventListener('pointermove', onPointerMove)
+    wheel.addEventListener('pointerup', onPointerUp)
+    wheel.addEventListener('pointercancel', onPointerUp)
+    wheel.addEventListener('selectstart', onSelectStart)
+    return () => {
+      wheel.removeEventListener('pointerdown', onPointerDown)
+      wheel.removeEventListener('pointermove', onPointerMove)
+      wheel.removeEventListener('pointerup', onPointerUp)
+      wheel.removeEventListener('pointercancel', onPointerUp)
+      wheel.removeEventListener('selectstart', onSelectStart)
+      wheel.classList.remove('is-dragging')
+    }
+  }, [])
+
   const items = Array.from({ length: WHEEL_COPIES * length }, (_, index) => wrap(index, length))
 
   return (
@@ -345,8 +409,11 @@ function WheelColumn({
             key={index}
             role="option"
             aria-selected={item === value}
-            className="picker-wheel-item flex w-full cursor-pointer items-center justify-center text-xl font-medium tabular-nums text-ink"
-            onClick={() => onChange(item)}
+            className="picker-wheel-item flex w-full items-center justify-center text-xl font-medium tabular-nums text-ink"
+            onClick={() => {
+              if (dragged.current) return
+              onChange(item)
+            }}
           >
             {pad2(item)}
           </div>

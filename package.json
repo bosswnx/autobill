@@ -14,6 +14,8 @@
     "serve": "npm run build && npm run server:start",
     "ios": "npm run ios -w @tagledger/web",
     "ios:live": "npm run ios:live -w @tagledger/web",
+    "android": "npm run android -w @tagledger/web",
+    "android:live": "npm run android:live -w @tagledger/web",
     "macos": "npm run macos -w @tagledger/web",
     "macos:build": "npm run macos:build -w @tagledger/web"
   }

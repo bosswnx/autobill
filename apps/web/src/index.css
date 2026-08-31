@@ -1,5 +1,11 @@
 @import "tailwindcss";
 
+@custom-variant desktop {
+  html.layout-desktop & {
+    @slot;
+  }
+}
+
 @theme {
   --font-sans: "Inter", "Noto Sans SC", ui-sans-serif, system-ui, sans-serif;
   --color-page: #ffffff;
@@ -151,12 +157,10 @@ textarea {
   touch-action: manipulation;
 }
 
-@media (max-width: 767px) {
-  input,
-  select,
-  textarea {
-    font-size: 16px;
-  }
+html.layout-phone input,
+html.layout-phone select,
+html.layout-phone textarea {
+  font-size: 16px;
 }
 
 input[type='date'],
@@ -349,8 +353,16 @@ html.is-scrolling::-webkit-scrollbar-thumb {
   overscroll-behavior: contain;
   scrollbar-width: none;
   touch-action: pan-y;
+  cursor: grab;
+  -webkit-user-select: none;
+  user-select: none;
   mask-image: linear-gradient(to bottom, transparent, #000 30%, #000 70%, transparent);
   -webkit-mask-image: linear-gradient(to bottom, transparent, #000 30%, #000 70%, transparent);
+}
+
+.picker-wheel.is-dragging {
+  cursor: grabbing;
+  scroll-snap-type: none;
 }
 
 .picker-wheel::-webkit-scrollbar {
@@ -361,6 +373,9 @@ html.is-scrolling::-webkit-scrollbar-thumb {
   height: var(--picker-item);
   scroll-snap-align: center;
   touch-action: pan-y;
+  cursor: inherit;
+  -webkit-user-select: none;
+  user-select: none;
 }
 
 @media (prefers-reduced-motion: reduce) {

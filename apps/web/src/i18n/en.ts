@@ -138,6 +138,7 @@ export const en: typeof zh = {
     note: 'Note (optional)',
     amount: 'Amount',
     amountRequired: 'Enter an amount',
+    amountNegative: 'Amount cannot be negative',
     date: 'Date',
     time: 'Time',
   },

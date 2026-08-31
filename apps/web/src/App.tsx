@@ -97,7 +97,7 @@ export default function App() {
 
   return (
     <div className="min-h-svh pl-[var(--sal)] pr-[var(--sar)]">
-      <aside className="hidden bg-sidebar px-2 pb-3 pt-[calc(0.75rem+var(--sat))] md:fixed md:inset-y-0 md:left-[var(--sal)] md:flex md:w-[var(--sidebar-width)] md:flex-col md:overflow-y-auto">
+      <aside className="hidden bg-sidebar px-2 pb-3 pt-[calc(0.75rem+var(--sat))] desktop:fixed desktop:inset-y-0 desktop:left-[var(--sal)] desktop:flex desktop:w-[var(--sidebar-width)] desktop:flex-col desktop:overflow-y-auto">
         <div className="mb-2 flex items-center gap-2 px-2 py-1.5">
           <BrandMark className="size-5 shrink-0" />
           <div className="truncate text-sm font-medium">{t.appName}</div>
@@ -118,8 +118,8 @@ export default function App() {
         </button>
       </aside>
 
-      <div className="flex min-h-svh flex-col md:ml-[var(--sidebar-width)]">
-        <main className="mx-auto w-full max-w-[var(--content-max)] flex-1 px-5 pb-[calc(7rem+var(--sab))] pt-[calc(2.5rem+var(--sat))] md:px-16 md:pb-16 md:pt-[calc(3rem+var(--sat))]">
+      <div className="flex min-h-svh flex-col desktop:ml-[var(--sidebar-width)]">
+        <main className="mx-auto w-full max-w-[var(--content-max)] flex-1 px-5 pb-[calc(7rem+var(--sab))] pt-[calc(2.5rem+var(--sat))] desktop:px-16 desktop:pb-16 desktop:pt-[calc(3rem+var(--sat))]">
           <div key={screen} className="anim-page">
           {screen === 'ledger' && book && (
             <LedgerScreen
@@ -164,7 +164,7 @@ export default function App() {
         </main>
 
         {createPortal(
-        <nav className="app-tabbar fixed inset-x-0 bottom-0 z-40 border-t border-line px-2 pb-[max(0.375rem,var(--sab))] pt-1 md:hidden">
+        <nav className="app-tabbar fixed inset-x-0 bottom-0 z-40 border-t border-line px-2 pb-[max(0.375rem,var(--sab))] pt-1 desktop:hidden">
           <div className="grid grid-cols-5">
             <NavButton
               current={screen}
@@ -263,7 +263,7 @@ function NavButton({
       className={`flex items-center justify-center rounded-md transition-colors duration-150 ${
         stacked
           ? 'flex-col gap-1.5 px-1 py-1 text-[10px] leading-none'
-          : 'gap-2 px-2 py-1.5 text-sm md:justify-start'
+          : 'gap-2 px-2 py-1.5 text-sm desktop:justify-start'
       } ${current === id ? 'bg-active text-ink' : 'text-muted hover:bg-hover hover:text-ink'}`}
     >
       {icon}

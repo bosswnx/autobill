@@ -6,6 +6,10 @@ import { TagChip } from './TagChip'
 
 const CHART_TOUCH = 'touch-pan-y select-none'
 
+function formatChartYuan(cents: number): string {
+  return formatYuan(cents, { sign: cents < 0 ? 'auto' : 'never' })
+}
+
 export function BarChart({
   points,
   color,
@@ -71,13 +75,15 @@ export function LineChart({ points, color }: { points: SeriesPoint[]; color: str
   const hi = Math.max(...values)
   const pad = Math.max((hi - lo) * 0.12, 100)
   const min = lo - pad
-  const max = hi + pad
+  const max = lo < 0 && hi <= 0 ? Math.max(0, hi + pad) : hi + pad
   const span = max - min || 1
   const width = 320
   const height = 144
   const top = 8
   const bottom = 8
   const innerH = height - top - bottom
+  const floor = top + innerH
+  const zeroY = Math.min(floor, Math.max(top, top + ((max - 0) / span) * innerH))
 
   const slot = width / points.length
   const coords = points.map((point, index) => {
@@ -86,7 +92,7 @@ export function LineChart({ points, color }: { points: SeriesPoint[]; color: str
     return { x, y, point }
   })
   const line = `0,${coords[0].y} ${coords.map((item) => `${item.x},${item.y}`).join(' ')} ${width},${coords[coords.length - 1].y}`
-  const area = `0,${top + innerH} ${line} ${width},${top + innerH}`
+  const area = `0,${zeroY} ${line} ${width},${zeroY}`
   const end = coords.length - 1
   let high = 0
   let low = 0
@@ -115,6 +121,17 @@ export function LineChart({ points, color }: { points: SeriesPoint[]; color: str
           className="pointer-events-none h-full w-full"
         >
           <polygon points={area} fill={color} opacity="0.12" />
+          {lo < 0 ? (
+            <line
+              x1="0"
+              x2={width}
+              y1={zeroY}
+              y2={zeroY}
+              stroke={color}
+              strokeOpacity="0.28"
+              vectorEffect="non-scaling-stroke"
+            />
+          ) : null}
           <polyline
             points={line}
             fill="none"
@@ -131,11 +148,7 @@ export function LineChart({ points, color }: { points: SeriesPoint[]; color: str
             x={(coords[index].x / width) * 100}
             y={(coords[index].y / height) * 100}
             color={color}
-            amount={
-              flags.amount
-                ? formatYuan(coords[index].point.cents, { sign: 'never' })
-                : null
-            }
+            amount={flags.amount ? formatChartYuan(coords[index].point.cents) : null}
             dash={flags.dash}
           />
         ))}

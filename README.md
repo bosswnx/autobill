@@ -2,7 +2,7 @@
 
 A tag-based personal ledger. Flat tags, no category tree, no wallets. One book, and one editable **savings** figure.
 
-**Targets: browser, iPhone, iPad, macOS, Android.** One React UI, not a separate app per platform. Browser, iOS (iPhone / iPad), and macOS (Tauri) are working; Android is not wired up yet. Cross-device sync is a self-hosted Linux service: every device and the server keep a full copy and reconcile by appending changes.
+**Targets: browser, iPhone, iPad, macOS, Android.** One React UI, not a separate app per platform. Browser, iOS (iPhone / iPad), Android (phone / tablet), and macOS (Tauri) are working. Cross-device sync is a self-hosted Linux service: every device and the server keep a full copy and reconcile by appending changes.
 
 The UI is Chinese. Amounts are stored as **cents** (`amountCents`). Display uses `formatYuan`: no decimal when the value is a whole yuan; otherwise show the remainder. Integer groups of three get commas.
 
@@ -14,7 +14,7 @@ The UI is Chinese. Amounts are stored as **cents** (`amountCents`). Display uses
 - Client: React 19 + Vite + TypeScript + Tailwind CSS v4
 - Local store: Dexie (IndexedDB) + `dexie-react-hooks`
 - Sync server: Hono + SQLite (`better-sqlite3`), deployable on Linux
-- Native shell: Capacitor (iOS) and Tauri (macOS)
+- Native shell: Capacitor (iOS + Android) and Tauri (macOS)
 - Icons: Lucide
 
 Shared types live in `@tagledger/shared`. Vite and the sync server import the source directly; you do not need to build the package first.
@@ -29,9 +29,10 @@ apps/web/                 Web app + Capacitor + Tauri shells
   src/db/                 Dexie, mutations, first-run seed
   src/sync/               Sync engine: connect, push/pull, three-way merge
   src/hooks/useLedger.ts  Live queries
-  src/lib/                Money, time, tag filters, stats, keypad
-  capacitor.config.ts    iOS shell config
+  src/lib/                Money, time, tag filters, stats, keypad, layout
+  capacitor.config.ts    iOS / Android shell config
   ios/                    Xcode project (iPhone / iPad)
+  android/                Android Studio project (phone / tablet)
   src-tauri/              Tauri macOS shell
 apps/server/              Sync server (Linux)
   src/index.ts            HTTP: /healthz, /v1/connect, /v1/sync, /v1/replace
@@ -127,6 +128,41 @@ npm run ios:live
 Phone and computer must be on the same Wi-Fi. `ios:live` writes `CAP_SERVER_URL` into the Capacitor config. For a store/dev IPA use plain `npm run ios` with no live URL.
 
 Bundle ID is `app.tagledger`. App Store, privacy manifests, and certificates are not in this repo yet. Local install only.
+
+### Android (installable app)
+
+The same React UI is wrapped in a WebView by Capacitor. You need [Android Studio](https://developer.android.com/studio) and an emulator or a USB-debuggable phone/tablet.
+
+First time, or after changing the web app:
+
+```bash
+npm run android
+```
+
+This runs `build` → `cap sync android` → opens Android Studio. Then Run on a device or emulator.
+
+After web-only changes:
+
+```bash
+npm run build
+npm run cap:sync -w @tagledger/web
+```
+
+Then Run in Android Studio.
+
+Live reload on a physical device against your LAN:
+
+```bash
+# Terminal 1: bind Vite to the LAN
+npm run dev:lan
+
+# Terminal 2: point the shell at this machine's IP, then open Android Studio
+npm run android:live
+```
+
+Phone and computer must be on the same Wi-Fi. `android:live` writes `CAP_SERVER_URL` into the Capacitor config. For a store/dev APK use plain `npm run android` with no live URL.
+
+Application ID is `app.tagledger`. Play listing, signing, and privacy manifests are not in this repo yet. Local install only.
 
 ### macOS (installable app)
 
@@ -243,16 +279,16 @@ Schema changes need a new `version` and an `upgrade`. **Do not wipe the user’s
 | --- | --- | --- |
 | Browser | Ready | `npm run dev` / `npm run build` |
 | iPhone | Wired | `npm run ios`, Xcode to device or simulator |
-| iPad | Wired | Same iOS project; wide layout uses the sidebar (`md`) |
-| Android | Not yet | Capacitor Android (WebView) |
+| iPad | Wired | Same iOS project; portrait uses the bottom bar, landscape uses the sidebar |
+| Android | Wired | `npm run android`, Android Studio to device or emulator. Same portrait / landscape split on tablets |
 | Sync server | Wired | `npm run server`, Linux + SQLite |
 
 Do not start a React Native / Flutter app. Shared types stay in `@tagledger/shared`; product and UI stay in `apps/web`. The native shell owns the window, safe areas, and later maybe push and file backup.
 
-Layout is already split by width. Reuse it when wrapping native; do not build a second iPad UI:
+Layout is already split into two shells. Reuse it when wrapping native; do not build a second tablet UI:
 
-- Narrow (phone, narrow browser): bottom bar (ledger / stats / new entry / tags / settings)
-- `md` and up (iPad, desktop): left sidebar
+- Phone layout (phones, tablet portrait, narrow browser): bottom bar (ledger / stats / new entry / tags / settings)
+- Desktop layout (tablet landscape, desktop browser, Tauri): left sidebar
 
 Capacitor / device notes:
 
@@ -270,4 +306,4 @@ Capacitor / device notes:
 
 - One book. No book switcher.
 - No accounts/wallets, no category tree, no email login. Sync is target key + user token.
-- Installable iOS via `npm run ios`. Android is not wired. Day-to-day UI work can stay in the browser.
+- Installable iOS via `npm run ios`. Installable Android via `npm run android`. Day-to-day UI work can stay in the browser.

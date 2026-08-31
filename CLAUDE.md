@@ -4,7 +4,7 @@ Repo conventions. Read this before changing code. If it conflicts with `README.m
 
 ## What this is
 
-A personal ledger. Flat tags, no category tree, no wallets. One React UI on the browser, Capacitor (iOS), and Tauri (macOS). Sync server is `apps/server`, Linux + SQLite. Do not start a React Native / Flutter app.
+A personal ledger. Flat tags, no category tree, no wallets. One React UI on the browser, Capacitor (iOS + Android), and Tauri (macOS). Sync server is `apps/server`, Linux + SQLite. Do not start a React Native / Flutter app.
 
 The UI is Chinese and English. Language lives in Settings; default is Chinese. The Chinese product name is 标签记账 — never show “TagLedger” in the zh locale. Amounts are integer cents.
 
@@ -20,6 +20,8 @@ npm run server:start     # sync server (no watch)
 npm run serve            # build web, then start API + web on one port
 npm run ios              # build + cap sync ios + open Xcode
 npm run ios:live         # device against this machine's Vite
+npm run android          # build + cap sync android + open Android Studio
+npm run android:live     # device against this machine's Vite
 npm run macos            # Tauri window against Vite (needs Rust)
 npm run macos:build      # .app + dmg
 ```
@@ -28,7 +30,7 @@ npm run macos:build      # .app + dmg
 
 ## Layout
 
-- `apps/web`: UI, Dexie, sync client, Capacitor iOS, Tauri macOS
+- `apps/web`: UI, Dexie, sync client, Capacitor iOS/Android, Tauri macOS
 - `apps/server`: Hono sync server
 - `packages/shared`: types, LWW, token length constants
 
@@ -49,7 +51,7 @@ npm run macos:build      # .app + dmg
 ### UI
 
 - Overlay mounts on `document.body`, animates in/out, and must close on the system back gesture. New sheets use the existing `Overlay`.
-- Narrow: bottom bar. `md` and up: sidebar. Do not build a second iPad UI.
+- Phone layout: bottom bar. Desktop layout: sidebar. A tablet (shortest CSS side ≥ 600px) uses phone layout in portrait and desktop layout in landscape. Phones stay on the bottom bar even in landscape. Tauri is always desktop. Do not build a second iPad UI.
 - Creating a tag defaults to `kind: 'expense'`. From new-entry or the tags screen you must pass the current type.
 - `updateTag` cannot change `kind`.
 - Transfer `type: 'transfer'` exists in types but has no UI. Treat it as 0.
@@ -91,6 +93,6 @@ Do not write multi-paragraph prose commits. Do not commit unless the user asked.
 
 - One book. No book switcher.
 - No accounts/wallets, category tree, or email login.
-- Android is not wired. Store listing, signing, and privacy manifests are out of scope.
+- Android is wired (Capacitor). Play listing, signing, and privacy manifests are out of scope.
 - Windows and Linux desktop shells are not wired.
 - Sync is not end-to-end encrypted (self-hosted server + TLS).
