@@ -25,6 +25,13 @@ export type TagAmount = {
   cents: number
 }
 
+export type TagSlice = {
+  items: TagAmount[]
+  total: number
+  remainderCents: number
+  focused: boolean
+}
+
 export type PeriodStats = {
   expense: number
   income: number
@@ -34,8 +41,13 @@ export type PeriodStats = {
   expenseSeries: SeriesPoint[]
   incomeSeries: SeriesPoint[]
   assetSeries: SeriesPoint[]
-  expenseTags: TagAmount[]
-  incomeTags: TagAmount[]
+  expenseTagSlice: TagSlice
+  incomeTagSlice: TagSlice
+}
+
+export type StatsFocus = {
+  expenseTagIds?: string[]
+  incomeTagIds?: string[]
 }
 
 function signedAmount(entry: Entry): number {
@@ -48,14 +60,38 @@ function inPeriod(entry: Entry, mode: StatsMode, period: string): boolean {
   return mode === 'month' ? inMonth(entry.occurredAt, period) : inYear(entry.occurredAt, period)
 }
 
+function hasAllTags(entry: Entry, tagIds: string[]): boolean {
+  return tagIds.every((id) => entry.tagIds.includes(id))
+}
+
+export function sanitizeTagFocus(ids: string[], tags: Tag[]): string[] {
+  const known = new Set(tags.map((tag) => tag.id))
+  const next: string[] = []
+  for (const id of ids) {
+    if (!known.has(id)) break
+    next.push(id)
+  }
+  return next
+}
+
+export function formatShare(cents: number, total: number): string {
+  if (total <= 0) return '0%'
+  const rounded = Math.round((cents / total) * 1000) / 10
+  const text = Number.isInteger(rounded) ? String(rounded) : rounded.toFixed(1)
+  return `${text}%`
+}
+
 export function buildPeriodStats(
   mode: StatsMode,
   period: string,
   entries: Entry[],
   tags: Tag[],
   openingBalanceCents: number,
-  now = new Date(),
+  options?: { now?: Date } & StatsFocus,
 ): PeriodStats {
+  const now = options?.now ?? new Date()
+  const expenseTagIds = options?.expenseTagIds ?? []
+  const incomeTagIds = options?.incomeTagIds ?? []
   const periodEntries = entries.filter((entry) => inPeriod(entry, mode, period))
   let expense = 0
   let income = 0
@@ -72,10 +108,10 @@ export function buildPeriodStats(
   const incomeByKey = new Map<string, number>()
   for (const entry of periodEntries) {
     const key = mode === 'month' ? dayKey(entry.occurredAt) : monthKey(new Date(entry.occurredAt))
-    if (entry.type === 'expense') {
+    if (entry.type === 'expense' && hasAllTags(entry, expenseTagIds)) {
       expenseByKey.set(key, (expenseByKey.get(key) ?? 0) + entry.amountCents)
     }
-    if (entry.type === 'income') {
+    if (entry.type === 'income' && hasAllTags(entry, incomeTagIds)) {
       incomeByKey.set(key, (incomeByKey.get(key) ?? 0) + entry.amountCents)
     }
   }
@@ -90,22 +126,6 @@ export function buildPeriodStats(
       cursor += 1
     }
     assetSeries.push({ key: bucket.key, label: bucket.label, cents: running })
-  }
-
-  const tagMap = new Map(tags.map((tag) => [tag.id, tag]))
-  const expenseTagCents = new Map<string, number>()
-  const incomeTagCents = new Map<string, number>()
-  for (const entry of periodEntries) {
-    for (const tagId of entry.tagIds) {
-      const tag = tagMap.get(tagId)
-      if (!tag) continue
-      if (tag.kind === 'expense' && entry.type === 'expense') {
-        expenseTagCents.set(tagId, (expenseTagCents.get(tagId) ?? 0) + entry.amountCents)
-      }
-      if (tag.kind === 'income' && entry.type === 'income') {
-        incomeTagCents.set(tagId, (incomeTagCents.get(tagId) ?? 0) + entry.amountCents)
-      }
-    }
   }
 
   return {
@@ -125,9 +145,52 @@ export function buildPeriodStats(
       cents: incomeByKey.get(item.key) ?? 0,
     })),
     assetSeries,
-    expenseTags: rankTags(tags, expenseTagCents, 'expense'),
-    incomeTags: rankTags(tags, incomeTagCents, 'income'),
+    expenseTagSlice: buildTagSlice(periodEntries, tags, 'expense', expenseTagIds),
+    incomeTagSlice: buildTagSlice(periodEntries, tags, 'income', incomeTagIds),
   }
+}
+
+function buildTagSlice(
+  periodEntries: Entry[],
+  tags: Tag[],
+  kind: 'expense' | 'income',
+  focusIds: string[],
+): TagSlice {
+  const tagMap = new Map(tags.map((tag) => [tag.id, tag]))
+  const scoped = periodEntries.filter(
+    (entry) => entry.type === kind && hasAllTags(entry, focusIds),
+  )
+  const total = scoped.reduce((sum, entry) => sum + entry.amountCents, 0)
+
+  if (focusIds.length === 0) {
+    const amounts = new Map<string, number>()
+    for (const entry of scoped) {
+      for (const tagId of entry.tagIds) {
+        const tag = tagMap.get(tagId)
+        if (!tag || tag.kind !== kind) continue
+        amounts.set(tagId, (amounts.get(tagId) ?? 0) + entry.amountCents)
+      }
+    }
+    return { items: rankTags(tags, amounts, kind), total, remainderCents: 0, focused: false }
+  }
+
+  const focusSet = new Set(focusIds)
+  const amounts = new Map<string, number>()
+  let remainderCents = 0
+  for (const entry of scoped) {
+    const others: string[] = []
+    for (const tagId of entry.tagIds) {
+      if (focusSet.has(tagId)) continue
+      const tag = tagMap.get(tagId)
+      if (!tag || tag.kind !== kind) continue
+      others.push(tagId)
+    }
+    if (others.length === 0) remainderCents += entry.amountCents
+    for (const tagId of others) {
+      amounts.set(tagId, (amounts.get(tagId) ?? 0) + entry.amountCents)
+    }
+  }
+  return { items: rankTags(tags, amounts, kind), total, remainderCents, focused: true }
 }
 
 function rankTags(

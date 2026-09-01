@@ -1,7 +1,7 @@
 import { useI18n } from '../i18n'
 import { useChartScrub } from '../lib/chartScrub'
 import { formatYuan } from '../lib/money'
-import type { SeriesPoint, TagAmount } from '../lib/stats'
+import { formatShare, type SeriesPoint, type TagAmount } from '../lib/stats'
 import { TagChip } from './TagChip'
 
 const CHART_TOUCH = 'touch-pan-y select-none'
@@ -206,33 +206,95 @@ function LineMark({
   )
 }
 
-export function TagAmountList({ items, empty }: { items: TagAmount[]; empty: string }) {
-  if (items.length === 0) {
+export function TagAmountList({
+  items,
+  empty,
+  onSelectTag,
+  selectLabel,
+  shareTotal,
+  remainderCents = 0,
+  remainderLabel,
+}: {
+  items: TagAmount[]
+  empty: string
+  onSelectTag?: (id: string) => void
+  selectLabel?: (name: string) => string
+  shareTotal?: number
+  remainderCents?: number
+  remainderLabel?: string
+}) {
+  const showRemainder = remainderCents > 0
+  if (items.length === 0 && !showRemainder) {
     return <p className="py-6 text-sm text-muted">{empty}</p>
   }
-  const max = items[0]?.cents ?? 0
+  const showShare = shareTotal != null && shareTotal > 0
+  const max = showShare ? shareTotal : (items[0]?.cents ?? remainderCents)
   return (
-    <div className="grid w-full grid-cols-[max-content_minmax(0,1fr)_max-content] items-center gap-x-3 gap-y-2.5">
-      {items.map((item) => (
-        <div key={item.tag.id} className="contents">
+    <div className="grid w-full grid-cols-[max-content_minmax(0,1fr)_max-content] items-center gap-x-3 gap-y-1.5">
+      {items.map((item) => {
+        const row = (
+          <>
+            <div className="flex items-center justify-end">
+              <TagChip tag={item.tag} />
+            </div>
+            <AmountBar cents={item.cents} max={max} color={item.tag.color} />
+            <AmountCell cents={item.cents} shareTotal={showShare ? shareTotal : undefined} />
+          </>
+        )
+        if (!onSelectTag) {
+          return (
+            <div key={item.tag.id} className="col-span-3 grid grid-cols-subgrid items-center py-1">
+              {row}
+            </div>
+          )
+        }
+        return (
+          <button
+            key={item.tag.id}
+            type="button"
+            aria-label={selectLabel?.(item.tag.name)}
+            onClick={() => onSelectTag(item.tag.id)}
+            className="col-span-3 -mx-1.5 grid grid-cols-subgrid items-center rounded-md px-1.5 py-1 text-left hover:bg-hover"
+          >
+            {row}
+          </button>
+        )
+      })}
+      {showRemainder ? (
+        <div className="col-span-3 grid grid-cols-subgrid items-center py-1">
           <div className="flex items-center justify-end">
-            <TagChip tag={item.tag} />
+            <span className="px-1.5 py-0.5 text-xs text-muted">{remainderLabel}</span>
           </div>
-          <div className="h-2 overflow-hidden rounded-full bg-hover">
-            <div
-              className="h-full rounded-full"
-              style={{
-                width: `${max > 0 ? (item.cents / max) * 100 : 0}%`,
-                background: item.tag.color,
-              }}
-            />
-          </div>
-          <span className="text-left tabular-nums text-xs text-muted">
-            {formatYuan(item.cents, { sign: 'never' })}
-          </span>
+          <AmountBar cents={remainderCents} max={max} color="#787774" />
+          <AmountCell cents={remainderCents} shareTotal={showShare ? shareTotal : undefined} />
         </div>
-      ))}
+      ) : null}
     </div>
+  )
+}
+
+function AmountBar({ cents, max, color }: { cents: number; max: number; color: string }) {
+  return (
+    <div className="h-2 overflow-hidden rounded-full bg-hover">
+      <div
+        className="h-full rounded-full"
+        style={{
+          width: `${max > 0 ? (cents / max) * 100 : 0}%`,
+          background: color,
+        }}
+      />
+    </div>
+  )
+}
+
+function AmountCell({ cents, shareTotal }: { cents: number; shareTotal?: number }) {
+  return (
+    <span className="flex items-baseline justify-end gap-2 text-left tabular-nums text-xs text-muted">
+      <span>{formatYuan(cents, { sign: 'never' })}</span>
+      {shareTotal != null ? (
+        <span className="w-11 text-right text-faint">{formatShare(cents, shareTotal)}</span>
+      ) : null}
+    </span>
   )
 }
 

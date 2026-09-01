@@ -197,7 +197,7 @@ export function EntrySheet({ book, tags, usage, entry, onClose }: Props) {
                   <button
                     type="button"
                     onClick={() => void addTagFromQuery()}
-                    className="mt-2 text-sm text-accent"
+                    className="mt-2 inline-flex h-[22px] items-center rounded bg-[#f4f3f0] px-1.5 text-sm text-muted transition-colors duration-150 hover:bg-[#ebeae6] hover:text-ink"
                   >
                     {t.entry.createNamed(tagQuery.trim())}
                   </button>
@@ -264,7 +264,7 @@ export function EntrySheet({ book, tags, usage, entry, onClose }: Props) {
           {entry ? (
             <button
               type="button"
-              className="rounded px-2 py-1 text-sm text-expense hover:bg-hover"
+              className="rounded-md border border-expense px-3 py-1.5 text-sm text-expense hover:bg-hover"
               onClick={async () => {
                 await deleteEntry(entry.id)
                 close()
@@ -276,7 +276,11 @@ export function EntrySheet({ book, tags, usage, entry, onClose }: Props) {
             <span />
           )}
           <div className="flex gap-1">
-            <button type="button" className="rounded px-3 py-1.5 text-sm text-muted hover:bg-hover" onClick={close}>
+            <button
+              type="button"
+              className="rounded-md bg-[#f4f3f0] px-4 py-1.5 text-sm text-muted transition-colors duration-150 hover:bg-[#ebeae6] hover:text-ink"
+              onClick={close}
+            >
               {t.common.cancel}
             </button>
             <button

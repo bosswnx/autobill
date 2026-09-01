@@ -2,11 +2,12 @@ import type { Book, Tag } from '@tagledger/shared'
 import { useMemo, useState, type ReactNode } from 'react'
 import { BarChart, LineChart, TagAmountList } from '../components/Charts'
 import { MonthPager } from '../components/MonthPager'
+import { TagChip } from '../components/TagChip'
 import { YearPager } from '../components/YearPager'
 import { useBookEntries } from '../hooks/useLedger'
 import { useI18n } from '../i18n'
 import { formatYuan } from '../lib/money'
-import { buildPeriodStats, type StatsMode } from '../lib/stats'
+import { buildPeriodStats, sanitizeTagFocus, type StatsMode, type TagSlice } from '../lib/stats'
 import { monthKey, yearKey } from '../lib/time'
 
 type Props = {
@@ -20,16 +21,26 @@ export function StatsScreen({ book, tags, savings }: Props) {
   const [mode, setMode] = useState<StatsMode>('month')
   const [month, setMonth] = useState(monthKey())
   const [year, setYear] = useState(yearKey())
+  const [expenseFocus, setExpenseFocus] = useState<string[]>([])
+  const [incomeFocus, setIncomeFocus] = useState<string[]>([])
   const entries = useBookEntries(book.id)
   const period = mode === 'month' ? month : year
+  const expenseTagIds = useMemo(() => sanitizeTagFocus(expenseFocus, tags), [expenseFocus, tags])
+  const incomeTagIds = useMemo(() => sanitizeTagFocus(incomeFocus, tags), [incomeFocus, tags])
   const stats = useMemo(
-    () => buildPeriodStats(mode, period, entries, tags, book.openingBalanceCents ?? 0),
-    [mode, period, entries, tags, book.openingBalanceCents],
+    () =>
+      buildPeriodStats(mode, period, entries, tags, book.openingBalanceCents ?? 0, {
+        expenseTagIds,
+        incomeTagIds,
+      }),
+    [mode, period, entries, tags, book.openingBalanceCents, expenseTagIds, incomeTagIds],
   )
 
   const monthly = mode === 'month'
   const avgExpenseLabel = monthly ? t.stats.avgExpenseDay : t.stats.avgExpenseMonth
   const avgIncomeLabel = monthly ? t.stats.avgIncomeDay : t.stats.avgIncomeMonth
+  const expenseChartTitle = `${monthly ? t.stats.expense : t.stats.monthlyExpense}${focusSuffix(expenseTagIds, tags)}`
+  const incomeChartTitle = `${monthly ? t.stats.income : t.stats.monthlyIncome}${focusSuffix(incomeTagIds, tags)}`
 
   return (
     <div className="flex flex-col gap-8">
@@ -86,23 +97,105 @@ export function StatsScreen({ book, tags, savings }: Props) {
         </div>
       </header>
 
-      <ChartBlock title={monthly ? t.stats.expense : t.stats.monthlyExpense}>
+      <ChartBlock title={expenseChartTitle}>
         <BarChart points={stats.expenseSeries} color="#e03e3e" />
       </ChartBlock>
-      <ChartBlock title={monthly ? t.stats.income : t.stats.monthlyIncome}>
+      <ChartBlock title={incomeChartTitle}>
         <BarChart points={stats.incomeSeries} color="#0f7b6c" />
       </ChartBlock>
       <ChartBlock title={t.stats.assetChart}>
         <LineChart points={stats.assetSeries} color="#787774" />
       </ChartBlock>
-      <ChartBlock title={t.stats.expenseTags}>
-        <TagAmountList items={stats.expenseTags} empty={t.stats.emptyExpenseTags} />
-      </ChartBlock>
-      <ChartBlock title={t.stats.incomeTags}>
-        <TagAmountList items={stats.incomeTags} empty={t.stats.emptyIncomeTags} />
-      </ChartBlock>
+      <TagSliceBlock
+        title={t.stats.expenseTags}
+        tags={tags}
+        focusIds={expenseTagIds}
+        onFocus={setExpenseFocus}
+        slice={stats.expenseTagSlice}
+        empty={t.stats.emptyExpenseTags}
+      />
+      <TagSliceBlock
+        title={t.stats.incomeTags}
+        tags={tags}
+        focusIds={incomeTagIds}
+        onFocus={setIncomeFocus}
+        slice={stats.incomeTagSlice}
+        empty={t.stats.emptyIncomeTags}
+      />
     </div>
   )
+}
+
+function TagSliceBlock({
+  title,
+  tags,
+  focusIds,
+  onFocus,
+  slice,
+  empty,
+}: {
+  title: string
+  tags: Tag[]
+  focusIds: string[]
+  onFocus: (ids: string[]) => void
+  slice: TagSlice
+  empty: string
+}) {
+  const { t } = useI18n()
+  const tagMap = new Map(tags.map((tag) => [tag.id, tag]))
+  const focused = focusIds.map((id) => tagMap.get(id)).filter((tag): tag is Tag => Boolean(tag))
+
+  return (
+    <section>
+      <div className="mb-3 flex flex-wrap items-center gap-x-2 gap-y-1.5">
+        <h2 className="text-sm font-medium">{title}</h2>
+        {slice.focused ? null : <span className="text-xs text-faint">{t.stats.drillHint}</span>}
+        {focused.map((tag, index) => (
+          <TagChip
+            key={tag.id}
+            tag={tag}
+            size="sm"
+            active
+            onClick={() => {
+              const next =
+                index === focused.length - 1 ? focusIds.slice(0, index) : focusIds.slice(0, index + 1)
+              onFocus(next)
+            }}
+          />
+        ))}
+        {slice.focused ? (
+          <>
+            <span className="text-xs tabular-nums text-muted">
+              {formatYuan(slice.total, { sign: 'never' })}
+            </span>
+            <button
+              type="button"
+              className="px-1 text-xs text-muted hover:text-ink"
+              onClick={() => onFocus([])}
+            >
+              {t.stats.clearFocus}
+            </button>
+          </>
+        ) : null}
+      </div>
+      <TagAmountList
+        items={slice.items}
+        empty={empty}
+        onSelectTag={(id) => onFocus(focusIds.includes(id) ? focusIds : [...focusIds, id])}
+        selectLabel={t.stats.drillTag}
+        shareTotal={slice.focused ? slice.total : undefined}
+        remainderCents={slice.remainderCents}
+        remainderLabel={focusIds.length > 1 ? t.stats.tagOnlyMany : t.stats.tagOnly}
+      />
+    </section>
+  )
+}
+
+function focusSuffix(ids: string[], tags: Tag[]): string {
+  if (ids.length === 0) return ''
+  const tagMap = new Map(tags.map((tag) => [tag.id, tag]))
+  const names = ids.map((id) => tagMap.get(id)?.name).filter((name): name is string => Boolean(name))
+  return names.length ? ` · ${names.join(' · ')}` : ''
 }
 
 function ModeSwitch({ mode, onChange }: { mode: StatsMode; onChange: (mode: StatsMode) => void }) {
