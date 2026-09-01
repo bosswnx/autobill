@@ -263,7 +263,7 @@ If an entry has several tags, stats attribute the **full amount** to each tag (n
 
 Dates, months, and chart axes use the **device local timezone**. Do not slice “days” with UTC `getUTC*`. `dayKey` / `monthKey` / `inMonth` all use local `Date`.
 
-Daily average for the current month divides by elapsed days in that month. Monthly average for the current year divides by elapsed months. Future months/years have divisor 0, so the average is 0.
+Daily average for a month divides by that month’s total days. Monthly average for the current year divides by elapsed months. Future years have divisor 0, so the average is 0.
 
 ## Dexie versions
 

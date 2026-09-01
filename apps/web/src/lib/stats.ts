@@ -3,7 +3,6 @@ import { getLocale } from '../i18n'
 import {
   dayKey,
   daysInMonth,
-  elapsedDaysInMonth,
   elapsedMonthsInYear,
   endOfDayMs,
   endOfMonthMs,
@@ -101,7 +100,7 @@ export function buildPeriodStats(
   }
 
   const divisor =
-    mode === 'month' ? elapsedDaysInMonth(period, now) : elapsedMonthsInYear(period, now)
+    mode === 'month' ? daysInMonth(period) : elapsedMonthsInYear(period, now)
 
   const buckets = mode === 'month' ? monthBuckets(period) : yearBuckets(period)
   const expenseByKey = new Map<string, number>()

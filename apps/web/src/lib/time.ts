@@ -71,13 +71,6 @@ export function daysInMonth(key: string): number {
   return new Date(year, month, 0).getDate()
 }
 
-export function elapsedDaysInMonth(key: string, now = new Date()): number {
-  const current = monthKey(now)
-  if (key < current) return daysInMonth(key)
-  if (key > current) return 0
-  return now.getDate()
-}
-
 export function elapsedMonthsInYear(year: string, now = new Date()): number {
   const value = Number(year)
   if (value < now.getFullYear()) return 12
