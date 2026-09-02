@@ -6,6 +6,7 @@ import type {
   EntryType,
   Subscription,
   SubscriptionCadence,
+  SubscriptionTime,
   Tag,
   TagKind,
 } from '@tagledger/shared'
@@ -237,15 +238,7 @@ export type SubscriptionDraft = {
   currency: string
   tagIds: string[]
   note: string
-  times: Array<{
-    id: string
-    cadence?: SubscriptionCadence
-    month: number
-    day: number
-    fromEnd: boolean
-    hour: number
-    minute: number
-  }>
+  times: SubscriptionTime[]
   enabled: boolean
 }
 
