@@ -27,7 +27,6 @@ export function MonthPager({ month, onChange }: Props) {
   const [open, setOpen] = useState(false)
   const native = useMemo(supportsNativeMonthInput, [])
   const currentMonth = monthKey()
-  const isCurrent = month === currentMonth
 
   return (
     <div className="flex shrink-0 items-center gap-1">
@@ -62,7 +61,6 @@ export function MonthPager({ month, onChange }: Props) {
             <MonthPickerPanel
               month={month}
               native={native}
-              isCurrent={isCurrent}
               currentMonth={currentMonth}
               onChange={onChange}
               close={close}
@@ -77,46 +75,61 @@ export function MonthPager({ month, onChange }: Props) {
 function MonthPickerPanel({
   month,
   native,
-  isCurrent,
   currentMonth,
   onChange,
   close,
 }: {
   month: string
   native: boolean
-  isCurrent: boolean
   currentMonth: string
   onChange: (month: string) => void
   close: () => void
 }) {
   const { t } = useI18n()
-  function pick(next: string) {
-    onChange(next)
-    close()
-  }
+  const [picked, setPicked] = useState(month)
+  const isCurrent = picked === currentMonth
 
   return (
     <div className="anim-panel w-full max-w-sm rounded-xl border border-line bg-page p-5">
       <h2 className="text-lg font-semibold">{t.pickers.monthTitle}</h2>
       {native ? (
-        <NativeMonthField value={month} onPick={pick} />
+        <NativeMonthField value={picked} onPick={setPicked} />
       ) : (
-        <FallbackMonthGrid month={month} onPick={pick} />
+        <FallbackMonthGrid month={picked} onPick={setPicked} />
       )}
       <div className="mt-5 flex items-center justify-between">
         <button
           type="button"
           disabled={isCurrent}
-          onClick={() => pick(currentMonth)}
-          className={`rounded px-3 py-1.5 text-sm ${
-            isCurrent ? 'text-faint' : 'text-ink hover:bg-hover'
-          }`}
+          aria-pressed={isCurrent}
+          onClick={() => setPicked(currentMonth)}
+          className={
+            isCurrent
+              ? 'rounded-md px-3 py-1.5 text-sm text-faint disabled:opacity-100'
+              : 'rounded-md bg-[#f4f3f0] px-3 py-1.5 text-sm text-ink transition-colors duration-150 hover:bg-[#ebeae6]'
+          }
         >
           {t.pickers.thisMonth}
         </button>
-        <button type="button" className="rounded px-3 py-1.5 text-sm text-muted hover:bg-hover" onClick={close}>
-          {t.common.cancel}
-        </button>
+        <div className="flex gap-1">
+          <button
+            type="button"
+            className="rounded-md bg-[#f4f3f0] px-3 py-1.5 text-sm text-ink transition-colors duration-150 hover:bg-[#ebeae6]"
+            onClick={close}
+          >
+            {t.common.cancel}
+          </button>
+          <button
+            type="button"
+            className="rounded-md bg-accent px-4 py-1.5 text-sm text-accent-ink hover:brightness-95"
+            onClick={() => {
+              onChange(picked)
+              close()
+            }}
+          >
+            {t.common.confirm}
+          </button>
+        </div>
       </div>
     </div>
   )

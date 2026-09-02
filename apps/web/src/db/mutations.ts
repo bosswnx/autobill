@@ -1,4 +1,14 @@
-import type { Book, Change, EntityType, Entry, EntryType, Tag, TagKind } from '@tagledger/shared'
+import type {
+  Book,
+  Change,
+  EntityType,
+  Entry,
+  EntryType,
+  Subscription,
+  SubscriptionCadence,
+  Tag,
+  TagKind,
+} from '@tagledger/shared'
 import { TAG_COLOR_PALETTE } from '@tagledger/shared'
 import { db } from './database'
 import { deviceId, nid } from '../lib/id'
@@ -162,6 +172,7 @@ export async function deleteTag(id: string, opts?: { withEntries?: boolean }): P
 }
 
 export type EntryDraft = {
+  id?: string
   bookId: string
   type: EntryType
   amountCents: number
@@ -174,10 +185,15 @@ export type EntryDraft = {
 }
 
 export async function createEntry(draft: EntryDraft): Promise<Entry> {
+  const { id: requestedId, ...rest } = draft
+  if (requestedId) {
+    const existing = await db.entries.get(requestedId)
+    if (existing) return existing
+  }
   const now = nowIso()
   const entry: Entry = {
-    id: nid(),
-    ...draft,
+    id: requestedId ?? nid(),
+    ...rest,
     rev: 1,
     createdAt: now,
     updatedAt: now,
@@ -188,7 +204,7 @@ export async function createEntry(draft: EntryDraft): Promise<Entry> {
   return entry
 }
 
-export async function updateEntry(id: string, draft: Omit<EntryDraft, 'bookId'>): Promise<void> {
+export async function updateEntry(id: string, draft: Omit<EntryDraft, 'bookId' | 'id'>): Promise<void> {
   const current = await db.entries.get(id)
   if (!current) return
   const next: Entry = {
@@ -212,4 +228,140 @@ export async function deleteEntry(id: string): Promise<void> {
   }
   await db.entries.put(next)
   await appendChange(next.bookId, 'entry', next.id, next.rev, next)
+}
+
+export type SubscriptionDraft = {
+  bookId: string
+  type: Exclude<EntryType, 'transfer'>
+  amountCents: number
+  currency: string
+  tagIds: string[]
+  note: string
+  times: Array<{
+    id: string
+    cadence?: SubscriptionCadence
+    month: number
+    day: number
+    fromEnd: boolean
+    hour: number
+    minute: number
+  }>
+  enabled: boolean
+}
+
+function resolveCadence(value?: string): SubscriptionCadence {
+  return value === 'yearly' || value === 'weekly' ? value : 'monthly'
+}
+
+function clampSlot(slot: SubscriptionDraft['times'][number], fallback?: SubscriptionCadence) {
+  const cadence = resolveCadence(slot.cadence ?? fallback)
+  const day =
+    cadence === 'weekly'
+      ? Math.min(6, Math.max(0, Math.trunc(slot.day) || 0))
+      : Math.min(31, Math.max(1, Math.trunc(slot.day) || 1))
+  return {
+    id: slot.id || nid(),
+    cadence,
+    month: Math.min(12, Math.max(1, Math.trunc(slot.month) || 1)),
+    day,
+    fromEnd: cadence === 'monthly' && Boolean(slot.fromEnd),
+    hour: Math.min(23, Math.max(0, Math.trunc(slot.hour) || 0)),
+    minute: Math.min(59, Math.max(0, Math.trunc(slot.minute) || 0)),
+  }
+}
+
+function clampTimes(times: SubscriptionDraft['times'], fallback?: SubscriptionCadence) {
+  const slots = times.map((slot) => clampSlot(slot, fallback))
+  const first = slots[0] ?? clampSlot({ id: '', month: 1, day: 1, fromEnd: false, hour: 0, minute: 0 }, fallback)
+  return {
+    cadence: first.cadence,
+    times: slots,
+    month: first.month,
+    day: first.day,
+    fromEnd: first.fromEnd,
+    hour: first.hour,
+    minute: first.minute,
+  }
+}
+
+export async function createSubscription(draft: SubscriptionDraft): Promise<Subscription> {
+  const now = nowIso()
+  const recurrence = clampTimes(draft.times)
+  const subscription: Subscription = {
+    id: nid(),
+    bookId: draft.bookId,
+    type: draft.type === 'income' ? 'income' : 'expense',
+    amountCents: draft.amountCents,
+    currency: draft.currency,
+    tagIds: draft.tagIds,
+    note: draft.note,
+    ...recurrence,
+    enabled: draft.enabled,
+    startsAt: now,
+    rev: 1,
+    createdAt: now,
+    updatedAt: now,
+    deletedAt: null,
+  }
+  await db.subscriptions.add(subscription)
+  await appendChange(subscription.bookId, 'subscription', subscription.id, subscription.rev, subscription)
+  return subscription
+}
+
+export async function updateSubscription(
+  id: string,
+  patch: Partial<Omit<SubscriptionDraft, 'bookId'>>,
+): Promise<void> {
+  const current = await db.subscriptions.get(id)
+  if (!current) return
+  const now = nowIso()
+  const mergedTimes = patch.times ?? current.times
+  const recurrence = clampTimes(mergedTimes?.length ? mergedTimes : timesFallback(current), current.cadence)
+  const merged = {
+    type: patch.type ?? current.type,
+    amountCents: patch.amountCents ?? current.amountCents,
+    currency: patch.currency ?? current.currency,
+    tagIds: patch.tagIds ?? current.tagIds,
+    note: patch.note ?? current.note,
+    enabled: patch.enabled ?? current.enabled,
+  }
+  const enabling = merged.enabled && !current.enabled
+  const next: Subscription = {
+    ...current,
+    ...merged,
+    ...recurrence,
+    startsAt: enabling ? now : current.startsAt,
+    rev: current.rev + 1,
+    updatedAt: now,
+  }
+  await db.subscriptions.put(next)
+  await appendChange(next.bookId, 'subscription', next.id, next.rev, next)
+}
+
+function timesFallback(current: Subscription): SubscriptionDraft['times'] {
+  return [
+    {
+      id: 'legacy',
+      cadence: current.cadence,
+      month: current.month,
+      day: current.day,
+      fromEnd: Boolean(current.fromEnd),
+      hour: current.hour,
+      minute: current.minute,
+    },
+  ]
+}
+
+export async function deleteSubscription(id: string): Promise<void> {
+  const current = await db.subscriptions.get(id)
+  if (!current) return
+  const now = nowIso()
+  const next: Subscription = {
+    ...current,
+    deletedAt: now,
+    rev: current.rev + 1,
+    updatedAt: now,
+  }
+  await db.subscriptions.put(next)
+  await appendChange(next.bookId, 'subscription', next.id, next.rev, next)
 }

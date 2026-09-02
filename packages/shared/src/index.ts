@@ -4,7 +4,19 @@ export type TagKind = 'expense' | 'income'
 
 export type AccountKind = 'cash' | 'bank' | 'alipay' | 'wechat' | 'credit' | 'other'
 
-export type EntityType = 'book' | 'account' | 'tag' | 'entry'
+export type EntityType = 'book' | 'account' | 'tag' | 'entry' | 'subscription'
+
+export type SubscriptionCadence = 'weekly' | 'monthly' | 'yearly'
+
+export type SubscriptionTime = {
+  id: string
+  cadence?: SubscriptionCadence
+  month: number
+  day: number
+  fromEnd?: boolean
+  hour: number
+  minute: number
+}
 
 export type Syncable = {
   id: string
@@ -44,6 +56,24 @@ export type Entry = Syncable & {
   tagIds: string[]
   note: string
   occurredAt: string
+}
+
+export type Subscription = Syncable & {
+  bookId: string
+  type: Exclude<EntryType, 'transfer'>
+  amountCents: number
+  currency: string
+  tagIds: string[]
+  note: string
+  cadence: SubscriptionCadence
+  month: number
+  day: number
+  fromEnd?: boolean
+  hour: number
+  minute: number
+  times?: SubscriptionTime[]
+  enabled: boolean
+  startsAt: string
 }
 
 export type Change = {
@@ -89,7 +119,7 @@ export type ConnectResponse = {
 
 export type MergeChoice = 'local' | 'cloud' | 'both'
 
-export const ENTITY_TYPES: EntityType[] = ['book', 'account', 'tag', 'entry']
+export const ENTITY_TYPES: EntityType[] = ['book', 'account', 'tag', 'entry', 'subscription']
 
 export const MIN_USER_TOKEN_LENGTH = 8
 export const MAX_TOKEN_LENGTH = 256

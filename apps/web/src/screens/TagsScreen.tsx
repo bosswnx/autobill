@@ -2,6 +2,7 @@ import type { Tag, TagKind } from '@tagledger/shared'
 import { TAG_COLOR_PALETTE } from '@tagledger/shared'
 import { Plus } from 'lucide-react'
 import { useEffect, useMemo, useRef, useState } from 'react'
+import { ChoicePicker } from '../components/ChoicePicker'
 import { ColorPicker } from '../components/ColorPicker'
 import { IconPicker } from '../components/IconPicker'
 import { Overlay } from '../components/Overlay'
@@ -19,9 +20,6 @@ type Props = {
 
 type SortKey = 'count' | 'name'
 type SortDir = 'asc' | 'desc'
-
-const SELECT_CLASS =
-  'rounded-md border border-line bg-page px-3 py-2 text-sm hover:bg-hover focus:border-accent'
 
 export function TagsScreen({ bookId, tags, usage, onFilterTag }: Props) {
   const { t, locale } = useI18n()
@@ -58,10 +56,6 @@ export function TagsScreen({ bookId, tags, usage, onFilterTag }: Props) {
 
   return (
     <div className="flex flex-col gap-8">
-      <header>
-        <h1 className="shrink-0 whitespace-nowrap text-[40px] leading-none font-bold tracking-[-0.03em]">{t.tags.title}</h1>
-      </header>
-
       <div className="flex flex-col gap-3 sm:flex-row">
         <input
           value={query}
@@ -71,25 +65,27 @@ export function TagsScreen({ bookId, tags, usage, onFilterTag }: Props) {
         />
         <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-muted">
           <span>{t.tags.sortBy}</span>
-          <select
+          <ChoicePicker
             value={sortKey}
-            onChange={(event) => setSortKey(event.target.value as SortKey)}
-            className={SELECT_CLASS}
-            aria-label={t.tags.sortByAria}
-          >
-            <option value="count">{t.tags.sortCount}</option>
-            <option value="name">{t.tags.sortName}</option>
-          </select>
+            title={t.tags.sortByAria}
+            ariaLabel={t.tags.sortByAria}
+            onChange={setSortKey}
+            options={[
+              { id: 'count', label: t.tags.sortCount },
+              { id: 'name', label: t.tags.sortName },
+            ]}
+          />
           {t.tags.sortThen ? <span>{t.tags.sortThen}</span> : null}
-          <select
+          <ChoicePicker
             value={sortDir}
-            onChange={(event) => setSortDir(event.target.value as SortDir)}
-            className={SELECT_CLASS}
-            aria-label={t.tags.sortDirAria}
-          >
-            <option value="desc">{t.tags.sortDesc}</option>
-            <option value="asc">{t.tags.sortAsc}</option>
-          </select>
+            title={t.tags.sortDirAria}
+            ariaLabel={t.tags.sortDirAria}
+            onChange={setSortDir}
+            options={[
+              { id: 'desc', label: t.tags.sortDesc },
+              { id: 'asc', label: t.tags.sortAsc },
+            ]}
+          />
           {t.tags.sortSuffix ? <span>{t.tags.sortSuffix}</span> : null}
         </div>
       </div>
@@ -328,7 +324,7 @@ function TagFormDialog({
                   {onDelete ? (
                     <button
                       type="button"
-                      className="rounded px-2 py-1 text-sm text-expense hover:bg-hover"
+                      className="rounded-md border border-expense px-3 py-1.5 text-sm text-expense hover:bg-hover"
                       onClick={() => {
                         const active = document.activeElement
                         if (active instanceof HTMLElement) active.blur()
@@ -341,7 +337,7 @@ function TagFormDialog({
                   {onView ? (
                     <button
                       type="button"
-                      className="rounded px-2 py-1 text-sm text-muted hover:bg-hover"
+                      className="rounded-md bg-[#f4f3f0] px-3 py-1.5 text-sm text-muted transition-colors duration-150 hover:bg-[#ebeae6] hover:text-ink"
                       onClick={onView}
                     >
                       {t.tags.viewLedger}
@@ -350,7 +346,11 @@ function TagFormDialog({
                 </div>
               ) : null}
               <div className="flex gap-1">
-                <button type="button" className="rounded px-3 py-1.5 text-sm text-muted hover:bg-hover" onClick={close}>
+                <button
+                  type="button"
+                  className="rounded-md bg-[#f4f3f0] px-3 py-1.5 text-sm text-muted transition-colors duration-150 hover:bg-[#ebeae6] hover:text-ink"
+                  onClick={close}
+                >
                   {t.common.cancel}
                 </button>
                 <button
@@ -445,7 +445,7 @@ function DeleteTagOverlay({
             <button
               type="button"
               disabled={busy}
-              className="rounded px-3 py-1.5 text-sm text-muted hover:bg-hover disabled:opacity-40"
+              className="rounded-md bg-[#f4f3f0] px-3 py-1.5 text-sm text-muted transition-colors duration-150 hover:bg-[#ebeae6] hover:text-ink disabled:opacity-40"
               onClick={onClose}
             >
               {t.common.cancel}

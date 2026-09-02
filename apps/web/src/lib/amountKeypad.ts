@@ -54,6 +54,12 @@ export function pressOp(expr: AmountExpr, op: AmountOp): AmountExpr {
   return { ...expr, op, right: '' }
 }
 
+/** First tap inserts `primary`; a second tap before the next number swaps it to `secondary`. */
+export function pressToggleOp(expr: AmountExpr, primary: AmountOp, secondary: AmountOp): AmountExpr {
+  if (expr.op === primary && !expr.right) return { ...expr, op: secondary }
+  return pressOp(expr, primary)
+}
+
 export function pressEquals(expr: AmountExpr): AmountExpr {
   if (!expr.op || !expr.right) return expr
   const result = compute(expr.left, expr.op, expr.right)

@@ -1,7 +1,8 @@
-import { ChartColumn, Menu, Plus, Settings, Tag } from 'lucide-react'
+import { ChartColumn, Layers, Menu, Plus, Settings } from 'lucide-react'
 import { useEffect, useState, type ReactNode } from 'react'
 import { createPortal } from 'react-dom'
 import { seedIfNeeded } from './db/seed'
+import { fireDueSubscriptions } from './db/fireSubscriptions'
 import { detectHostedOrigin } from './sync/api'
 import { initSync, subscribeSync } from './sync/engine'
 import { isConnected } from './sync/session'
@@ -20,9 +21,9 @@ import { useI18n } from './i18n'
 import { EntrySheet } from './screens/EntrySheet'
 import { LedgerScreen } from './screens/LedgerScreen'
 import { LoginScreen } from './screens/LoginScreen'
+import { ManageScreen } from './screens/ManageScreen'
 import { SettingsScreen } from './screens/SettingsScreen'
 import { StatsScreen } from './screens/StatsScreen'
-import { TagsScreen } from './screens/TagsScreen'
 
 type Screen = 'ledger' | 'tags' | 'stats' | 'settings'
 type Boot = 'loading' | 'login' | 'app'
@@ -59,6 +60,20 @@ export default function App() {
       })
     })
   }, [boot, hostedOrigin])
+
+  useEffect(() => {
+    if (boot !== 'app') return
+    void fireDueSubscriptions()
+    const onVis = () => {
+      if (document.visibilityState === 'visible') void fireDueSubscriptions()
+    }
+    document.addEventListener('visibilitychange', onVis)
+    const timer = window.setInterval(() => void fireDueSubscriptions(), 30_000)
+    return () => {
+      document.removeEventListener('visibilitychange', onVis)
+      window.clearInterval(timer)
+    }
+  }, [boot])
 
   const book = useBook()
   const tags = useTags(book?.id)
@@ -105,7 +120,7 @@ export default function App() {
         <nav className="mt-2 flex flex-col gap-0.5">
           <NavButton current={screen} id="ledger" label={t.nav.ledger} onClick={setScreen} icon={<Menu size={16} strokeWidth={1.75} />} />
           <NavButton current={screen} id="stats" label={t.nav.stats} onClick={setScreen} icon={<ChartColumn size={16} strokeWidth={1.75} />} />
-          <NavButton current={screen} id="tags" label={t.nav.tags} onClick={setScreen} icon={<Tag size={16} strokeWidth={1.75} />} />
+          <NavButton current={screen} id="tags" label={t.nav.tags} onClick={setScreen} icon={<Layers size={16} strokeWidth={1.75} />} />
           <NavButton current={screen} id="settings" label={t.nav.settings} onClick={setScreen} icon={<Settings size={16} strokeWidth={1.75} />} />
         </nav>
         <button
@@ -148,8 +163,8 @@ export default function App() {
           )}
           {screen === 'stats' && !book && <MissingBook onSettings={() => setScreen('settings')} />}
           {screen === 'tags' && book && (
-            <TagsScreen
-              bookId={book.id}
+            <ManageScreen
+              book={book}
               tags={tags}
               usage={usage}
               onFilterTag={(id) => {
@@ -195,7 +210,7 @@ export default function App() {
               id="tags"
               label={t.nav.tags}
               onClick={setScreen}
-              icon={<Tag size={22} strokeWidth={1.75} />}
+              icon={<Layers size={22} strokeWidth={1.75} />}
               stacked
             />
             <NavButton
@@ -256,18 +271,27 @@ function NavButton({
   icon?: ReactNode
   stacked?: boolean
 }) {
+  const active = current === id
   return (
     <button
       type="button"
       onClick={() => onClick(id)}
-      className={`flex items-center justify-center rounded-md transition-colors duration-150 ${
+      className={`relative flex w-full items-center rounded-md transition-colors duration-150 ${
         stacked
-          ? 'flex-col gap-1.5 px-1 py-1 text-[10px] leading-none'
+          ? 'h-full flex-col justify-center gap-1.5 px-1 py-1 text-center text-[10px] leading-none'
           : 'gap-2 px-2 py-1.5 text-sm desktop:justify-start'
-      } ${current === id ? 'bg-active text-ink' : 'text-muted hover:bg-hover hover:text-ink'}`}
+      } ${active ? 'text-ink' : 'text-muted hover:text-ink'} ${!active ? 'hover:bg-hover' : ''}`}
     >
-      {icon}
-      {label}
+      <span
+        aria-hidden
+        className={`pointer-events-none absolute inset-0 rounded-md ${active ? 'bg-active' : ''}`}
+      />
+      {icon ? (
+        <span className={`relative z-10 flex shrink-0 items-center justify-center ${stacked ? 'size-[22px]' : 'size-4'}`}>
+          {icon}
+        </span>
+      ) : null}
+      <span className="relative z-10">{label}</span>
     </button>
   )
 }

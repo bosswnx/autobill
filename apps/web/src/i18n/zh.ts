@@ -21,7 +21,7 @@ export const zh = {
   nav: {
     ledger: '流水',
     stats: '统计',
-    tags: '标签',
+    tags: '管理',
     settings: '设置',
     addEntry: '记一笔',
   },
@@ -129,6 +129,50 @@ export const zh = {
       n === 0 ? '目前没有使用这个标签的账单。' : `将删除使用这个标签的 ${n} 笔账单。`,
   },
 
+  manage: {
+    title: '管理',
+    tags: '标签',
+    subscriptions: '订阅',
+  },
+
+  sub: {
+    emptyTitle: '还没有订阅',
+    emptyHint: '房租、会员、工资都可以设成到期自动记账。',
+    add: '添加订阅',
+    edit: '编辑订阅',
+    cadence: '周期',
+    weekly: '每周',
+    monthly: '每月',
+    yearly: '每年',
+    day: '日期',
+    month: '月份',
+    enabled: '启用',
+    disabled: '未启用',
+    paused: '已暂停',
+    next: (when: string) => `下次 ${when}`,
+    summaryWeekly: (weekday: string, time: string) => `每${weekday} ${time}`,
+    summaryMonthly: (day: number, time: string) => `每月第 ${day} 天 ${time}`,
+    summaryMonthlyFromEnd: (day: number, time: string) =>
+      day === 1 ? `每月最后一天 ${time}` : `每月倒数第 ${day} 天 ${time}`,
+    summaryYearly: (month: string, day: number, time: string) => `每年 ${month}${day}日 ${time}`,
+    monthDayLabel: (month: string, day: number) => `${month}${day}日`,
+    nthDay: (n: number) => `第 ${n} 天`,
+    lastNthDay: (n: number) => (n === 1 ? '最后一天' : `倒数第 ${n} 天`),
+    nthPrefix: '第',
+    nthSuffix: '天',
+    fromStart: '正数',
+    fromEnd: '倒数',
+    weekdayName: (n: number) => ['周日', '周一', '周二', '周三', '周四', '周五', '周六'][n] ?? '',
+    pickDay: '选择日期',
+    pickMonthDay: '选择日期',
+    pickWeekday: '选择星期',
+    addTime: '添加时间',
+    editTime: '编辑时间',
+    times: '时间',
+    timeRequired: '请添加时间',
+    deleteHint: '已生成的账单会留在流水里。',
+  },
+
   entry: {
     create: '记一笔',
     edit: '改一笔',
@@ -148,7 +192,7 @@ export const zh = {
     title: '设置',
     language: '语言',
     wipe: '清空所有数据',
-    wipeHint: '本机的账本、标签和流水都会删掉，无法恢复。云端和其他设备不受影响。',
+    wipeHint: '本机的账本、标签、订阅和流水都会删掉，无法恢复。云端和其他设备不受影响。',
     wipeWait: (n: number) => `${n} 秒后可确认`,
     wipeConfirm: '确认清空',
   },
@@ -208,7 +252,7 @@ export const zh = {
     cloudTitle: '用云端覆盖本机',
     cloudDetail: '这台设备上的记录会清掉，换成云端那本账。',
     bothTitle: '两边都留',
-    bothDetail: '流水和标签都会保留。同名标签可能出现两份，存款以较新的设置为准。',
+    bothDetail: '流水、标签和订阅都会保留。同名标签可能出现两份，存款以较新的设置为准。',
   },
 
   pickers: {
@@ -244,6 +288,8 @@ export const zh = {
 
   keypad: {
     backspaceHint: '退格，长按清零',
+    plusTimesHint: '加号，再按改为乘号',
+    minusDivHint: '减号，再按改为除号',
   },
 
   seed: {

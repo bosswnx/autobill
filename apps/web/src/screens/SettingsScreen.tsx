@@ -325,7 +325,7 @@ function WipeOverlay({ onClose }: { onClose: () => void }) {
             <button
               type="button"
               disabled={busy}
-              className="rounded px-3 py-1.5 text-sm text-muted hover:bg-hover disabled:opacity-40"
+              className="rounded-md bg-[#f4f3f0] px-3 py-1.5 text-sm text-muted transition-colors duration-150 hover:bg-[#ebeae6] hover:text-ink disabled:opacity-40"
               onClick={close}
             >
               {t.common.cancel}

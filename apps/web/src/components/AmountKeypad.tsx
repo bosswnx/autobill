@@ -10,7 +10,7 @@ import {
   pressDigit,
   pressDot,
   pressEquals,
-  pressOp,
+  pressToggleOp,
 } from '../lib/amountKeypad'
 import { tapHaptic } from '../lib/haptic'
 
@@ -56,17 +56,21 @@ export function AmountKeypad({ expr, onChange }: Props) {
         </div>
       </div>
       <div className="mt-3 grid grid-cols-4 gap-1.5">
-        <Key className={NUM} onClick={() => onChange(pressDigit(expr, '7'))}>
-          7
+        <Key className={NUM} onClick={() => onChange(pressDigit(expr, '1'))}>
+          1
         </Key>
-        <Key className={NUM} onClick={() => onChange(pressDigit(expr, '8'))}>
-          8
+        <Key className={NUM} onClick={() => onChange(pressDigit(expr, '2'))}>
+          2
         </Key>
-        <Key className={NUM} onClick={() => onChange(pressDigit(expr, '9'))}>
-          9
+        <Key className={NUM} onClick={() => onChange(pressDigit(expr, '3'))}>
+          3
         </Key>
-        <Key className={OP} onClick={() => onChange(pressOp(expr, '/'))}>
-          ÷
+        <Key
+          className={OP}
+          aria-label={t.keypad.plusTimesHint}
+          onClick={() => onChange(pressToggleOp(expr, '+', '*'))}
+        >
+          <DualOp primary="+" secondary="×" nextIsSecondary={expr.op === '+' && !expr.right} />
         </Key>
         <Key className={NUM} onClick={() => onChange(pressDigit(expr, '4'))}>
           4
@@ -77,26 +81,21 @@ export function AmountKeypad({ expr, onChange }: Props) {
         <Key className={NUM} onClick={() => onChange(pressDigit(expr, '6'))}>
           6
         </Key>
-        <Key className={OP} onClick={() => onChange(pressOp(expr, '*'))}>
-          ×
+        <Key
+          className={OP}
+          aria-label={t.keypad.minusDivHint}
+          onClick={() => onChange(pressToggleOp(expr, '-', '/'))}
+        >
+          <DualOp primary="−" secondary="÷" nextIsSecondary={expr.op === '-' && !expr.right} />
         </Key>
-        <Key className={NUM} onClick={() => onChange(pressDigit(expr, '1'))}>
-          1
+        <Key className={NUM} onClick={() => onChange(pressDigit(expr, '7'))}>
+          7
         </Key>
-        <Key className={NUM} onClick={() => onChange(pressDigit(expr, '2'))}>
-          2
+        <Key className={NUM} onClick={() => onChange(pressDigit(expr, '8'))}>
+          8
         </Key>
-        <Key className={NUM} onClick={() => onChange(pressDigit(expr, '3'))}>
-          3
-        </Key>
-        <Key className={OP} onClick={() => onChange(pressOp(expr, '-'))}>
-          −
-        </Key>
-        <Key className={NUM} onClick={() => onChange(pressDigit(expr, '0'))}>
-          0
-        </Key>
-        <Key className={NUM} onClick={() => onChange(pressDot(expr))}>
-          .
+        <Key className={NUM} onClick={() => onChange(pressDigit(expr, '9'))}>
+          9
         </Key>
         <Key
           className={OP}
@@ -106,14 +105,38 @@ export function AmountKeypad({ expr, onChange }: Props) {
         >
           <BackspaceIcon className="size-[22px]" strokeWidth={2} />
         </Key>
-        <Key className={OP} onClick={() => onChange(pressOp(expr, '+'))}>
-          +
+        <Key className={`${NUM} col-span-2`} onClick={() => onChange(pressDigit(expr, '0'))}>
+          0
         </Key>
-        <Key className={`${KEY} amount-key-op col-span-4 bg-[#ecebe7] text-ink hover:bg-[#e3e2de]`} onClick={() => onChange(pressEquals(expr))}>
+        <Key className={NUM} onClick={() => onChange(pressDot(expr))}>
+          .
+        </Key>
+        <Key
+          className={`${KEY} amount-key-op bg-[#ecebe7] text-ink hover:bg-[#e3e2de]`}
+          onClick={() => onChange(pressEquals(expr))}
+        >
           =
         </Key>
       </div>
     </div>
+  )
+}
+
+function DualOp({
+  primary,
+  secondary,
+  nextIsSecondary,
+}: {
+  primary: string
+  secondary: string
+  nextIsSecondary: boolean
+}) {
+  const idle = 'text-[13px] font-normal text-faint'
+  return (
+    <span className="flex items-center justify-center gap-2.5 leading-none">
+      <span className={nextIsSecondary ? idle : 'text-ink'}>{primary}</span>
+      <span className={nextIsSecondary ? 'text-ink' : idle}>{secondary}</span>
+    </span>
   )
 }
 

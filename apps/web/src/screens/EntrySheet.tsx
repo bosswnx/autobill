@@ -253,9 +253,7 @@ export function EntrySheet({ book, tags, usage, entry, onClose }: Props) {
             </div>
           </div>
 
-          {amountNegative ? (
-            <p className="mt-4 text-sm text-expense">{t.entry.amountNegative}</p>
-          ) : error ? (
+          {error && !amountNegative ? (
             <p className="mt-4 text-sm text-expense">{error}</p>
           ) : null}
         </div>
@@ -275,7 +273,12 @@ export function EntrySheet({ book, tags, usage, entry, onClose }: Props) {
           ) : (
             <span />
           )}
-          <div className="flex gap-1">
+          <div className="relative flex gap-1">
+            {amountNegative ? (
+              <p className="pointer-events-none absolute right-full top-1/2 mr-2 -translate-y-1/2 whitespace-nowrap text-sm text-expense">
+                {t.entry.amountNegative}
+              </p>
+            ) : null}
             <button
               type="button"
               className="rounded-md bg-[#f4f3f0] px-4 py-1.5 text-sm text-muted transition-colors duration-150 hover:bg-[#ebeae6] hover:text-ink"

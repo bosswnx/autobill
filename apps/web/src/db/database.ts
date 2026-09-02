@@ -1,4 +1,4 @@
-import type { Account, Book, Change, Entry, Tag, TagKind } from '@tagledger/shared'
+import type { Account, Book, Change, Entry, Subscription, Tag, TagKind } from '@tagledger/shared'
 import Dexie, { type EntityTable } from 'dexie'
 
 export type SyncMeta = {
@@ -16,6 +16,7 @@ export class TagLedgerDB extends Dexie {
   accounts!: EntityTable<Account, 'id'>
   tags!: EntityTable<Tag, 'id'>
   entries!: EntityTable<Entry, 'id'>
+  subscriptions!: EntityTable<Subscription, 'id'>
   changes!: EntityTable<Change, 'id'>
   meta!: EntityTable<SyncMeta, 'key'>
 
@@ -60,6 +61,9 @@ export class TagLedgerDB extends Dexie {
       entries: 'id, bookId, occurredAt, accountId, *tagIds, updatedAt',
       changes: 'id, bookId, createdAt, entity, entityId, seq',
       meta: 'key',
+    })
+    this.version(4).stores({
+      subscriptions: 'id, bookId, updatedAt',
     })
   }
 }

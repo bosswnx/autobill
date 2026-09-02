@@ -16,7 +16,11 @@ export function ColorPicker({ value, onClose, onPick }: Props) {
         <div className="anim-panel w-full max-w-xs rounded-xl border border-line bg-page p-4">
           <div className="flex items-center justify-between">
             <h2 className="text-base font-semibold">{t.colorPicker.title}</h2>
-            <button type="button" className="rounded px-2 py-1 text-sm text-muted hover:bg-hover" onClick={close}>
+            <button
+              type="button"
+              className="rounded-md bg-[#f4f3f0] px-3 py-1.5 text-sm text-muted transition-colors duration-150 hover:bg-[#ebeae6] hover:text-ink"
+              onClick={close}
+            >
               {t.common.close}
             </button>
           </div>

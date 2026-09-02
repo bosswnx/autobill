@@ -1,4 +1,4 @@
-import type { Book, Entry, Tag } from '@tagledger/shared'
+import type { Book, Entry, Subscription, Tag } from '@tagledger/shared'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { db } from '../db/database'
 import { entryMatchesTagFilter } from '../lib/tags'
@@ -121,4 +121,17 @@ export function useEntry(id: string | undefined): Entry | undefined {
     if (!id) return undefined
     return db.entries.get(id)
   }, [id])
+}
+
+export function useSubscriptions(bookId: string | undefined): Subscription[] {
+  return (
+    useLiveQuery(async () => {
+      if (!bookId) return []
+      const rows = await db.subscriptions.where('bookId').equals(bookId).toArray()
+      return alive(rows).sort((a, b) => {
+        if (a.enabled !== b.enabled) return a.enabled ? -1 : 1
+        return a.createdAt.localeCompare(b.createdAt)
+      })
+    }, [bookId]) ?? []
+  )
 }

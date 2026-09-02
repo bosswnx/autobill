@@ -134,7 +134,10 @@ export async function runSync(): Promise<void> {
       changes: outgoing.map(stripSeq),
     })
 
-    await db.transaction('rw', db.books, db.tags, db.entries, db.accounts, db.changes, async () => {
+    await db.transaction(
+      'rw',
+      [db.books, db.tags, db.entries, db.accounts, db.subscriptions, db.changes],
+      async () => {
       for (const change of response.changes) {
         await applyChange(change)
       }
@@ -151,6 +154,7 @@ export async function runSync(): Promise<void> {
     })
     setUi({ lastError: null })
     if (allOutgoing.length > outgoing.length) queued = true
+    void import('../db/fireSubscriptions').then((mod) => mod.fireDueSubscriptions())
   } catch (error) {
     const code = error instanceof SyncApiError ? error.code : 'failed'
     await saveSession({ lastError: code }).catch(() => undefined)
@@ -174,7 +178,10 @@ async function installFromCloud(serverUrl: string, token: string): Promise<void>
     deviceId: deviceId(),
     changes: [],
   })
-  await db.transaction('rw', db.books, db.tags, db.entries, db.accounts, db.changes, async () => {
+  await db.transaction(
+    'rw',
+    [db.books, db.tags, db.entries, db.accounts, db.subscriptions, db.changes],
+    async () => {
     await clearLedger()
     for (const change of response.changes) {
       await applyChange(change)

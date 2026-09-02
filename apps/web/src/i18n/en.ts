@@ -1,5 +1,20 @@
 import type { zh } from './zh'
 
+function ordinal(n: number): string {
+  const v = n % 100
+  if (v >= 11 && v <= 13) return `${n}th`
+  switch (n % 10) {
+    case 1:
+      return `${n}st`
+    case 2:
+      return `${n}nd`
+    case 3:
+      return `${n}rd`
+    default:
+      return `${n}th`
+  }
+}
+
 export const en: typeof zh = {
   appName: 'TagLedger',
   htmlLang: 'en',
@@ -23,7 +38,7 @@ export const en: typeof zh = {
   nav: {
     ledger: 'Ledger',
     stats: 'Stats',
-    tags: 'Tags',
+    tags: 'Manage',
     settings: 'Settings',
     addEntry: 'Add entry',
   },
@@ -133,6 +148,51 @@ export const en: typeof zh = {
         : `Deletes ${n === 1 ? '1 entry' : `${n} entries`} that use this tag.`,
   },
 
+  manage: {
+    title: 'Manage',
+    tags: 'Tags',
+    subscriptions: 'Subscriptions',
+  },
+
+  sub: {
+    emptyTitle: 'No subscriptions yet',
+    emptyHint: 'Rent, memberships, and salary can post themselves when due.',
+    add: 'Add subscription',
+    edit: 'Edit subscription',
+    cadence: 'Repeat',
+    weekly: 'Weekly',
+    monthly: 'Monthly',
+    yearly: 'Yearly',
+    day: 'Day',
+    month: 'Month',
+    enabled: 'Enabled',
+    disabled: 'Disabled',
+    paused: 'Paused',
+    next: (when: string) => `Next ${when}`,
+    summaryWeekly: (weekday: string, time: string) => `Weekly on ${weekday} at ${time}`,
+    summaryMonthly: (day: number, time: string) => `Monthly on the ${ordinal(day)} at ${time}`,
+    summaryMonthlyFromEnd: (day: number, time: string) =>
+      day === 1 ? `Monthly on the last day at ${time}` : `Monthly on the ${ordinal(day)} last day at ${time}`,
+    summaryYearly: (month: string, day: number, time: string) => `Yearly on ${month} ${ordinal(day)} at ${time}`,
+    monthDayLabel: (month: string, day: number) => `${month} ${ordinal(day)}`,
+    nthDay: (n: number) => `${ordinal(n)} day`,
+    lastNthDay: (n: number) => (n === 1 ? 'Last day' : `${ordinal(n)} last`),
+    nthPrefix: '',
+    nthSuffix: '',
+    fromStart: 'From start',
+    fromEnd: 'From end',
+    weekdayName: (n: number) =>
+      ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'][n] ?? '',
+    pickDay: 'Choose day',
+    pickMonthDay: 'Choose date',
+    pickWeekday: 'Choose weekday',
+    addTime: 'Add time',
+    editTime: 'Edit time',
+    times: 'Times',
+    timeRequired: 'Add at least one time',
+    deleteHint: 'Entries already posted stay in the ledger.',
+  },
+
   entry: {
     create: 'Add entry',
     edit: 'Edit entry',
@@ -152,7 +212,7 @@ export const en: typeof zh = {
     title: 'Settings',
     language: 'Language',
     wipe: 'Erase all data',
-    wipeHint: 'This device’s ledger, tags, and entries will be deleted and cannot be undone. Cloud and other devices are unchanged.',
+    wipeHint: 'This device’s ledger, tags, subscriptions, and entries will be deleted and cannot be undone. Cloud and other devices are unchanged.',
     wipeWait: (n: number) => `Wait ${n}s to confirm`,
     wipeConfirm: 'Erase now',
   },
@@ -214,7 +274,7 @@ export const en: typeof zh = {
     cloudDetail: 'Records on this device will be cleared and replaced with the cloud ledger.',
     bothTitle: 'Keep both',
     bothDetail:
-      'Entries and tags from both sides are kept. Tags with the same name may appear twice. Savings uses the newer value.',
+      'Entries, tags, and subscriptions from both sides are kept. Tags with the same name may appear twice. Savings uses the newer value.',
   },
 
   pickers: {
@@ -258,6 +318,8 @@ export const en: typeof zh = {
 
   keypad: {
     backspaceHint: 'Backspace, hold to clear',
+    plusTimesHint: 'Plus, tap again for multiply',
+    minusDivHint: 'Minus, tap again for divide',
   },
 
   seed: {

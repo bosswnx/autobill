@@ -20,7 +20,7 @@ export function YearPager({ year, onChange }: Props) {
   const selected = Number(year)
   const [viewStart, setViewStart] = useState(pageStart(selected))
   const current = yearKey()
-  const isCurrent = year === current
+  const [picked, setPicked] = useState(selected)
 
   function pick(next: string) {
     onChange(next)
@@ -42,6 +42,7 @@ export function YearPager({ year, onChange }: Props) {
         aria-haspopup="dialog"
         onClick={() => {
           setViewStart(pageStart(selected))
+          setPicked(selected)
           setOpen(true)
         }}
         className="w-[6.75rem] shrink-0 rounded-md bg-hover px-2 py-1 text-center text-[15px] font-semibold tabular-nums transition-colors duration-150 hover:bg-active"
@@ -84,15 +85,12 @@ export function YearPager({ year, onChange }: Props) {
               </div>
               <div className="grid grid-cols-4 gap-1">
                 {Array.from({ length: YEAR_PAGE }, (_, index) => viewStart + index).map((item) => {
-                  const active = item === selected
+                  const active = item === picked
                   return (
                     <button
                       key={item}
                       type="button"
-                      onClick={() => {
-                        pick(String(item))
-                        close()
-                      }}
+                      onClick={() => setPicked(item)}
                       className={`rounded py-1.5 text-sm transition-colors duration-150 ${
                         active ? 'bg-accent text-accent-ink' : 'text-ink hover:bg-hover'
                       }`}
@@ -105,24 +103,36 @@ export function YearPager({ year, onChange }: Props) {
               <div className="mt-5 flex items-center justify-between">
                 <button
                   type="button"
-                  disabled={isCurrent}
-                  onClick={() => {
-                    pick(current)
-                    close()
-                  }}
-                  className={`rounded px-3 py-1.5 text-sm ${
-                    isCurrent ? 'text-faint' : 'text-ink hover:bg-hover'
-                  }`}
+                  disabled={String(picked) === current}
+                  aria-pressed={String(picked) === current}
+                  onClick={() => setPicked(Number(current))}
+                  className={
+                    String(picked) === current
+                      ? 'rounded-md px-3 py-1.5 text-sm text-faint disabled:opacity-100'
+                      : 'rounded-md bg-[#f4f3f0] px-3 py-1.5 text-sm text-ink transition-colors duration-150 hover:bg-[#ebeae6]'
+                  }
                 >
                   {t.pickers.thisYear}
                 </button>
-                <button
-                  type="button"
-                  className="rounded px-3 py-1.5 text-sm text-muted hover:bg-hover"
-                  onClick={close}
-                >
-                  {t.common.cancel}
-                </button>
+                <div className="flex gap-1">
+                  <button
+                    type="button"
+                    className="rounded-md bg-[#f4f3f0] px-3 py-1.5 text-sm text-ink transition-colors duration-150 hover:bg-[#ebeae6]"
+                    onClick={close}
+                  >
+                    {t.common.cancel}
+                  </button>
+                  <button
+                    type="button"
+                    className="rounded-md bg-accent px-4 py-1.5 text-sm text-accent-ink hover:brightness-95"
+                    onClick={() => {
+                      pick(String(picked))
+                      close()
+                    }}
+                  >
+                    {t.common.confirm}
+                  </button>
+                </div>
               </div>
             </div>
           )}

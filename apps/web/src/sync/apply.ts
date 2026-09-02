@@ -1,10 +1,10 @@
-import type { Account, Book, Change, EntityType, Entry, Tag } from '@tagledger/shared'
+import type { Account, Book, Change, EntityType, Entry, Subscription, Tag } from '@tagledger/shared'
 import { incomingWins } from '@tagledger/shared'
 import { db } from '../db/database'
 import { deviceId, nid } from '../lib/id'
 import { nowIso } from '../lib/time'
 
-type Entity = Book | Account | Tag | Entry
+type Entity = Book | Account | Tag | Entry | Subscription
 
 function tableFor(entity: EntityType) {
   switch (entity) {
@@ -16,6 +16,8 @@ function tableFor(entity: EntityType) {
       return db.tags
     case 'entry':
       return db.entries
+    case 'subscription':
+      return db.subscriptions
   }
 }
 
@@ -53,6 +55,7 @@ export async function clearLedger(): Promise<void> {
   await db.accounts.clear()
   await db.tags.clear()
   await db.entries.clear()
+  await db.subscriptions.clear()
   await db.changes.clear()
 }
 
@@ -62,10 +65,14 @@ export async function clearSeqs(): Promise<void> {
 
 export async function rebindLocalToBook(canonicalBookId: string): Promise<void> {
   const now = nowIso()
-  await db.transaction('rw', db.books, db.tags, db.entries, db.accounts, db.changes, async () => {
+  await db.transaction(
+    'rw',
+    [db.books, db.tags, db.entries, db.accounts, db.subscriptions, db.changes],
+    async () => {
     await rewriteCollection(db.tags as never, 'tag', canonicalBookId, now)
     await rewriteCollection(db.entries as never, 'entry', canonicalBookId, now)
     await rewriteCollection(db.accounts as never, 'account', canonicalBookId, now)
+    await rewriteCollection(db.subscriptions as never, 'subscription', canonicalBookId, now)
 
     const books = await db.books.toArray()
     for (const book of books) {

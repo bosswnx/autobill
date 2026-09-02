@@ -8,6 +8,31 @@ function pad2(n: number): string {
   return String(n).padStart(2, '0')
 }
 
+const CALENDAR_WEEKS = 5
+const CALENDAR_CELL = 34
+const CALENDAR_GAP = 4
+
+export function calendarGridStyle(firstWeekday: number, days: number) {
+  const rows = Math.max(1, Math.ceil((firstWeekday + days) / 7))
+  return {
+    height: CALENDAR_WEEKS * CALENDAR_CELL + (CALENDAR_WEEKS - 1) * CALENDAR_GAP,
+    gridTemplateRows: `repeat(${rows}, minmax(0, 1fr))`,
+    rowGap: CALENDAR_GAP,
+  }
+}
+
+function pickerShortcutClass(active: boolean): string {
+  return active
+    ? 'rounded-md px-3 py-1.5 text-sm text-faint disabled:opacity-100'
+    : 'rounded-md bg-[#f4f3f0] px-3 py-1.5 text-sm text-ink transition-colors duration-150 hover:bg-[#ebeae6]'
+}
+
+const pickerCancelClass =
+  'rounded-md bg-[#f4f3f0] px-3 py-1.5 text-sm text-ink transition-colors duration-150 hover:bg-[#ebeae6]'
+
+const pickerConfirmClass =
+  'rounded-md bg-accent px-4 py-1.5 text-sm text-accent-ink hover:brightness-95'
+
 function wrap(n: number, max: number): number {
   return ((n % max) + max) % max
 }
@@ -19,6 +44,7 @@ export function CompactPicker({
   ariaLabel,
   onChange,
   className,
+  overlayClassName,
 }: {
   type: 'date' | 'time'
   value: string
@@ -26,6 +52,7 @@ export function CompactPicker({
   ariaLabel: string
   onChange: (value: string) => void
   className?: string
+  overlayClassName?: string
 }) {
   const [open, setOpen] = useState(false)
 
@@ -42,7 +69,7 @@ export function CompactPicker({
         <span className="truncate tabular-nums">{display}</span>
       </button>
       {open && (
-        <Overlay onClose={() => setOpen(false)} className="overlay-pad items-center">
+        <Overlay onClose={() => setOpen(false)} className={overlayClassName ?? 'overlay-pad items-center'}>
           {(close) =>
             type === 'date' ? (
               <DatePickerPanel value={value} onPick={onChange} close={close} />
@@ -70,6 +97,7 @@ function DatePickerPanel({
   const [viewYear, setViewYear] = useState(year)
   const [viewMonth, setViewMonth] = useState(month)
   const today = toDateInput(nowIso())
+  const [picked, setPicked] = useState(value)
   const viewKey = `${viewYear}-${pad2(viewMonth)}`
   const days = daysInMonth(viewKey)
   const firstWeekday = new Date(viewYear, viewMonth - 1, 1).getDay()
@@ -80,9 +108,15 @@ function DatePickerPanel({
     setViewMonth(next.getMonth() + 1)
   }
 
-  function pick(day: number) {
-    onPick(`${viewYear}-${pad2(viewMonth)}-${pad2(day)}`)
-    close()
+  function selectDay(day: number) {
+    setPicked(`${viewYear}-${pad2(viewMonth)}-${pad2(day)}`)
+  }
+
+  function selectToday() {
+    const [nextYear, nextMonth] = today.split('-').map(Number)
+    setViewYear(nextYear)
+    setViewMonth(nextMonth)
+    setPicked(today)
   }
 
   return (
@@ -115,20 +149,22 @@ function DatePickerPanel({
             {day}
           </div>
         ))}
+      </div>
+      <div className="grid grid-cols-7 gap-x-1 text-center" style={calendarGridStyle(firstWeekday, days)}>
         {Array.from({ length: firstWeekday }, (_, index) => (
           <div key={`blank-${index}`} />
         ))}
         {Array.from({ length: days }, (_, index) => {
           const day = index + 1
           const key = `${viewYear}-${pad2(viewMonth)}-${pad2(day)}`
-          const active = key === value
+          const active = key === picked
           const isToday = key === today
           return (
             <button
               key={key}
               type="button"
-              onClick={() => pick(day)}
-              className={`rounded py-1.5 text-sm tabular-nums transition-colors duration-150 ${
+              onClick={() => selectDay(day)}
+              className={`flex h-full w-full items-center justify-center rounded text-sm tabular-nums transition-colors duration-150 ${
                 active
                   ? 'bg-accent text-accent-ink'
                   : isToday
@@ -144,20 +180,28 @@ function DatePickerPanel({
       <div className="mt-5 flex items-center justify-between">
         <button
           type="button"
-          disabled={value === today}
-          onClick={() => {
-            onPick(today)
-            close()
-          }}
-          className={`rounded px-3 py-1.5 text-sm ${
-            value === today ? 'text-faint' : 'text-ink hover:bg-hover'
-          }`}
+          disabled={picked === today}
+          aria-pressed={picked === today}
+          onClick={selectToday}
+          className={pickerShortcutClass(picked === today)}
         >
           {t.common.today}
         </button>
-        <button type="button" className="rounded px-3 py-1.5 text-sm text-muted hover:bg-hover" onClick={close}>
-          {t.common.cancel}
-        </button>
+        <div className="flex gap-1">
+          <button type="button" className={pickerCancelClass} onClick={close}>
+            {t.common.cancel}
+          </button>
+          <button
+            type="button"
+            className={pickerConfirmClass}
+            onClick={() => {
+              onPick(picked)
+              close()
+            }}
+          >
+            {t.common.confirm}
+          </button>
+        </div>
       </div>
     </div>
   )
@@ -201,23 +245,23 @@ function TimePickerPanel({
         <button
           type="button"
           disabled={picked === now}
+          aria-pressed={picked === now}
           onClick={() => {
-            onPick(now)
-            close()
+            const [nextHour, nextMinute] = now.split(':').map(Number)
+            setHour(nextHour)
+            setMinute(nextMinute)
           }}
-          className={`rounded px-3 py-1.5 text-sm ${
-            picked === now ? 'text-faint' : 'text-ink hover:bg-hover'
-          }`}
+          className={pickerShortcutClass(picked === now)}
         >
           {t.common.now}
         </button>
         <div className="flex gap-1">
-          <button type="button" className="rounded px-3 py-1.5 text-sm text-muted hover:bg-hover" onClick={close}>
+          <button type="button" className={pickerCancelClass} onClick={close}>
             {t.common.cancel}
           </button>
           <button
             type="button"
-            className="rounded-md bg-accent px-4 py-1.5 text-sm text-accent-ink hover:brightness-95"
+            className={pickerConfirmClass}
             onClick={() => {
               onPick(picked)
               close()

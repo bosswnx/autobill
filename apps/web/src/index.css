@@ -50,6 +50,10 @@ html {
   overflow-y: auto;
 }
 
+html:not(.is-ios) {
+  scrollbar-gutter: stable;
+}
+
 html.is-ios,
 html.is-ios body {
   overscroll-behavior-y: auto;
@@ -185,6 +189,10 @@ input[type='month']::-webkit-date-and-time-value {
 
 button {
   cursor: pointer;
+}
+
+button:disabled {
+  cursor: not-allowed;
 }
 
 .amount-key[data-pressed='true'] {
