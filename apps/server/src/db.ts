@@ -132,6 +132,20 @@ export function touchDevice(id: string, at: string): void {
   db.prepare('UPDATE devices SET last_seen = ? WHERE id = ?').run(at, id)
 }
 
+export function listEntityRows(spaceId: string, entity: EntityType): EntityRow[] {
+  return db
+    .prepare(
+      `SELECT * FROM entities
+       WHERE space_id = ? AND entity = ?
+       ORDER BY updated_at ASC`,
+    )
+    .all(spaceId, entity) as EntityRow[]
+}
+
+export function getEntityRow(id: string): EntityRow | undefined {
+  return db.prepare('SELECT * FROM entities WHERE id = ?').get(id) as EntityRow | undefined
+}
+
 export function cloudBookId(spaceId: string): string | null {
   const row = db
     .prepare(

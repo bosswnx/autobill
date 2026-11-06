@@ -35,7 +35,8 @@ apps/web/                 Web app + Capacitor + Tauri shells
   android/                Android Studio project (phone / tablet)
   src-tauri/              Tauri macOS shell
 apps/server/              Sync server (Linux)
-  src/index.ts            HTTP: /healthz, /v1/connect, /v1/sync, /v1/replace
+  src/index.ts            HTTP: /healthz, /v1/connect, /v1/sync, /v1/replace, /v1/mcp/token
+  src/mcp/                MCP: tools, ledger reads/writes, stats, stdio bridge
   src/db.ts               SQLite log and materialized entities
   .env.example            Environment sample
 packages/shared/src/     Book / Tag / Entry / Change types and LWW
@@ -89,6 +90,60 @@ Connecting from another device still needs three things:
 Opening the page **on the server itself** shows login first (no URL field). On a given server, the user token *is* the space. Do not share it. After connect, sync uses a device token; the target key and user token are not sent again.
 
 If both sides already have data, the app stops and asks: overwrite cloud with this device, overwrite this device with cloud, or keep both.
+
+### Docker
+
+```bash
+cp apps/server/.env.example .env   # at least TAGLEDGER_TARGET_KEY and TAGLEDGER_PEPPER
+docker compose up -d --build
+```
+
+The image builds the web app. The container listens on `127.0.0.1:8787` only; put Caddy or nginx in front for TLS. SQLite lives in `./data`.
+
+### MCP (AI agents)
+
+The sync server exposes an MCP endpoint, so an agent can add entries, edit them, manage tags and subscriptions — the same operations the UI offers. Writes go through the same change log, so every device sees them on its next sync.
+
+- Endpoint: `POST /mcp` (Streamable HTTP, stateless, JSON responses)
+- Auth: `Authorization: Bearer <MCP token>`
+- Exchange the server gate for an MCP token:
+
+```bash
+TAGLEDGER_MCP_URL=https://ledger.example.com \
+TAGLEDGER_TARGET_KEY=... \
+TAGLEDGER_USER_TOKEN=... \
+npm run mcp:token
+```
+
+Minting again with the same `deviceName` rotates that agent's token; different names (Claude Code, Claude Desktop, …) keep separate tokens.
+
+HTTP-capable clients connect directly:
+
+```json
+{
+  "mcpServers": {
+    "tagledger": {
+      "type": "http",
+      "url": "https://ledger.example.com/mcp",
+      "headers": { "Authorization": "Bearer <token>" }
+    }
+  }
+}
+```
+
+stdio-only clients use the bundled bridge:
+
+```bash
+TAGLEDGER_MCP_URL=https://ledger.example.com \
+TAGLEDGER_MCP_TOKEN=<token> \
+npm run mcp
+```
+
+Without a token, set `TAGLEDGER_TARGET_KEY` + `TAGLEDGER_USER_TOKEN` instead and the bridge mints one on start.
+
+Tools: `ledger_info`, `set_savings`, `list_tags`, `create_tag`, `update_tag`, `delete_tag`, `list_entries`, `get_entry`, `create_entry`, `update_entry`, `delete_entry`, `ledger_stats`, `list_subscriptions`, `create_subscription`, `update_subscription`, `delete_subscription`.
+
+Conventions: amounts are integer cents (or `amountYuan`); times are ISO 8601 or local `YYYY-MM-DD HH:mm`; "this month" follows the server time zone reported by `ledger_info`. Tags are created and deleted only by `create_tag` / `delete_tag`; any other tool that receives an unknown tag id or name fails, so create the tag first. Due subscription entries are still materialized by the app when it opens — the server does not create them. There is no cloud-wide wipe tool — the wipe button in Settings is local, and the cloud is replaced by a device sync.
 
 ### iPhone / iPad (installable app)
 
@@ -228,6 +283,8 @@ API:
 | `POST` | `/v1/connect` | Body: target key, user token, device info → device token |
 | `POST` | `/v1/sync` | `Authorization: Bearer <deviceToken>`; push unacked changes, pull `seq > cursor` |
 | `POST` | `/v1/replace` | When overwriting cloud with local: wipe that space’s log, then push |
+| `POST` | `/v1/mcp/token` | Exchange target key + user token for an MCP token |
+| `POST` | `/mcp` | MCP Streamable HTTP, `Authorization: Bearer <MCP token>` |
 
 ## Screens
 

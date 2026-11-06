@@ -29,6 +29,7 @@ import {
   withTxn,
 } from './db.ts'
 import { rateLimit } from './rateLimit.ts'
+import { mountMcp } from './mcp/http.ts'
 import { mountWeb } from './web.ts'
 
 const config = loadConfig()
@@ -40,7 +41,14 @@ app.use(
   '*',
   cors({
     origin: '*',
-    allowHeaders: ['Authorization', 'Content-Type'],
+    allowHeaders: [
+      'Authorization',
+      'Content-Type',
+      'Accept',
+      'MCP-Protocol-Version',
+      'Mcp-Session-Id',
+      'Last-Event-ID',
+    ],
     allowMethods: ['GET', 'POST', 'OPTIONS'],
   }),
 )
@@ -121,6 +129,71 @@ app.post('/v1/connect', async (c) => {
   return c.json(result)
 })
 
+app.post('/v1/mcp/token', async (c) => {
+  const ip = c.req.header('x-forwarded-for')?.split(',')[0]?.trim() || 'local'
+  if (!rateLimit(`mcp-token:${ip}`)) {
+    return c.json({ error: 'rate_limited' }, 429)
+  }
+
+  let body: { targetKey?: string; userToken?: string; deviceId?: string; deviceName?: string }
+  try {
+    body = await c.req.json()
+  } catch {
+    return c.json({ error: 'invalid_json' }, 400)
+  }
+
+  const targetKey = String(body.targetKey ?? '').trim()
+  const userToken = String(body.userToken ?? '').trim()
+  const deviceName = (String(body.deviceName ?? '').trim() || 'AI agent').slice(0, 80)
+  // One device row per named agent: the same name rotates its token, different
+  // names (Claude Code, Claude Desktop, ...) keep separate tokens alive.
+  const deviceId = (
+    String(body.deviceId ?? '').trim() || `mcp-${agentSlug(deviceName)}`
+  ).slice(0, 80)
+
+  if (!safeEqual(targetKey, config.targetKey)) {
+    return c.json({ error: 'invalid_target_key' }, 403)
+  }
+  if (userToken.length < MIN_USER_TOKEN_LENGTH || userToken.length > MAX_TOKEN_LENGTH) {
+    return c.json({ error: 'invalid_user_token' }, 400)
+  }
+
+  const key = spaceKey(userToken, config.pepper)
+  const now = new Date().toISOString()
+  const token = newDeviceToken()
+
+  const result = withTxn(() => {
+    let space = findSpaceByKey(key)
+    let isNewSpace = false
+    if (!space) {
+      space = { id: newId(), space_key: key, created_at: now }
+      insertSpace(space)
+      isNewSpace = true
+    }
+    upsertDevice({
+      id: newId(),
+      space_id: space.id,
+      device_id: deviceId,
+      name: deviceName,
+      token_hash: hashSecret(token),
+      created_at: now,
+      last_seen: now,
+    })
+    return {
+      token,
+      spaceId: space.id,
+      deviceId,
+      deviceName,
+      isNewSpace,
+      hasCloudData: hasCloudData(space.id),
+      cloudBookId: cloudBookId(space.id),
+    }
+  })
+
+  console.log('mcp token issued', `space=${result.spaceId.slice(0, 8)} device=${deviceId.slice(0, 24)}`)
+  return c.json(result)
+})
+
 app.post('/v1/replace', (c) => {
   const device = authDevice(c.req.header('Authorization'))
   if (!device) return c.json({ error: 'unauthorized' }, 401)
@@ -183,6 +256,8 @@ app.post('/v1/sync', async (c) => {
   }
 })
 
+mountMcp(app)
+
 if (config.webRoot) {
   mountWeb(app, config.webRoot)
 }
@@ -199,6 +274,15 @@ function authDevice(header: string | undefined) {
   const token = header.slice('Bearer '.length).trim()
   if (!token) return undefined
   return findDeviceByTokenHash(hashSecret(token))
+}
+
+function agentSlug(name: string): string {
+  const slug = name
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '')
+    .slice(0, 40)
+  return slug || 'agent'
 }
 
 function parseCursor(cursor: string | null | undefined): number | null {

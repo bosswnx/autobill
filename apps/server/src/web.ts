@@ -4,7 +4,7 @@ import { getMimeType } from 'hono/utils/mime'
 import type { Hono } from 'hono'
 
 function isApi(path: string): boolean {
-  return path === '/healthz' || path.startsWith('/v1/')
+  return path === '/healthz' || path.startsWith('/v1/') || path === '/mcp'
 }
 
 function safeFile(webRoot: string, urlPath: string): string | null {

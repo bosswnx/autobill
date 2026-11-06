@@ -35,7 +35,8 @@ apps/web/                 前端 + Capacitor + Tauri 壳
   android/                Android Studio 工程（手机 / 平板）
   src-tauri/              Tauri macOS 壳
 apps/server/              同步服务（Linux）
-  src/index.ts            HTTP：/healthz、/v1/connect、/v1/sync、/v1/replace
+  src/index.ts            HTTP：/healthz、/v1/connect、/v1/sync、/v1/replace、/v1/mcp/token
+  src/mcp/                MCP：工具、账本读写、统计、stdio 桥
   src/db.ts               SQLite 日志与物化实体
   .env.example            环境变量样例
 packages/shared/src/      Book / Tag / Entry / Change 等类型与 LWW
@@ -89,6 +90,60 @@ npm run serve
 **直接打开这台服务器上的网页**会先登录（不用填地址）。同一台服务器上，用户 token 就是你的空间。不要和别人重复。连上之后同步走设备 token，不再传 target key 和用户 token。
 
 两边都有数据时会停下来让你选：用本机覆盖云端、用云端覆盖本机、两边都留。
+
+### Docker
+
+```bash
+cp apps/server/.env.example .env   # 至少填 TAGLEDGER_TARGET_KEY 和 TAGLEDGER_PEPPER
+docker compose up -d --build
+```
+
+镜像里会编好网页。容器只监听 `127.0.0.1:8787`，前面用 Caddy / nginx 终止 TLS；SQLite 落在 `./data`。
+
+### MCP（给 AI agent）
+
+同步服务自带一个 MCP 端点，AI 可以直接记账、改账、管理标签和订阅，和人在界面里能做的事一样。写进去的变更走同一条 change 日志，所有设备下次同步就能看到。
+
+- 端点：`POST /mcp`（Streamable HTTP，无状态，JSON 响应）
+- 鉴权：`Authorization: Bearer <MCP token>`
+- 用 target key + 用户 token 换 MCP token：
+
+```bash
+TAGLEDGER_MCP_URL=https://ledger.example.com \
+TAGLEDGER_TARGET_KEY=... \
+TAGLEDGER_USER_TOKEN=... \
+npm run mcp:token
+```
+
+同一个 `deviceName` 再换一次 token 会顶掉旧的；不同的名字（Claude Code、Claude Desktop…）各自保留一个 token。
+
+支持 HTTP 的客户端直接连：
+
+```json
+{
+  "mcpServers": {
+    "tagledger": {
+      "type": "http",
+      "url": "https://ledger.example.com/mcp",
+      "headers": { "Authorization": "Bearer <token>" }
+    }
+  }
+}
+```
+
+只支持 stdio 的客户端用内置桥：
+
+```bash
+TAGLEDGER_MCP_URL=https://ledger.example.com \
+TAGLEDGER_MCP_TOKEN=<token> \
+npm run mcp
+```
+
+也可以不给 token，改成 `TAGLEDGER_TARGET_KEY` + `TAGLEDGER_USER_TOKEN`，桥启动时会自己换一个。
+
+工具：`ledger_info`、`set_savings`、`list_tags`、`create_tag`、`update_tag`、`delete_tag`、`list_entries`、`get_entry`、`create_entry`、`update_entry`、`delete_entry`、`ledger_stats`、`list_subscriptions`、`create_subscription`、`update_subscription`、`delete_subscription`。
+
+约定：金额是整数分（也可以传 `amountYuan`）；时间用 ISO 8601 或本地 `YYYY-MM-DD HH:mm`；「本月」按 `ledger_info` 返回的服务器时区算。标签只能通过 `create_tag` / `delete_tag` 增删；记账、订阅、改账里传了不存在的标签 id 或名字一律报错，先建标签再操作。订阅到点生成的流水仍由 App 打开时补，服务端不自动生成。MCP 没有「清空整本账」：设置里的清空只清本机，云端靠设备同步覆盖。
 
 ### iPhone / iPad（可安装的 App）
 
@@ -228,6 +283,8 @@ IndexedDB 库名：`tagledger`。
 | `POST` | `/v1/connect` | 地址已在客户端；body 带 target key、用户 token、设备信息 → 设备 token |
 | `POST` | `/v1/sync` | `Authorization: Bearer <deviceToken>`，推未确认的 change，拉 `seq > cursor` |
 | `POST` | `/v1/replace` | 用本机覆盖云端时，先清空该空间日志再推 |
+| `POST` | `/v1/mcp/token` | 用 target key + 用户 token 换 MCP token |
+| `POST` | `/mcp` | MCP Streamable HTTP，`Authorization: Bearer <MCP token>` |
 
 ## 页面
 

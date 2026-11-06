@@ -17,6 +17,8 @@ npm run dev:lan          # bind Vite to LAN for device live reload
 npm run build            # build web
 npm run server           # sync server (tsx watch); serves the web app if dist exists
 npm run server:start     # sync server (no watch)
+npm run mcp              # stdio bridge to a running server's /mcp
+npm run mcp:token        # exchange target key + user token for an MCP token
 npm run serve            # build web, then start API + web on one port
 npm run ios              # build + cap sync ios + open Xcode
 npm run ios:live         # device against this machine's Vite
@@ -31,7 +33,7 @@ npm run macos:build      # .app + dmg
 ## Layout
 
 - `apps/web`: UI, Dexie, sync client, Capacitor iOS/Android, Tauri macOS
-- `apps/server`: Hono sync server
+- `apps/server`: Hono sync server, and the MCP endpoint in `src/mcp`
 - `packages/shared`: types, LWW, token length constants
 
 ## Hard rules
@@ -72,6 +74,16 @@ npm run macos:build      # .app + dmg
 ### Dexie
 
 Current version is v3 (`changes.seq` + `meta`). Further schema changes need a new version and an upgrade.
+
+### MCP
+
+- Tools live in `apps/server/src/mcp/tools.ts`; ledger reads and writes in `store.ts`.
+- Every MCP write goes through `store.write`, which appends a `changes` row with a new `rev`, a non-decreasing `updatedAt`, and a server-assigned `seq`. Never `UPDATE entities` directly — that would skip the log and other devices would never see it.
+- `/mcp` authenticates a device token only. Target key and user token are accepted at `POST /v1/mcp/token` and nowhere else.
+- MCP reads come from the materialized `entities` table; filter `deleted_at`.
+- Tool names are snake_case, amounts are integer cents (`amountCents`) with an optional `amountYuan`.
+- MCP never creates or deletes tags implicitly: only `create_tag` and `delete_tag` touch tags. Any other tool that receives an unknown tag id or name fails and must be preceded by `create_tag`.
+- There is no cloud-wide wipe tool: the wipe button stays local, and a device sync replaces the cloud.
 
 ### Git commit
 
