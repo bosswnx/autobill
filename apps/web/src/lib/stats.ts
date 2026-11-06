@@ -1,4 +1,4 @@
-import type { Entry, Tag } from '@tagledger/shared'
+import type { Entry, Tag } from '@tagbill/shared'
 import { getLocale } from '../i18n'
 import {
   dayKey,

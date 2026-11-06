@@ -1,5 +1,5 @@
 {
-  "name": "@tagledger/web",
+  "name": "@tagbill/web",
   "private": true,
   "version": "0.0.0",
   "type": "module",
@@ -26,7 +26,7 @@
     "@capacitor/core": "^8.0.0",
     "@capacitor/haptics": "^8.0.2",
     "@capacitor/ios": "^8.0.0",
-    "@tagledger/shared": "*",
+    "@tagbill/shared": "*",
     "@tauri-apps/api": "^2",
     "dexie": "^4.2.1",
     "dexie-react-hooks": "^4.2.0",

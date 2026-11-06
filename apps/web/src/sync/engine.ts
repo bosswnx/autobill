@@ -1,5 +1,5 @@
-import type { ConnectResponse, MergeChoice } from '@tagledger/shared'
-import { MAX_CHANGES_PER_SYNC } from '@tagledger/shared'
+import type { ConnectResponse, MergeChoice } from '@tagbill/shared'
+import { MAX_CHANGES_PER_SYNC } from '@tagbill/shared'
 import { Capacitor } from '@capacitor/core'
 import { db } from '../db/database'
 import { deviceId } from '../lib/id'

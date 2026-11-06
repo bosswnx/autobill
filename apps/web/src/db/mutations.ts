@@ -9,8 +9,8 @@ import type {
   SubscriptionTime,
   Tag,
   TagKind,
-} from '@tagledger/shared'
-import { TAG_COLOR_PALETTE } from '@tagledger/shared'
+} from '@tagbill/shared'
+import { TAG_COLOR_PALETTE } from '@tagbill/shared'
 import { db } from './database'
 import { deviceId, nid } from '../lib/id'
 import { nowIso } from '../lib/time'

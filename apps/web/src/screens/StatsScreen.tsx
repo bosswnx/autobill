@@ -1,4 +1,4 @@
-import type { Book, Tag } from '@tagledger/shared'
+import type { Book, Tag } from '@tagbill/shared'
 import { useMemo, useState, type ReactNode } from 'react'
 import { BarChart, LineChart, TagAmountList } from '../components/Charts'
 import { MonthPager } from '../components/MonthPager'

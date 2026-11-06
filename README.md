@@ -1,4 +1,4 @@
-# TagLedger
+# TagBill
 
 A tag-based personal ledger. Flat tags, no category tree, no wallets. One book, and one editable **savings** figure.
 
@@ -17,7 +17,7 @@ The UI is Chinese. Amounts are stored as **cents** (`amountCents`). Display uses
 - Native shell: Capacitor (iOS + Android) and Tauri (macOS)
 - Icons: Lucide
 
-Shared types live in `@tagledger/shared`. Vite and the sync server import the source directly; you do not need to build the package first.
+Shared types live in `@tagbill/shared`. Vite and the sync server import the source directly; you do not need to build the package first.
 
 ## Layout
 
@@ -73,11 +73,11 @@ For a real deploy, set env vars (see `apps/server/.env.example`):
 
 | Variable | Role |
 | --- | --- |
-| `TAGLEDGER_TARGET_KEY` | Server gate, shared by every user on this instance |
-| `TAGLEDGER_PEPPER` | Used to hash user tokens; never send to clients |
+| `TAGBILL_TARGET_KEY` | Server gate, shared by every user on this instance |
+| `TAGBILL_PEPPER` | Used to hash user tokens; never send to clients |
 | `PORT` / `HOST` | Defaults `8787` / `0.0.0.0` |
-| `TAGLEDGER_DATA` | Directory for SQLite and secrets |
-| `TAGLEDGER_WEB` | Optional path to the web `dist` folder |
+| `TAGBILL_DATA` | Directory for SQLite and secrets |
+| `TAGBILL_WEB` | Optional path to the web `dist` folder |
 
 Terminate TLS with Caddy or nginx. A hosted browser asks for the target key and user token on a login page; the server URL is this page. After that, this browser is a terminal.
 
@@ -94,7 +94,7 @@ If both sides already have data, the app stops and asks: overwrite cloud with th
 ### Docker
 
 ```bash
-cp apps/server/.env.example .env   # at least TAGLEDGER_TARGET_KEY and TAGLEDGER_PEPPER
+cp apps/server/.env.example .env   # at least TAGBILL_TARGET_KEY and TAGBILL_PEPPER
 docker compose up -d --build
 ```
 
@@ -109,9 +109,9 @@ The sync server exposes an MCP endpoint, so an agent can add entries, edit them,
 - Exchange the server gate for an MCP token:
 
 ```bash
-TAGLEDGER_MCP_URL=https://ledger.example.com \
-TAGLEDGER_TARGET_KEY=... \
-TAGLEDGER_USER_TOKEN=... \
+TAGBILL_MCP_URL=https://ledger.example.com \
+TAGBILL_TARGET_KEY=... \
+TAGBILL_USER_TOKEN=... \
 npm run mcp:token
 ```
 
@@ -122,7 +122,7 @@ HTTP-capable clients connect directly:
 ```json
 {
   "mcpServers": {
-    "tagledger": {
+    "tagbill": {
       "type": "http",
       "url": "https://ledger.example.com/mcp",
       "headers": { "Authorization": "Bearer <token>" }
@@ -134,12 +134,12 @@ HTTP-capable clients connect directly:
 stdio-only clients use the bundled bridge:
 
 ```bash
-TAGLEDGER_MCP_URL=https://ledger.example.com \
-TAGLEDGER_MCP_TOKEN=<token> \
+TAGBILL_MCP_URL=https://ledger.example.com \
+TAGBILL_MCP_TOKEN=<token> \
 npm run mcp
 ```
 
-Without a token, set `TAGLEDGER_TARGET_KEY` + `TAGLEDGER_USER_TOKEN` instead and the bridge mints one on start.
+Without a token, set `TAGBILL_TARGET_KEY` + `TAGBILL_USER_TOKEN` instead and the bridge mints one on start.
 
 Tools: `ledger_info`, `set_savings`, `list_tags`, `create_tag`, `update_tag`, `delete_tag`, `list_entries`, `get_entry`, `create_entry`, `update_entry`, `delete_entry`, `ledger_stats`, `list_subscriptions`, `create_subscription`, `update_subscription`, `delete_subscription`.
 
@@ -165,7 +165,7 @@ After web-only changes:
 
 ```bash
 npm run build
-npm run cap:sync -w @tagledger/web
+npm run cap:sync -w @tagbill/web
 ```
 
 Then Run in Xcode. You do not need `cap open` every time.
@@ -182,7 +182,7 @@ npm run ios:live
 
 Phone and computer must be on the same Wi-Fi. `ios:live` writes `CAP_SERVER_URL` into the Capacitor config. For a store/dev IPA use plain `npm run ios` with no live URL.
 
-Bundle ID is `app.tagledger`. App Store, privacy manifests, and certificates are not in this repo yet. Local install only.
+Bundle ID is `app.tagbill`. App Store, privacy manifests, and certificates are not in this repo yet. Local install only.
 
 ### Android (installable app)
 
@@ -200,7 +200,7 @@ After web-only changes:
 
 ```bash
 npm run build
-npm run cap:sync -w @tagledger/web
+npm run cap:sync -w @tagbill/web
 ```
 
 Then Run in Android Studio.
@@ -217,7 +217,7 @@ npm run android:live
 
 Phone and computer must be on the same Wi-Fi. `android:live` writes `CAP_SERVER_URL` into the Capacitor config. For a store/dev APK use plain `npm run android` with no live URL.
 
-Application ID is `app.tagledger`. Play listing, signing, and privacy manifests are not in this repo yet. Local install only.
+Application ID is `app.tagbill`. Play listing, signing, and privacy manifests are not in this repo yet. Local install only.
 
 ### macOS (installable app)
 
@@ -231,7 +231,7 @@ npm run macos
 
 Opens a desktop window against Vite on `http://127.0.0.1:1420` (separate from `npm run dev` on 5173).
 
-To produce `TagLedger.app` and a dmg:
+To produce `TagBill.app` and a dmg:
 
 ```bash
 npm run macos:build
@@ -243,7 +243,7 @@ Windows and Linux shells are not wired.
 
 ## Data model
 
-Every entity has `id / rev / createdAt / updatedAt / deletedAt`. Deletes are soft. Writes go through `mutations.ts` and append a row to `changes`. Device id is in `localStorage` (`tagledger.deviceId`).
+Every entity has `id / rev / createdAt / updatedAt / deletedAt`. Deletes are soft. Writes go through `mutations.ts` and append a row to `changes`. Device id is in `localStorage` (`tagbill.deviceId`).
 
 | Table | Role |
 | --- | --- |
@@ -254,7 +254,7 @@ Every entity has `id / rev / createdAt / updatedAt / deletedAt`. Deletes are sof
 | `changes` | Change log. `seq` is empty until the server acks it |
 | `meta` | Sync session: server URL, device token, cursor |
 
-IndexedDB name: `tagledger`.
+IndexedDB name: `tagbill`.
 
 **Savings** is not stored as a running balance. When the user types “how much I have now”:
 
@@ -340,7 +340,7 @@ Schema changes need a new `version` and an `upgrade`. **Do not wipe the user’s
 | Android | Wired | `npm run android`, Android Studio to device or emulator. Same portrait / landscape split on tablets |
 | Sync server | Wired | `npm run server`, Linux + SQLite |
 
-Do not start a React Native / Flutter app. Shared types stay in `@tagledger/shared`; product and UI stay in `apps/web`. The native shell owns the window, safe areas, and later maybe push and file backup.
+Do not start a React Native / Flutter app. Shared types stay in `@tagbill/shared`; product and UI stay in `apps/web`. The native shell owns the window, safe areas, and later maybe push and file backup.
 
 Layout is already split into two shells. Reuse it when wrapping native; do not build a second tablet UI:
 

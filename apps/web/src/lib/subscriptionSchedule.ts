@@ -1,4 +1,4 @@
-import type { Subscription, SubscriptionCadence } from '@tagledger/shared'
+import type { Subscription, SubscriptionCadence } from '@tagbill/shared'
 import { shiftMonth } from './time'
 
 export type Recurrence = Pick<Subscription, 'cadence' | 'month' | 'day' | 'hour' | 'minute'> & {

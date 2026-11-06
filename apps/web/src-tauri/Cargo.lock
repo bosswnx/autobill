@@ -2994,7 +2994,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "tagledger"
+name = "tagbill"
 version = "0.0.0"
 dependencies = [
  "tauri",

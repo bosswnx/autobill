@@ -1,5 +1,5 @@
 {
-  "name": "@tagledger/server",
+  "name": "@tagbill/server",
   "private": true,
   "version": "0.0.1",
   "type": "module",
@@ -12,7 +12,7 @@
   "dependencies": {
     "@hono/node-server": "^1.19.6",
     "@modelcontextprotocol/sdk": "^1.32.2",
-    "@tagledger/shared": "*",
+    "@tagbill/shared": "*",
     "better-sqlite3": "^12.4.1",
     "hono": "^4.11.3",
     "zod": "^4.6.7"

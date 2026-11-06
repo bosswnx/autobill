@@ -1,4 +1,4 @@
-import type { Book, Subscription, SubscriptionCadence, Tag } from '@tagledger/shared'
+import type { Book, Subscription, SubscriptionCadence, Tag } from '@tagbill/shared'
 import { Plus } from 'lucide-react'
 import { useMemo, useRef, useState, type ReactNode } from 'react'
 import { AmountKeypad } from '../components/AmountKeypad'

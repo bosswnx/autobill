@@ -16,7 +16,7 @@ function ordinal(n: number): string {
 }
 
 export const en: typeof zh = {
-  appName: 'TagLedger',
+  appName: 'TagBill',
   htmlLang: 'en',
   intl: 'en',
 

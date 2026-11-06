@@ -5,7 +5,10 @@
     <script>
       (() => {
         try {
-          const mode = localStorage.getItem('tagledger.theme') || 'system'
+          const mode =
+            localStorage.getItem('tagbill.theme') ||
+            localStorage.getItem('tagledger.theme') ||
+            'system'
           const dark =
             mode === 'dark' ||
             (mode !== 'light' && matchMedia('(prefers-color-scheme: dark)').matches)

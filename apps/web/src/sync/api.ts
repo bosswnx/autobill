@@ -1,4 +1,4 @@
-import type { ConnectRequest, ConnectResponse, SyncRequest, SyncResponse } from '@tagledger/shared'
+import type { ConnectRequest, ConnectResponse, SyncRequest, SyncResponse } from '@tagbill/shared'
 import { getMessages } from '../i18n'
 
 export class SyncApiError extends Error {

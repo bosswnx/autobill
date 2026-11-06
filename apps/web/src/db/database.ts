@@ -1,4 +1,4 @@
-import type { Account, Book, Change, Entry, Subscription, Tag, TagKind } from '@tagledger/shared'
+import type { Account, Book, Change, Entry, Subscription, Tag, TagKind } from '@tagbill/shared'
 import Dexie, { type EntityTable } from 'dexie'
 
 export type SyncMeta = {
@@ -11,7 +11,7 @@ export type SyncMeta = {
   lastError: string | null
 }
 
-export class TagLedgerDB extends Dexie {
+export class TagBillDB extends Dexie {
   books!: EntityTable<Book, 'id'>
   accounts!: EntityTable<Account, 'id'>
   tags!: EntityTable<Tag, 'id'>
@@ -21,7 +21,7 @@ export class TagLedgerDB extends Dexie {
   meta!: EntityTable<SyncMeta, 'key'>
 
   constructor() {
-    super('tagledger')
+    super('tagbill')
     this.version(1).stores({
       books: 'id, updatedAt',
       accounts: 'id, bookId, updatedAt',
@@ -68,4 +68,49 @@ export class TagLedgerDB extends Dexie {
   }
 }
 
-export const db = new TagLedgerDB()
+export const db = new TagBillDB()
+
+const LEGACY_DB = 'tagledger'
+
+/**
+ * Copies a pre-rename IndexedDB database (`tagledger`) into the new one.
+ * Runs before the first render; the legacy database is left untouched.
+ */
+export async function migrateLegacyDb(): Promise<void> {
+  if (typeof indexedDB === 'undefined') return
+  try {
+    if (!(await Dexie.exists(LEGACY_DB))) return
+    if ((await Dexie.exists('tagbill')) && (await db.books.count()) > 0) return
+    await db.open()
+    const legacy = await openLegacyDb(LEGACY_DB)
+    try {
+      for (const name of Array.from(legacy.objectStoreNames)) {
+        const table = db.tables.find((item) => item.name === name)
+        if (!table) continue
+        const rows = await readAll(legacy, name)
+        if (rows.length > 0) await table.bulkPut(rows)
+      }
+    } finally {
+      legacy.close()
+    }
+  } catch (error) {
+    console.warn('tagledger -> tagbill migration skipped', error)
+  }
+}
+
+function openLegacyDb(name: string): Promise<IDBDatabase> {
+  return new Promise((resolve, reject) => {
+    const request = indexedDB.open(name)
+    request.onsuccess = () => resolve(request.result)
+    request.onerror = () => reject(request.error)
+  })
+}
+
+function readAll(database: IDBDatabase, store: string): Promise<unknown[]> {
+  return new Promise((resolve, reject) => {
+    const transaction = database.transaction(store, 'readonly')
+    const request = transaction.objectStore(store).getAll()
+    request.onsuccess = () => resolve(request.result as unknown[])
+    request.onerror = () => reject(request.error)
+  })
+}

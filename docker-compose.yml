@@ -1,15 +1,15 @@
 services:
-  tagledger:
+  tagbill:
     build: .
-    image: tagledger:local
-    container_name: tagledger
+    image: tagbill:local
+    container_name: tagbill
     restart: unless-stopped
     env_file:
       - .env
     environment:
       PORT: "8787"
       HOST: 0.0.0.0
-      TAGLEDGER_DATA: /data
+      TAGBILL_DATA: /data
     ports:
       - "127.0.0.1:8787:8787"
     volumes:

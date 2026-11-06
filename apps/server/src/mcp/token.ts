@@ -1,15 +1,20 @@
 import { mintAgentToken } from './mint.ts'
 
-const serverUrl = process.env.TAGLEDGER_MCP_URL ?? process.argv[2] ?? ''
-const targetKey = process.env.TAGLEDGER_TARGET_KEY ?? process.argv[3] ?? ''
-const userToken = process.env.TAGLEDGER_USER_TOKEN ?? process.argv[4] ?? ''
-const deviceName = process.env.TAGLEDGER_MCP_DEVICE_NAME ?? process.argv[5] ?? 'AI agent'
+const env = (name: string): string | undefined =>
+  process.env[name]?.trim() ||
+  process.env[name.replace('TAGBILL_', 'TAGLEDGER_')]?.trim() ||
+  undefined
+
+const serverUrl = env('TAGBILL_MCP_URL') ?? process.argv[2] ?? ''
+const targetKey = env('TAGBILL_TARGET_KEY') ?? process.argv[3] ?? ''
+const userToken = env('TAGBILL_USER_TOKEN') ?? process.argv[4] ?? ''
+const deviceName = env('TAGBILL_MCP_DEVICE_NAME') ?? process.argv[5] ?? 'AI agent'
 
 if (!serverUrl || !targetKey || !userToken) {
   console.error(
-    'usage: TAGLEDGER_MCP_URL=https://ledger.example.com \\\n' +
-      '       TAGLEDGER_TARGET_KEY=... TAGLEDGER_USER_TOKEN=... \\\n' +
-      '       npm run mcp:token -w @tagledger/server',
+    'usage: TAGBILL_MCP_URL=https://ledger.example.com \\\n' +
+      '       TAGBILL_TARGET_KEY=... TAGBILL_USER_TOKEN=... \\\n' +
+      '       npm run mcp:token -w @tagbill/server',
   )
   process.exit(1)
 }

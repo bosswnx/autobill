@@ -1,4 +1,4 @@
-# TagLedger — for agents
+# TagBill — for agents
 
 Repo conventions. Read this before changing code. If it conflicts with `README.md`, these hard rules win.
 
@@ -6,7 +6,7 @@ Repo conventions. Read this before changing code. If it conflicts with `README.m
 
 A personal ledger. Flat tags, no category tree, no wallets. One React UI on the browser, Capacitor (iOS + Android), and Tauri (macOS). Sync server is `apps/server`, Linux + SQLite. Do not start a React Native / Flutter app.
 
-The UI is Chinese and English. Language lives in Settings; default is Chinese. The Chinese product name is 标签记账 — never show “TagLedger” in the zh locale. Amounts are integer cents.
+The UI is Chinese and English. Language lives in Settings; default is Chinese. The Chinese product name is 标签记账 — never show “TagBill” in the zh locale. Amounts are integer cents.
 
 ## Commands
 
@@ -28,7 +28,7 @@ npm run macos            # Tauri window against Vite (needs Rust)
 npm run macos:build      # .app + dmg
 ```
 
-`@tagledger/shared` does not need its own build. Vite aliases it to `packages/shared/src/index.ts`; the server imports it with tsx.
+`@tagbill/shared` does not need its own build. Vite aliases it to `packages/shared/src/index.ts`; the server imports it with tsx.
 
 ## Layout
 
@@ -40,7 +40,7 @@ npm run macos:build      # .app + dmg
 
 ### User data
 
-- The local ledger is user data. Schema changes go through Dexie `version` + `upgrade`. Do not `indexedDB.deleteDatabase('tagledger')` unless the user explicitly asks to wipe.
+- The local ledger is user data. Schema changes go through Dexie `version` + `upgrade`. Do not `indexedDB.deleteDatabase('tagbill')` unless the user explicitly asks to wipe.
 - All writes go through `apps/web/src/db/mutations.ts`. Keep `rev`, soft delete, and `changes` in lockstep. Do not `db.tags.put` around that path.
 - New changes must have `seq: null`. The server assigns seq when it acks.
 - Do not run the `seedIfNeeded` sample book when sync is already connected.
@@ -53,7 +53,7 @@ npm run macos:build      # .app + dmg
 ### UI
 
 - Overlay mounts on `document.body`, animates in/out, and must close on the system back gesture. New sheets use the existing `Overlay`.
-- Theme is light / dark / follow-system (`lib/theme.ts`, stored in `localStorage` as `tagledger.theme`). Colors are tokens in `index.css`: use `bg-page`, `text-ink`, `bg-field`, `border-line`, … and add a token (with a `html.dark` value) instead of a hard-coded hex in components.
+- Theme is light / dark / follow-system (`lib/theme.ts`, stored in `localStorage` as `tagbill.theme`). Colors are tokens in `index.css`: use `bg-page`, `text-ink`, `bg-field`, `border-line`, … and add a token (with a `html.dark` value) instead of a hard-coded hex in components.
 - Phone layout: bottom bar. Desktop layout: sidebar. A tablet (shortest CSS side ≥ 600px) uses phone layout in portrait and desktop layout in landscape. Phones stay on the bottom bar even in landscape. Tauri is always desktop. Do not build a second iPad UI.
 - Creating a tag defaults to `kind: 'expense'`. From new-entry or the tags screen you must pass the current type.
 - `updateTag` cannot change `kind`.
@@ -62,7 +62,7 @@ npm run macos:build      # .app + dmg
 
 ### Sync
 
-- One server, many spaces. Gate is three fields: server URL, `TAGLEDGER_TARGET_KEY`, user-chosen token.
+- One server, many spaces. Gate is three fields: server URL, `TAGBILL_TARGET_KEY`, user-chosen token.
 - The user token is hashed into `space_key` (HMAC-SHA256 + pepper). The server never stores the plaintext token.
 - After connect, call `/v1/sync` with the device token only. The old dual-token pair is gone; do not bring it back.
 - A hosted browser (page served from the API origin) with no device token must show the login page first: target key + user token. Do not seed the sample book in that case. Native / Vite / Tauri stay optional-connect in Settings.

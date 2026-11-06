@@ -8,22 +8,27 @@ import { mintAgentToken, normalizeBaseUrl } from './mint.ts'
 /**
  * stdio bridge for MCP clients that cannot speak Streamable HTTP (for example
  * Claude Desktop). It forwards tools/list and tools/call to a running
- * TagLedger server. Nothing may be written to stdout except MCP messages.
+ * TagBill server. Nothing may be written to stdout except MCP messages.
  */
 
-const serverUrl = normalizeBaseUrl(process.env.TAGLEDGER_MCP_URL ?? '')
-let token = process.env.TAGLEDGER_MCP_TOKEN?.trim() ?? ''
+const env = (name: string): string | undefined =>
+  process.env[name]?.trim() ||
+  process.env[name.replace('TAGBILL_', 'TAGLEDGER_')]?.trim() ||
+  undefined
+
+const serverUrl = normalizeBaseUrl(env('TAGBILL_MCP_URL') ?? '')
+let token = env('TAGBILL_MCP_TOKEN') ?? ''
 
 if (!serverUrl) {
-  console.error('TAGLEDGER_MCP_URL is required, for example https://ledger.example.com')
+  console.error('TAGBILL_MCP_URL is required, for example https://ledger.example.com')
   process.exit(1)
 }
 
 if (!token) {
-  const targetKey = process.env.TAGLEDGER_TARGET_KEY?.trim() ?? ''
-  const userToken = process.env.TAGLEDGER_USER_TOKEN?.trim() ?? ''
+  const targetKey = env('TAGBILL_TARGET_KEY') ?? ''
+  const userToken = env('TAGBILL_USER_TOKEN') ?? ''
   if (!targetKey || !userToken) {
-    console.error('Set TAGLEDGER_MCP_TOKEN, or TAGLEDGER_TARGET_KEY + TAGLEDGER_USER_TOKEN to mint one.')
+    console.error('Set TAGBILL_MCP_TOKEN, or TAGBILL_TARGET_KEY + TAGBILL_USER_TOKEN to mint one.')
     process.exit(1)
   }
   token = (
@@ -31,12 +36,12 @@ if (!token) {
       serverUrl,
       targetKey,
       userToken,
-      deviceName: process.env.TAGLEDGER_MCP_DEVICE_NAME ?? 'AI agent',
+      deviceName: env('TAGBILL_MCP_DEVICE_NAME') ?? 'AI agent',
     })
   ).token
 }
 
-const client = new Client({ name: 'tagledger-bridge', version: '0.1.0' })
+const client = new Client({ name: 'tagbill-bridge', version: '0.1.0' })
 await client.connect(
   new StreamableHTTPClientTransport(new URL(`${serverUrl}/mcp`), {
     requestInit: { headers: { Authorization: `Bearer ${token}` } },
@@ -44,7 +49,7 @@ await client.connect(
 )
 
 const server = new Server(
-  { name: 'tagledger', version: '0.1.0' },
+  { name: 'tagbill', version: '0.1.0' },
   {
     capabilities: { tools: {} },
     instructions: client.getInstructions(),
@@ -59,4 +64,4 @@ server.setRequestHandler(CallToolRequestSchema, async (request) =>
 )
 
 await server.connect(new StdioServerTransport())
-console.error(`tagledger mcp bridge -> ${serverUrl}`)
+console.error(`tagbill mcp bridge -> ${serverUrl}`)

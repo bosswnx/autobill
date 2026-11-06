@@ -1,4 +1,4 @@
-import type { Entry, Tag } from '@tagledger/shared'
+import type { Entry, Tag } from '@tagbill/shared'
 import { MonthPager } from '../components/MonthPager'
 import { TagChip } from '../components/TagChip'
 import { useI18n } from '../i18n'

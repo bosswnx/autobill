@@ -1,4 +1,4 @@
-import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs'
+import { existsSync, mkdirSync, readFileSync, renameSync, writeFileSync } from 'node:fs'
 import { dirname, isAbsolute, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { randomBytes } from 'node:crypto'
@@ -22,12 +22,25 @@ type SecretsFile = {
 }
 
 function env(name: string): string | undefined {
-  const value = process.env[name]?.trim()
+  // TAGLEDGER_* was the pre-rename prefix; keep reading it for existing installs.
+  const legacy = name.startsWith('TAGBILL_') ? name.replace('TAGBILL_', 'TAGLEDGER_') : name
+  const value = (process.env[name] ?? process.env[legacy])?.trim()
   return value || undefined
 }
 
+function dbPathFor(dataDir: string): string {
+  const next = join(dataDir, 'tagbill.sqlite')
+  const legacy = join(dataDir, 'tagledger.sqlite')
+  if (!existsSync(next) && existsSync(legacy)) {
+    for (const suffix of ['', '-wal', '-shm']) {
+      if (existsSync(`${legacy}${suffix}`)) renameSync(`${legacy}${suffix}`, `${next}${suffix}`)
+    }
+  }
+  return next
+}
+
 function webRootPath(): string | null {
-  const raw = env('TAGLEDGER_WEB')
+  const raw = env('TAGBILL_WEB')
   const candidates = [
     raw,
     join(root, '..', '..', 'web', 'dist'),
@@ -42,7 +55,7 @@ function webRootPath(): string | null {
 }
 
 function dataDirPath(): string {
-  const raw = env('TAGLEDGER_DATA') ?? join(root, '..', 'data')
+  const raw = env('TAGBILL_DATA') ?? join(root, '..', 'data')
   return isAbsolute(raw) ? raw : join(process.cwd(), raw)
 }
 
@@ -66,8 +79,8 @@ export function loadConfig(): Config {
   const dataDir = dataDirPath()
   mkdirSync(dataDir, { recursive: true })
 
-  const fromEnvTarget = env('TAGLEDGER_TARGET_KEY')
-  const fromEnvPepper = env('TAGLEDGER_PEPPER')
+  const fromEnvTarget = env('TAGBILL_TARGET_KEY')
+  const fromEnvPepper = env('TAGBILL_PEPPER')
   const secrets =
     fromEnvTarget && fromEnvPepper
       ? { targetKey: fromEnvTarget, pepper: fromEnvPepper }
@@ -83,7 +96,7 @@ export function loadConfig(): Config {
     targetKey: secrets.targetKey,
     pepper: secrets.pepper,
     dataDir,
-    dbPath: join(dataDir, 'tagledger.sqlite'),
+    dbPath: dbPathFor(dataDir),
     webRoot: webRootPath(),
     generatedTargetKey: !fromEnvTarget,
   }

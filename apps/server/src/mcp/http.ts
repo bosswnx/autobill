@@ -4,7 +4,7 @@ import { WebStandardStreamableHTTPServerTransport } from '@modelcontextprotocol/
 import { resolveAgent } from './auth.ts'
 import { registerTools } from './tools.ts'
 
-const INSTRUCTIONS = `TagLedger is a personal ledger: one book, flat tags, expense/income entries, and recurring subscriptions.
+const INSTRUCTIONS = `TagBill is a personal ledger: one book, flat tags, expense/income entries, and recurring subscriptions.
 Amounts are integer cents. Tags have a kind (expense or income) that never changes.
 Every write is a soft-delete-aware change that syncs to all of the user's devices on their next sync.
 Read ledger_info first: it returns the book, currency, savings, counts, and the server time zone.
@@ -15,12 +15,12 @@ export function mountMcp(app: Hono): void {
   app.all('/mcp', async (c) => {
     const agent = resolveAgent(c.req.header('Authorization'))
     if (!agent) {
-      c.header('WWW-Authenticate', 'Bearer realm="tagledger"')
+      c.header('WWW-Authenticate', 'Bearer realm="tagbill"')
       return c.json({ error: 'unauthorized' }, 401)
     }
 
     const server = new McpServer(
-      { name: 'tagledger', version: '0.1.0' },
+      { name: 'tagbill', version: '0.1.0' },
       { instructions: INSTRUCTIONS },
     )
     registerTools(server, agent)

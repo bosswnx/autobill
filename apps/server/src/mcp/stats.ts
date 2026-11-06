@@ -1,4 +1,4 @@
-import type { Entry, Tag } from '@tagledger/shared'
+import type { Entry, Tag } from '@tagbill/shared'
 
 /** Mirrors apps/web/src/lib/stats.ts, without locale-dependent labels. */
 

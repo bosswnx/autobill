@@ -1,4 +1,4 @@
-import type { Book, Entry, EntryType, Tag } from '@tagledger/shared'
+import type { Book, Entry, EntryType, Tag } from '@tagbill/shared'
 import { useMemo, useRef, useState, type ReactNode } from 'react'
 import { AmountKeypad } from '../components/AmountKeypad'
 import { CompactPicker } from '../components/DateTimePickers'

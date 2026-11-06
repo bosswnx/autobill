@@ -1,5 +1,5 @@
-import type { Tag, TagKind } from '@tagledger/shared'
-import { TAG_COLOR_PALETTE } from '@tagledger/shared'
+import type { Tag, TagKind } from '@tagbill/shared'
+import { TAG_COLOR_PALETTE } from '@tagbill/shared'
 import { Plus } from 'lucide-react'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { ChoicePicker } from '../components/ChoicePicker'

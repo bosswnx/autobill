@@ -1,6 +1,6 @@
 import { createRequire } from 'node:module'
-import type { Account, Book, Change, EntityType, Entry, Subscription, Tag } from '@tagledger/shared'
-import { incomingWins } from '@tagledger/shared'
+import type { Account, Book, Change, EntityType, Entry, Subscription, Tag } from '@tagbill/shared'
+import { incomingWins } from '@tagbill/shared'
 
 const require = createRequire(import.meta.url)
 const Database = require('better-sqlite3') as typeof import('better-sqlite3')

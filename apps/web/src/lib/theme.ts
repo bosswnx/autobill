@@ -1,6 +1,7 @@
 export type ThemeMode = 'light' | 'dark' | 'system'
 
-const STORAGE_KEY = 'tagledger.theme'
+const STORAGE_KEY = 'tagbill.theme'
+const LEGACY_STORAGE_KEY = 'tagledger.theme'
 
 type Listener = () => void
 
@@ -12,8 +13,10 @@ function isThemeMode(value: string | null): value is ThemeMode {
 
 function readStored(): ThemeMode | null {
   try {
-    const value = localStorage.getItem(STORAGE_KEY)
-    return isThemeMode(value) ? value : null
+    const value = localStorage.getItem(STORAGE_KEY) ?? localStorage.getItem(LEGACY_STORAGE_KEY)
+    if (!isThemeMode(value)) return null
+    if (localStorage.getItem(STORAGE_KEY) !== value) localStorage.setItem(STORAGE_KEY, value)
+    return value
   } catch {
     return null
   }

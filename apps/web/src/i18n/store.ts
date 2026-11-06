@@ -12,7 +12,8 @@ export const LOCALES: { id: Locale; nativeName: string }[] = [
 
 export const catalogs: Record<Locale, Messages> = { zh, en }
 
-const STORAGE_KEY = 'tagledger.locale'
+const STORAGE_KEY = 'tagbill.locale'
+const LEGACY_STORAGE_KEY = 'tagledger.locale'
 
 type Listener = (locale: Locale) => void
 
@@ -24,8 +25,10 @@ function isLocale(value: string | null): value is Locale {
 
 function readStored(): Locale | null {
   try {
-    const value = localStorage.getItem(STORAGE_KEY)
-    return isLocale(value) ? value : null
+    const value = localStorage.getItem(STORAGE_KEY) ?? localStorage.getItem(LEGACY_STORAGE_KEY)
+    if (!isLocale(value)) return null
+    if (localStorage.getItem(STORAGE_KEY) !== value) localStorage.setItem(STORAGE_KEY, value)
+    return value
   } catch {
     return null
   }

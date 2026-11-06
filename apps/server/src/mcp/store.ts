@@ -11,8 +11,8 @@ import type {
   Syncable,
   Tag,
   TagKind,
-} from '@tagledger/shared'
-import { TAG_COLOR_PALETTE } from '@tagledger/shared'
+} from '@tagbill/shared'
+import { TAG_COLOR_PALETTE } from '@tagbill/shared'
 import { applyEntity, cloudBookId, getEntityRow, insertChange, listEntityRows, withTxn } from '../db.ts'
 import { nextOccurrenceOf, resolveCadence } from './schedule.ts'
 import {

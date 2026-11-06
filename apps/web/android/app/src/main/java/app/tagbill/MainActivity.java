@@ -1,4 +1,4 @@
-package app.tagledger;
+package app.tagbill;
 
 import com.getcapacitor.BridgeActivity;
 

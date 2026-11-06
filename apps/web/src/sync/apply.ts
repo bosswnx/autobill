@@ -1,5 +1,5 @@
-import type { Account, Book, Change, EntityType, Entry, Subscription, Tag } from '@tagledger/shared'
-import { incomingWins } from '@tagledger/shared'
+import type { Account, Book, Change, EntityType, Entry, Subscription, Tag } from '@tagbill/shared'
+import { incomingWins } from '@tagbill/shared'
 import { db } from '../db/database'
 import { deviceId, nid } from '../lib/id'
 import { nowIso } from '../lib/time'

@@ -1,4 +1,4 @@
-import type { Book, Tag } from '@tagledger/shared'
+import type { Book, Tag } from '@tagbill/shared'
 import { useState } from 'react'
 import { useI18n } from '../i18n'
 import { useSubscriptions } from '../hooks/useLedger'

@@ -1,4 +1,4 @@
-import type { Book, Entry, Subscription, Tag } from '@tagledger/shared'
+import type { Book, Entry, Subscription, Tag } from '@tagbill/shared'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { db } from '../db/database'
 import { entryMatchesTagFilter } from '../lib/tags'

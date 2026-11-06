@@ -1,5 +1,5 @@
-import type { ConnectResponse } from '@tagledger/shared'
-import { MIN_USER_TOKEN_LENGTH } from '@tagledger/shared'
+import type { ConnectResponse } from '@tagbill/shared'
+import { MIN_USER_TOKEN_LENGTH } from '@tagbill/shared'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { useEffect, useState } from 'react'
 import { Overlay } from '../components/Overlay'

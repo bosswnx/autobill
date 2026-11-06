@@ -3,7 +3,7 @@ import type { CapacitorConfig } from '@capacitor/cli'
 const liveReload = process.env.CAP_SERVER_URL
 
 const config: CapacitorConfig = {
-  appId: 'app.tagledger',
+  appId: 'app.tagbill',
   appName: '标签记账',
   webDir: 'dist',
   backgroundColor: '#ffffff',
