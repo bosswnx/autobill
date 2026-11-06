@@ -53,6 +53,7 @@ npm run macos:build      # .app + dmg
 ### UI
 
 - Overlay mounts on `document.body`, animates in/out, and must close on the system back gesture. New sheets use the existing `Overlay`.
+- Theme is light / dark / follow-system (`lib/theme.ts`, stored in `localStorage` as `tagledger.theme`). Colors are tokens in `index.css`: use `bg-page`, `text-ink`, `bg-field`, `border-line`, … and add a token (with a `html.dark` value) instead of a hard-coded hex in components.
 - Phone layout: bottom bar. Desktop layout: sidebar. A tablet (shortest CSS side ≥ 600px) uses phone layout in portrait and desktop layout in landscape. Phones stay on the bottom bar even in landscape. Tauri is always desktop. Do not build a second iPad UI.
 - Creating a tag defaults to `kind: 'expense'`. From new-entry or the tags screen you must pass the current type.
 - `updateTag` cannot change `kind`.

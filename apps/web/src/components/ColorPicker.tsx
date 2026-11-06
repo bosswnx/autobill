@@ -18,7 +18,7 @@ export function ColorPicker({ value, onClose, onPick }: Props) {
             <h2 className="text-base font-semibold">{t.colorPicker.title}</h2>
             <button
               type="button"
-              className="rounded-md bg-[#f4f3f0] px-3 py-1.5 text-sm text-muted transition-colors duration-150 hover:bg-[#ebeae6] hover:text-ink"
+              className="rounded-md bg-field px-3 py-1.5 text-sm text-muted transition-colors duration-150 hover:bg-field-hover hover:text-ink"
               onClick={close}
             >
               {t.common.close}

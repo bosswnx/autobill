@@ -118,7 +118,7 @@ export function EntrySheet({ book, tags, usage, entry, onClose }: Props) {
         className="anim-sheet flex max-h-[92%] w-full max-w-lg touch-pan-y flex-col overflow-hidden rounded-t-[20px] bg-page sm:max-h-full sm:rounded-xl sm:border sm:border-line"
       >
         <div className="flex justify-center pt-2 pb-1 sm:hidden" aria-hidden>
-          <span className="h-1 w-9 rounded-full bg-black/20" />
+          <span className="h-1 w-9 rounded-full bg-handle" />
         </div>
         <div className="flex items-center justify-between gap-3 px-5 pt-2 sm:pt-4">
           <h2 className="shrink-0 text-lg font-semibold">{entry ? t.entry.edit : t.entry.create}</h2>
@@ -197,7 +197,7 @@ export function EntrySheet({ book, tags, usage, entry, onClose }: Props) {
                   <button
                     type="button"
                     onClick={() => void addTagFromQuery()}
-                    className="mt-2 inline-flex h-[22px] items-center rounded bg-[#f4f3f0] px-1.5 text-sm text-muted transition-colors duration-150 hover:bg-[#ebeae6] hover:text-ink"
+                    className="mt-2 inline-flex h-[22px] items-center rounded bg-field px-1.5 text-sm text-muted transition-colors duration-150 hover:bg-field-hover hover:text-ink"
                   >
                     {t.entry.createNamed(tagQuery.trim())}
                   </button>
@@ -215,8 +215,8 @@ export function EntrySheet({ book, tags, usage, entry, onClose }: Props) {
                 }}
                 className={`flex size-[22px] items-center justify-center rounded transition-colors duration-150 ${
                   tagSearchOpen
-                    ? 'bg-[#ebeae6] text-ink'
-                    : 'bg-[#f4f3f0] text-muted hover:bg-[#ebeae6] hover:text-ink'
+                    ? 'bg-field-hover text-ink'
+                    : 'bg-field text-muted hover:bg-field-hover hover:text-ink'
                 }`}
               >
                 <SearchIcon />
@@ -281,7 +281,7 @@ export function EntrySheet({ book, tags, usage, entry, onClose }: Props) {
             ) : null}
             <button
               type="button"
-              className="rounded-md bg-[#f4f3f0] px-4 py-1.5 text-sm text-muted transition-colors duration-150 hover:bg-[#ebeae6] hover:text-ink"
+              className="rounded-md bg-field px-4 py-1.5 text-sm text-muted transition-colors duration-150 hover:bg-field-hover hover:text-ink"
               onClick={close}
             >
               {t.common.cancel}

@@ -198,7 +198,7 @@ function EntryRow({
     <button
       type="button"
       onClick={onClick}
-      className="flex w-full items-start justify-between gap-3 rounded-lg border border-[rgb(55_53_47/18%)] bg-page px-3.5 py-3 text-left transition-colors duration-150 hover:bg-hover"
+      className="flex w-full items-start justify-between gap-3 rounded-lg border border-line-strong bg-page px-3.5 py-3 text-left transition-colors duration-150 hover:bg-hover"
     >
       <div className="min-w-0">
         <div className="flex items-center gap-2">

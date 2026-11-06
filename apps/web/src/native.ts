@@ -1,5 +1,11 @@
 import { App } from '@capacitor/app'
 import { Capacitor, SystemBars, SystemBarsStyle } from '@capacitor/core'
+import { resolvedTheme, subscribeTheme } from './lib/theme'
+
+function applySystemBars(): void {
+  const style = resolvedTheme() === 'dark' ? SystemBarsStyle.Dark : SystemBarsStyle.Light
+  void SystemBars.setStyle({ style }).catch(() => undefined)
+}
 
 export async function initNative(): Promise<void> {
   if (!Capacitor.isNativePlatform()) return
@@ -14,11 +20,8 @@ export async function initNative(): Promise<void> {
     event.preventDefault()
   })
 
-  try {
-    await SystemBars.setStyle({ style: SystemBarsStyle.Light })
-  } catch {
-    /* web 或旧壳 */
-  }
+  applySystemBars()
+  subscribeTheme(applySystemBars)
 
   await App.addListener('backButton', ({ canGoBack }) => {
     if (canGoBack) {

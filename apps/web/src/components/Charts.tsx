@@ -2,6 +2,7 @@ import { useI18n } from '../i18n'
 import { useChartScrub } from '../lib/chartScrub'
 import { formatYuan } from '../lib/money'
 import { formatShare, type SeriesPoint, type TagAmount } from '../lib/stats'
+import type { CSSProperties } from 'react'
 import { TagChip } from './TagChip'
 
 const CHART_TOUCH = 'touch-pan-y select-none'
@@ -120,14 +121,14 @@ export function LineChart({ points, color }: { points: SeriesPoint[]; color: str
           preserveAspectRatio="none"
           className="pointer-events-none h-full w-full"
         >
-          <polygon points={area} fill={color} opacity="0.12" />
+          <polygon points={area} style={{ fill: color }} opacity="0.12" />
           {lo < 0 ? (
             <line
               x1="0"
               x2={width}
               y1={zeroY}
               y2={zeroY}
-              stroke={color}
+              style={{ stroke: color }}
               strokeOpacity="0.28"
               vectorEffect="non-scaling-stroke"
             />
@@ -135,7 +136,7 @@ export function LineChart({ points, color }: { points: SeriesPoint[]; color: str
           <polyline
             points={line}
             fill="none"
-            stroke={color}
+            style={{ stroke: color }}
             strokeWidth="1.6"
             strokeLinejoin="round"
             strokeLinecap="round"
@@ -265,7 +266,7 @@ export function TagAmountList({
           <div className="flex items-center justify-end">
             <span className="px-1.5 py-0.5 text-xs text-muted">{remainderLabel}</span>
           </div>
-          <AmountBar cents={remainderCents} max={max} color="#787774" />
+          <AmountBar cents={remainderCents} max={max} color="var(--color-chart-asset)" />
           <AmountCell cents={remainderCents} shareTotal={showShare ? shareTotal : undefined} />
         </div>
       ) : null}
@@ -277,11 +278,11 @@ function AmountBar({ cents, max, color }: { cents: number; max: number; color: s
   return (
     <div className="h-2 overflow-hidden rounded-full bg-hover">
       <div
-        className="h-full rounded-full"
+        className="amount-bar-fill h-full rounded-full"
         style={{
           width: `${max > 0 ? (cents / max) * 100 : 0}%`,
-          background: color,
-        }}
+          '--bar-color': color,
+        } as CSSProperties}
       />
     </div>
   )

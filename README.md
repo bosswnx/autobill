@@ -304,7 +304,7 @@ Month / year. Month: daily expense/income bars, asset line, tag amount bars. Yea
 First visit from a new browser: server key + user token, then the ledger. Later visits reuse the device token in IndexedDB.
 
 **Settings**  
-Set current savings. Connect / disconnect sync (native, Mac, and local Vite), sync now, and the three-way choice when both sides have data.
+Change language and appearance (light / dark / follow system, stored on this device). Set current savings. Connect / disconnect sync (native, Mac, and local Vite), sync now, and the three-way choice when both sides have data.
 
 ## Tag filter (ledger)
 

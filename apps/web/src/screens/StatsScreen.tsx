@@ -98,13 +98,13 @@ export function StatsScreen({ book, tags, savings }: Props) {
       </header>
 
       <ChartBlock title={expenseChartTitle}>
-        <BarChart points={stats.expenseSeries} color="#e03e3e" />
+        <BarChart points={stats.expenseSeries} color="var(--color-chart-expense)" />
       </ChartBlock>
       <ChartBlock title={incomeChartTitle}>
-        <BarChart points={stats.incomeSeries} color="#0f7b6c" />
+        <BarChart points={stats.incomeSeries} color="var(--color-chart-income)" />
       </ChartBlock>
       <ChartBlock title={t.stats.assetChart}>
-        <LineChart points={stats.assetSeries} color="#787774" />
+        <LineChart points={stats.assetSeries} color="var(--color-chart-asset)" />
       </ChartBlock>
       <TagSliceBlock
         title={t.stats.expenseTags}
@@ -245,7 +245,7 @@ function Stat({
   className?: string
 }) {
   const valueClass =
-    tone === 'expense' ? 'text-expense' : tone === 'income' ? 'text-income' : 'text-black'
+    tone === 'expense' ? 'text-expense' : tone === 'income' ? 'text-income' : 'text-ink'
   return (
     <div className={className}>
       <div className="whitespace-nowrap text-xs text-faint">{label}</div>

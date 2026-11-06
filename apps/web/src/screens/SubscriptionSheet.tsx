@@ -31,7 +31,7 @@ const fieldClass =
   'w-full rounded-md border border-line bg-page px-3 py-2 text-sm hover:bg-hover focus:border-accent'
 
 const pickerBtnClass =
-  'inline-flex h-[38px] min-w-0 items-center rounded-md bg-[#f4f3f0] px-3 text-sm text-muted transition-colors duration-150 hover:bg-[#ebeae6] hover:text-ink'
+  'inline-flex h-[38px] min-w-0 items-center rounded-md bg-field px-3 text-sm text-muted transition-colors duration-150 hover:bg-field-hover hover:text-ink'
 
 function hhmm(hour: number, minute: number): string {
   return `${String(hour).padStart(2, '0')}:${String(minute).padStart(2, '0')}`
@@ -214,7 +214,7 @@ export function SubscriptionSheet({ book, tags, usage, subscription, onClose, on
             className="anim-sheet flex max-h-[92%] w-full max-w-lg touch-pan-y flex-col overflow-hidden rounded-t-[20px] bg-page sm:max-h-full sm:rounded-xl sm:border sm:border-line"
           >
             <div className="flex justify-center pt-2 pb-1 sm:hidden" aria-hidden>
-              <span className="h-1 w-9 rounded-full bg-black/20" />
+              <span className="h-1 w-9 rounded-full bg-handle" />
             </div>
             <div className="flex items-center justify-between gap-3 px-5 pt-2 sm:pt-4">
               <h2 className="shrink-0 text-lg font-semibold">{subscription ? t.sub.edit : t.sub.add}</h2>
@@ -227,11 +227,11 @@ export function SubscriptionSheet({ book, tags, usage, subscription, onClose, on
                   aria-label={enabled ? t.sub.enabled : t.sub.disabled}
                   onClick={() => setEnabled((value) => !value)}
                   className={`relative h-6 w-10 shrink-0 appearance-none rounded-full border-0 p-0 transition-colors duration-150 ${
-                    enabled ? 'bg-accent' : 'bg-[#e3e2de]'
+                    enabled ? 'bg-accent' : 'bg-switch-off'
                   }`}
                 >
                   <span
-                    className={`absolute top-0.5 size-5 rounded-full bg-white shadow-sm ${
+                    className={`absolute top-0.5 size-5 rounded-full bg-knob shadow-sm ${
                       enabled ? 'right-0.5 left-auto' : 'left-0.5'
                     }`}
                   />
@@ -275,7 +275,7 @@ export function SubscriptionSheet({ book, tags, usage, subscription, onClose, on
                     key={slot.id}
                     type="button"
                     onClick={() => setEditingTime(slot)}
-                    className="flex h-[38px] items-center justify-between rounded-md bg-[#f4f3f0] px-3 text-left text-sm text-muted transition-colors duration-150 hover:bg-[#ebeae6] hover:text-ink"
+                    className="flex h-[38px] items-center justify-between rounded-md bg-field px-3 text-left text-sm text-muted transition-colors duration-150 hover:bg-field-hover hover:text-ink"
                   >
                     <span className="truncate tabular-nums">{timeSlotLabel(slot, t)}</span>
                   </button>
@@ -283,7 +283,7 @@ export function SubscriptionSheet({ book, tags, usage, subscription, onClose, on
                 <button
                   type="button"
                   onClick={() => setEditingTime('new')}
-                  className="flex h-[38px] items-center justify-center gap-1.5 rounded-md bg-[#f4f3f0] px-3 text-sm text-muted transition-colors duration-150 hover:bg-[#ebeae6] hover:text-ink"
+                  className="flex h-[38px] items-center justify-center gap-1.5 rounded-md bg-field px-3 text-sm text-muted transition-colors duration-150 hover:bg-field-hover hover:text-ink"
                 >
                   <Plus size={14} strokeWidth={1.5} />
                   {t.sub.addTime}
@@ -314,7 +314,7 @@ export function SubscriptionSheet({ book, tags, usage, subscription, onClose, on
                     <button
                       type="button"
                       onClick={() => void addTagFromQuery()}
-                      className="mt-2 inline-flex h-[22px] items-center rounded bg-[#f4f3f0] px-1.5 text-sm text-muted transition-colors duration-150 hover:bg-[#ebeae6] hover:text-ink"
+                      className="mt-2 inline-flex h-[22px] items-center rounded bg-field px-1.5 text-sm text-muted transition-colors duration-150 hover:bg-field-hover hover:text-ink"
                     >
                       {t.entry.createNamed(tagQuery.trim())}
                     </button>
@@ -332,8 +332,8 @@ export function SubscriptionSheet({ book, tags, usage, subscription, onClose, on
                   }}
                   className={`flex size-[22px] items-center justify-center rounded transition-colors duration-150 ${
                     tagSearchOpen
-                      ? 'bg-[#ebeae6] text-ink'
-                      : 'bg-[#f4f3f0] text-muted hover:bg-[#ebeae6] hover:text-ink'
+                      ? 'bg-field-hover text-ink'
+                      : 'bg-field text-muted hover:bg-field-hover hover:text-ink'
                   }`}
                 >
                   <SearchIcon />
@@ -398,7 +398,7 @@ export function SubscriptionSheet({ book, tags, usage, subscription, onClose, on
                 ) : null}
                 <button
                   type="button"
-                  className="rounded-md bg-[#f4f3f0] px-4 py-1.5 text-sm text-muted transition-colors duration-150 hover:bg-[#ebeae6] hover:text-ink"
+                  className="rounded-md bg-field px-4 py-1.5 text-sm text-muted transition-colors duration-150 hover:bg-field-hover hover:text-ink"
                   onClick={close}
                 >
                   {t.common.cancel}
@@ -576,7 +576,7 @@ function TimeEditorOverlay({
               <div className="flex gap-1">
                 <button
                   type="button"
-                  className="rounded-md bg-[#f4f3f0] px-3 py-1.5 text-sm text-muted transition-colors duration-150 hover:bg-[#ebeae6] hover:text-ink"
+                  className="rounded-md bg-field px-3 py-1.5 text-sm text-muted transition-colors duration-150 hover:bg-field-hover hover:text-ink"
                   onClick={close}
                 >
                   {t.common.cancel}
@@ -676,7 +676,7 @@ function DayPickerOverlay({
           <div className="mt-5 flex justify-end gap-1">
             <button
               type="button"
-              className="rounded-md bg-[#f4f3f0] px-3 py-1.5 text-sm text-ink transition-colors duration-150 hover:bg-[#ebeae6]"
+              className="rounded-md bg-field px-3 py-1.5 text-sm text-ink transition-colors duration-150 hover:bg-field-hover"
               onClick={close}
             >
               {t.common.cancel}
@@ -784,7 +784,7 @@ function MonthDayPickerOverlay({
           <div className="mt-5 flex justify-end gap-1">
             <button
               type="button"
-              className="rounded-md bg-[#f4f3f0] px-3 py-1.5 text-sm text-ink transition-colors duration-150 hover:bg-[#ebeae6]"
+              className="rounded-md bg-field px-3 py-1.5 text-sm text-ink transition-colors duration-150 hover:bg-field-hover"
               onClick={close}
             >
               {t.common.cancel}
@@ -841,7 +841,7 @@ function WeekdayPickerOverlay({
           <div className="mt-5 flex justify-end gap-1">
             <button
               type="button"
-              className="rounded-md bg-[#f4f3f0] px-3 py-1.5 text-sm text-ink transition-colors duration-150 hover:bg-[#ebeae6]"
+              className="rounded-md bg-field px-3 py-1.5 text-sm text-ink transition-colors duration-150 hover:bg-field-hover"
               onClick={close}
             >
               {t.common.cancel}

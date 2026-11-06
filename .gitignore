@@ -14,3 +14,5 @@ apps/server/data
 **/DerivedData
 **/xcuserdata
 *.xcuserstate
+
+.openchamber

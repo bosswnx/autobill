@@ -21,8 +21,8 @@ type Props = {
 
 const KEY =
   'amount-key flex h-14 items-center justify-center rounded-md text-[22px] font-medium leading-none transition-colors duration-150'
-const NUM = `${KEY} bg-[#f4f3f0] text-ink hover:bg-[#ebeae6]`
-const OP = `${KEY} amount-key-op bg-[#ecebe7] text-muted hover:bg-[#e3e2de] hover:text-ink`
+const NUM = `${KEY} bg-field text-ink hover:bg-field-hover`
+const OP = `${KEY} amount-key-op bg-key-op text-muted hover:bg-key-op-hover hover:text-ink`
 
 const LONG_PRESS_MS = 450
 
@@ -112,7 +112,7 @@ export function AmountKeypad({ expr, onChange }: Props) {
           .
         </Key>
         <Key
-          className={`${KEY} amount-key-op bg-[#ecebe7] text-ink hover:bg-[#e3e2de]`}
+          className={`${KEY} amount-key-op bg-key-op text-ink hover:bg-key-op-hover`}
           onClick={() => onChange(pressEquals(expr))}
         >
           =

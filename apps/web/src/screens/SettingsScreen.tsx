@@ -4,6 +4,7 @@ import { useLiveQuery } from 'dexie-react-hooks'
 import { useEffect, useState } from 'react'
 import { Overlay } from '../components/Overlay'
 import { LanguageSwitch } from '../components/LanguageSwitch'
+import { ThemeSwitch } from '../components/ThemeSwitch'
 import { SavingsSection } from '../components/SavingsEditor'
 import { db } from '../db/database'
 import { ensureBookIfEmpty } from '../db/seed'
@@ -45,6 +46,10 @@ export function SettingsScreen() {
       <section className="flex flex-col gap-4">
         <h2 className="text-sm font-medium text-muted">{t.settings.language}</h2>
         <LanguageSwitch />
+      </section>
+      <section className="flex flex-col gap-4">
+        <h2 className="text-sm font-medium text-muted">{t.settings.theme}</h2>
+        <ThemeSwitch />
       </section>
       {book ? <SavingsSection bookId={book.id} savings={savings} /> : null}
       {rows === undefined ? null : session?.deviceToken ? (
@@ -325,7 +330,7 @@ function WipeOverlay({ onClose }: { onClose: () => void }) {
             <button
               type="button"
               disabled={busy}
-              className="rounded-md bg-[#f4f3f0] px-3 py-1.5 text-sm text-muted transition-colors duration-150 hover:bg-[#ebeae6] hover:text-ink disabled:opacity-40"
+              className="rounded-md bg-field px-3 py-1.5 text-sm text-muted transition-colors duration-150 hover:bg-field-hover hover:text-ink disabled:opacity-40"
               onClick={close}
             >
               {t.common.cancel}

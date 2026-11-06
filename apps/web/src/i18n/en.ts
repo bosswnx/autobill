@@ -211,6 +211,12 @@ export const en: typeof zh = {
   settings: {
     title: 'Settings',
     language: 'Language',
+    theme: 'Appearance',
+    themeOptions: {
+      light: 'Light',
+      dark: 'Dark',
+      system: 'System',
+    },
     wipe: 'Erase all data',
     wipeHint: 'This device’s ledger, tags, subscriptions, and entries will be deleted and cannot be undone. Cloud and other devices are unchanged.',
     wipeWait: (n: number) => `Wait ${n}s to confirm`,

@@ -4,6 +4,22 @@
     <meta charset="UTF-8" />
     <script>
       (() => {
+        try {
+          const mode = localStorage.getItem('tagledger.theme') || 'system'
+          const dark =
+            mode === 'dark' ||
+            (mode !== 'light' && matchMedia('(prefers-color-scheme: dark)').matches)
+          document.documentElement.classList.toggle('dark', dark)
+          document.documentElement.style.colorScheme = dark ? 'dark' : 'light'
+          const meta = document.querySelector('meta[name="theme-color"]')
+          if (meta) meta.setAttribute('content', dark ? '#191919' : '#F7F6F3')
+        } catch {
+          /* ignore */
+        }
+      })()
+    </script>
+    <script>
+      (() => {
         const tauri = '__TAURI_INTERNALS__' in window
         const shortest = Math.min(screen.width, screen.height)
         const landscape = innerWidth > innerHeight

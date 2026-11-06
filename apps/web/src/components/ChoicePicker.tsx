@@ -104,7 +104,7 @@ export function ChoicePicker<T extends string>({
               role="listbox"
               aria-label={title}
               style={{ top: pos.top, left: pos.left, minWidth: pos.minWidth }}
-              className="anim-panel fixed z-50 rounded-md border border-line bg-page py-1 shadow-[0_8px_24px_rgb(55_53_47/14%)]"
+              className="anim-panel fixed z-50 rounded-md border border-line bg-page py-1 shadow-pop"
             >
               {options.map((option) => (
                 <button

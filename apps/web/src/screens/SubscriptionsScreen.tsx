@@ -31,7 +31,7 @@ export function SubscriptionsScreen({ book, tags, usage, subscriptions }: Props)
           type="button"
           onClick={() => setEditing('new')}
           aria-label={t.sub.add}
-          className="flex size-8 items-center justify-center rounded-md bg-[#f4f3f0] text-muted transition-colors duration-150 hover:bg-[#ebeae6] hover:text-ink"
+          className="flex size-8 items-center justify-center rounded-md bg-field text-muted transition-colors duration-150 hover:bg-field-hover hover:text-ink"
         >
           <Plus size={18} strokeWidth={1.75} />
         </button>
@@ -55,7 +55,7 @@ export function SubscriptionsScreen({ book, tags, usage, subscriptions }: Props)
                 key={sub.id}
                 type="button"
                 onClick={() => setEditing(sub)}
-                className={`flex w-full items-start justify-between gap-3 rounded-lg border border-[rgb(55_53_47/18%)] bg-page px-3.5 py-3 text-left transition-colors duration-150 hover:bg-hover ${
+                className={`flex w-full items-start justify-between gap-3 rounded-lg border border-line-strong bg-page px-3.5 py-3 text-left transition-colors duration-150 hover:bg-hover ${
                   sub.enabled ? '' : 'opacity-55'
                 }`}
               >

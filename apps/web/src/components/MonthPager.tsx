@@ -106,7 +106,7 @@ function MonthPickerPanel({
           className={
             isCurrent
               ? 'rounded-md px-3 py-1.5 text-sm text-faint disabled:opacity-100'
-              : 'rounded-md bg-[#f4f3f0] px-3 py-1.5 text-sm text-ink transition-colors duration-150 hover:bg-[#ebeae6]'
+              : 'rounded-md bg-field px-3 py-1.5 text-sm text-ink transition-colors duration-150 hover:bg-field-hover'
           }
         >
           {t.pickers.thisMonth}
@@ -114,7 +114,7 @@ function MonthPickerPanel({
         <div className="flex gap-1">
           <button
             type="button"
-            className="rounded-md bg-[#f4f3f0] px-3 py-1.5 text-sm text-ink transition-colors duration-150 hover:bg-[#ebeae6]"
+            className="rounded-md bg-field px-3 py-1.5 text-sm text-ink transition-colors duration-150 hover:bg-field-hover"
             onClick={close}
           >
             {t.common.cancel}

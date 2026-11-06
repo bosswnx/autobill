@@ -5,11 +5,13 @@ import App from './App.tsx'
 import { initLocale, LocaleProvider } from './i18n'
 import { initLayout } from './lib/layout.ts'
 import { initDesktop, initOverlayScroll } from './lib/runtime.ts'
+import { initTheme } from './lib/theme.ts'
 import { initNative } from './native.ts'
 
 initDesktop()
 initLayout()
 initOverlayScroll()
+initTheme()
 void initNative()
 initLocale()
 

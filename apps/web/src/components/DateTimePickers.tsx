@@ -24,11 +24,11 @@ export function calendarGridStyle(firstWeekday: number, days: number) {
 function pickerShortcutClass(active: boolean): string {
   return active
     ? 'rounded-md px-3 py-1.5 text-sm text-faint disabled:opacity-100'
-    : 'rounded-md bg-[#f4f3f0] px-3 py-1.5 text-sm text-ink transition-colors duration-150 hover:bg-[#ebeae6]'
+    : 'rounded-md bg-field px-3 py-1.5 text-sm text-ink transition-colors duration-150 hover:bg-field-hover'
 }
 
 const pickerCancelClass =
-  'rounded-md bg-[#f4f3f0] px-3 py-1.5 text-sm text-ink transition-colors duration-150 hover:bg-[#ebeae6]'
+  'rounded-md bg-field px-3 py-1.5 text-sm text-ink transition-colors duration-150 hover:bg-field-hover'
 
 const pickerConfirmClass =
   'rounded-md bg-accent px-4 py-1.5 text-sm text-accent-ink hover:brightness-95'
@@ -64,7 +64,7 @@ export function CompactPicker({
         aria-expanded={open}
         aria-haspopup="dialog"
         onClick={() => setOpen(true)}
-        className={`inline-flex min-w-0 items-center rounded-md bg-[#f4f3f0] px-3 text-sm text-muted transition-colors duration-150 hover:bg-[#ebeae6] hover:text-ink ${className ?? ''}`}
+        className={`inline-flex min-w-0 items-center rounded-md bg-field px-3 text-sm text-muted transition-colors duration-150 hover:bg-field-hover hover:text-ink ${className ?? ''}`}
       >
         <span className="truncate tabular-nums">{display}</span>
       </button>

@@ -191,6 +191,12 @@ export const zh = {
   settings: {
     title: '设置',
     language: '语言',
+    theme: '外观',
+    themeOptions: {
+      light: '亮色',
+      dark: '暗色',
+      system: '跟随系统',
+    },
     wipe: '清空所有数据',
     wipeHint: '本机的账本、标签、订阅和流水都会删掉，无法恢复。云端和其他设备不受影响。',
     wipeWait: (n: number) => `${n} 秒后可确认`,

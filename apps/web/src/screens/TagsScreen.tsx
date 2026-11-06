@@ -191,7 +191,7 @@ function AddTagButton({ kind, onClick }: { kind: TagKind; onClick: () => void })
       type="button"
       onClick={onClick}
       aria-label={t.tags.addKind[kind]}
-      className="flex size-[22px] items-center justify-center rounded bg-[#f4f3f0] text-muted transition-colors duration-150 hover:bg-[#ebeae6] hover:text-ink"
+      className="flex size-[22px] items-center justify-center rounded bg-field text-muted transition-colors duration-150 hover:bg-field-hover hover:text-ink"
     >
       <Plus size={14} strokeWidth={1.5} />
     </button>
@@ -337,7 +337,7 @@ function TagFormDialog({
                   {onView ? (
                     <button
                       type="button"
-                      className="rounded-md bg-[#f4f3f0] px-3 py-1.5 text-sm text-muted transition-colors duration-150 hover:bg-[#ebeae6] hover:text-ink"
+                      className="rounded-md bg-field px-3 py-1.5 text-sm text-muted transition-colors duration-150 hover:bg-field-hover hover:text-ink"
                       onClick={onView}
                     >
                       {t.tags.viewLedger}
@@ -348,7 +348,7 @@ function TagFormDialog({
               <div className="flex gap-1">
                 <button
                   type="button"
-                  className="rounded-md bg-[#f4f3f0] px-3 py-1.5 text-sm text-muted transition-colors duration-150 hover:bg-[#ebeae6] hover:text-ink"
+                  className="rounded-md bg-field px-3 py-1.5 text-sm text-muted transition-colors duration-150 hover:bg-field-hover hover:text-ink"
                   onClick={close}
                 >
                   {t.common.cancel}
@@ -445,7 +445,7 @@ function DeleteTagOverlay({
             <button
               type="button"
               disabled={busy}
-              className="rounded-md bg-[#f4f3f0] px-3 py-1.5 text-sm text-muted transition-colors duration-150 hover:bg-[#ebeae6] hover:text-ink disabled:opacity-40"
+              className="rounded-md bg-field px-3 py-1.5 text-sm text-muted transition-colors duration-150 hover:bg-field-hover hover:text-ink disabled:opacity-40"
               onClick={onClose}
             >
               {t.common.cancel}
