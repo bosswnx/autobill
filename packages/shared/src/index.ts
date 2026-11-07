@@ -69,6 +69,7 @@ export type Entry = Syncable & {
   categoryId: string | null
   tagIds: string[]
   note: string
+  remark?: string
   occurredAt: string
 }
 

@@ -42,6 +42,7 @@ export function EntrySheet({ book, tags, categories, usage, entry, onClose }: Pr
     return ids.filter((id) => allowed.has(id))
   })
   const [note, setNote] = useState(entry?.note ?? '')
+  const [remark, setRemark] = useState(entry?.remark ?? '')
   const [date, setDate] = useState(toDateInput(initial))
   const [time, setTime] = useState(toTimeInput(initial))
   const [tagQuery, setTagQuery] = useState('')
@@ -96,6 +97,7 @@ export function EntrySheet({ book, tags, categories, usage, entry, onClose }: Pr
       categoryId,
       tagIds: tagIds.filter((id) => kindTags.some((tag) => tag.id === id)),
       note: note.trim(),
+      remark: remark.trim(),
       occurredAt: fromDateTimeInput(date, time),
     }
     try {
@@ -285,6 +287,15 @@ export function EntrySheet({ book, tags, categories, usage, entry, onClose }: Pr
               value={note}
               onChange={(event) => setNote(event.target.value)}
               placeholder={detailPlaceholder}
+              className={fieldClass}
+            />
+          </Field>
+
+          <Field label={t.entry.remark} className="mt-4">
+            <input
+              value={remark}
+              onChange={(event) => setRemark(event.target.value)}
+              placeholder={t.entry.remarkPlaceholder}
               className={fieldClass}
             />
           </Field>

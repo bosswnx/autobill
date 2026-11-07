@@ -210,6 +210,8 @@ export const zh = {
     tagSearchAria: '搜索或创建标签',
     createNamed: (name: string) => `创建 ${name}`,
     note: '详细信息（选填）',
+    remark: '备注（选填）',
+    remarkPlaceholder: '可选，例如和谁一起、买了什么',
     amount: '金额',
     amountRequired: '请输入金额',
     amountNegative: '金额不能为负数',

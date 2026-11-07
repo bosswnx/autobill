@@ -230,6 +230,8 @@ export const en: typeof zh = {
     tagSearchAria: 'Search or create a tag',
     createNamed: (name: string) => `Create ${name}`,
     note: 'Note (optional)',
+    remark: 'Remark (optional)',
+    remarkPlaceholder: 'Optional, e.g. who with or what for',
     amount: 'Amount',
     amountRequired: 'Enter an amount',
     amountNegative: 'Amount cannot be negative',

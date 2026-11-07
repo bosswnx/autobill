@@ -644,6 +644,7 @@ export type EntryInput = {
   tagIds?: string[]
   tagNames?: string[]
   note?: string
+  remark?: string
   occurredAt?: string
 }
 
@@ -665,6 +666,7 @@ export function createEntry(agent: Agent, input: EntryInput): EntryView {
     categoryId,
     tagIds,
     note: (input.note ?? '').trim(),
+    remark: (input.remark ?? '').trim(),
     occurredAt: isoFrom(input.occurredAt),
     rev: 0,
     createdAt: now,
@@ -701,6 +703,7 @@ export function updateEntry(agent: Agent, id: string, patch: EntryInput): EntryV
     currency: patch.currency?.trim() || current.currency,
     tagIds,
     note: patch.note === undefined ? current.note : patch.note.trim(),
+    remark: patch.remark === undefined ? current.remark ?? '' : patch.remark.trim(),
     occurredAt: patch.occurredAt === undefined ? current.occurredAt : isoFrom(patch.occurredAt),
   }
   return entryView(write(agent, 'entry', next, book.id), aliveTags(agent), aliveCategories(agent))

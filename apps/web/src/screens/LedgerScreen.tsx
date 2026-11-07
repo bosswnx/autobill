@@ -270,7 +270,14 @@ function EntryRow({
     >
       <div className="min-w-0">
         <div className="flex items-center gap-2">
-          <span className="truncate text-base md:text-sm">{title}</span>
+          <span className="flex min-w-0 items-baseline gap-1.5">
+            <span className="min-w-0 truncate text-base md:text-sm">{title}</span>
+            {entry.remark ? (
+              <span className="max-w-[10rem] shrink-0 truncate text-xs text-muted opacity-80">
+                {entry.remark}
+              </span>
+            ) : null}
+          </span>
           <span className="shrink-0 text-xs text-faint">{formatClock(entry.occurredAt)}</span>
         </div>
         {(category || tags.length > 0) && (

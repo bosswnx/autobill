@@ -42,6 +42,7 @@ export async function fireDueSubscriptions(now = new Date()): Promise<void> {
               categoryId: null,
               tagIds: sub.tagIds,
               note: sub.note,
+              remark: '',
               occurredAt: at.toISOString(),
             })
           }

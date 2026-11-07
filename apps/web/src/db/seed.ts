@@ -77,6 +77,7 @@ async function seedOnce(): Promise<void> {
     categoryId: coffee.id,
     tagIds: [coffeeTag.id, foodTag.id],
     note: seed.notes.luckin,
+    remark: '',
     occurredAt: yesterday.toISOString(),
   })
 
@@ -90,6 +91,7 @@ async function seedOnce(): Promise<void> {
     categoryId: transit.id,
     tagIds: [transitTag.id],
     note: seed.notes.metro,
+    remark: '',
     occurredAt: now.toISOString(),
   })
 
@@ -107,6 +109,7 @@ async function seedOnce(): Promise<void> {
     categoryId: salary.id,
     tagIds: [salaryTag.id],
     note: seed.notes.salary,
+    remark: '',
     occurredAt: payday.toISOString(),
   })
 }
