@@ -6,6 +6,7 @@ import { TagChip } from '../components/TagChip'
 import { YearPager } from '../components/YearPager'
 import { useBookEntries } from '../hooks/useLedger'
 import { useI18n } from '../i18n'
+import { categoryColor } from '../lib/categories'
 import { formatYuan } from '../lib/money'
 import {
   buildPeriodStats,
@@ -115,10 +116,18 @@ export function StatsScreen({ book, tags, categories, savings }: Props) {
         <LineChart points={stats.assetSeries} color="var(--color-chart-asset)" />
       </ChartBlock>
       <ChartBlock title={t.stats.expenseCategories}>
-        <CategoryRows breakdown={stats.expenseCategories} empty={t.stats.noData} />
+        <CategoryRows
+          breakdown={stats.expenseCategories}
+          categories={categories}
+          empty={t.stats.noData}
+        />
       </ChartBlock>
       <ChartBlock title={t.stats.incomeCategories}>
-        <CategoryRows breakdown={stats.incomeCategories} empty={t.stats.noData} />
+        <CategoryRows
+          breakdown={stats.incomeCategories}
+          categories={categories}
+          empty={t.stats.noData}
+        />
       </ChartBlock>
       <TagSliceBlock
         title={t.stats.expenseTags}
@@ -142,9 +151,11 @@ export function StatsScreen({ book, tags, categories, savings }: Props) {
 
 function CategoryRows({
   breakdown,
+  categories,
   empty,
 }: {
   breakdown: CategoryBreakdown
+  categories: Category[]
   empty: string
 }) {
   const { t } = useI18n()
@@ -155,13 +166,19 @@ function CategoryRows({
     <div className="flex flex-col gap-1.5">
       {breakdown.groups.map((group) => (
         <div key={group.category.id} className="flex flex-col gap-1">
-          <CategoryRow category={group.category} cents={group.cents} share={group.share} />
+          <CategoryRow
+            category={group.category}
+            color={group.category.color}
+            cents={group.cents}
+            share={group.share}
+          />
           {group.children.length > 0 ? (
             <div className="ml-3 flex flex-col gap-1 border-l border-line pl-3">
               {group.children.map((child) => (
                 <CategoryRow
                   key={child.category.id}
                   category={child.category}
+                  color={categoryColor(categories, child.category)}
                   cents={child.cents}
                   share={child.share}
                 />
@@ -190,17 +207,19 @@ function CategoryRows({
 
 function CategoryRow({
   category,
+  color,
   cents,
   share,
 }: {
   category: Category
+  color: string
   cents: number
   share: number
 }) {
   return (
     <div className="flex items-center justify-between gap-3 py-1 text-sm">
       <span className="flex min-w-0 items-center gap-2">
-        <span className="size-2 shrink-0 rounded-full" style={{ background: category.color }} />
+        <span className="size-2 shrink-0 rounded-full" style={{ background: color }} />
         <span className="truncate">{category.name}</span>
       </span>
       <span className="flex shrink-0 items-baseline gap-2 tabular-nums">

@@ -154,7 +154,7 @@ export function categoryPathOf(
   const leaf = byId.get(id)
   if (!leaf) return null
   const parent = leaf.parentId ? byId.get(leaf.parentId) : undefined
-  return parent ? `${parent.name} / ${leaf.name}` : leaf.name
+  return parent ? `${parent.name}-${leaf.name}` : leaf.name
 }
 
 export function categoryUsage(agent: Agent): Map<string, number> {
@@ -199,7 +199,7 @@ export function listCategories(agent: Agent, kind?: TagKind): CategoryView[] {
       rows.push({
         ...child,
         entryCount: usage.get(child.id) ?? 0,
-        path: `${root.name} / ${child.name}`,
+        path: `${root.name}-${child.name}`,
         depth: 1,
       })
     }
@@ -481,8 +481,11 @@ function categoryView(
     : undefined
   return {
     ...category,
+    // Children inherit the root's color and icon.
+    color: parent ? parent.color : category.color,
+    icon: parent ? parent.icon : category.icon,
     entryCount: categoryUsage(agent).get(category.id) ?? 0,
-    path: parent ? `${parent.name} / ${category.name}` : category.name,
+    path: parent ? `${parent.name}-${category.name}` : category.name,
     depth: category.parentId ? 1 : 0,
   }
 }
@@ -511,11 +514,13 @@ export function createCategory(
   )
   if (existing) return categoryView(agent, existing, categories)
 
+  const parent = parentId ? categories.find((category) => category.id === parentId) : undefined
   const used = new Set(categories.map((category) => category.color))
-  const color =
-    input.color?.trim() ||
-    TAG_COLOR_PALETTE.find((item) => !used.has(item)) ||
-    TAG_COLOR_PALETTE[0]
+  const color = parent
+    ? parent.color
+    : input.color?.trim() ||
+      TAG_COLOR_PALETTE.find((item) => !used.has(item)) ||
+      TAG_COLOR_PALETTE[0]
   const now = nowIso()
   const category: Category = {
     id: randomUUID(),
@@ -524,7 +529,7 @@ export function createCategory(
     name,
     parentId,
     color,
-    icon: input.icon ?? null,
+    icon: parent ? parent.icon ?? null : input.icon ?? null,
     rev: 0,
     createdAt: now,
     updatedAt: now,
@@ -542,11 +547,12 @@ export function updateCategory(
   const current = getCategory(agent, id)
   const name = patch.name === undefined ? current.name : patch.name.trim()
   if (!name) throw new Error('category name is required')
+  const isChild = Boolean(current.parentId)
   const next: Category = {
     ...current,
     name,
-    color: patch.color?.trim() || current.color,
-    icon: patch.icon === undefined ? current.icon : patch.icon,
+    color: isChild ? current.color : patch.color?.trim() || current.color,
+    icon: isChild ? current.icon : patch.icon === undefined ? current.icon : patch.icon,
   }
   return categoryView(agent, write(agent, 'category', next, current.bookId))
 }
@@ -602,7 +608,7 @@ function resolveCategory(
 
   if (input.categoryPath) {
     const parts = input.categoryPath
-      .split('/')
+      .split(/[\/-]/)
       .map((part) => part.trim())
       .filter(Boolean)
     const root = categories.find(

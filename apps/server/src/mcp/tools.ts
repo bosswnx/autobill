@@ -58,7 +58,7 @@ const categoryShape = {
   categoryPath: z
     .string()
     .optional()
-    .describe('Category path such as "餐饮 / 咖啡". Unknown paths fail; create with create_category first.'),
+    .describe('Category path such as "餐饮-咖啡". Unknown paths fail; create with create_category first.'),
 }
 
 const tagSelectorShape = {
@@ -208,7 +208,7 @@ export function registerTools(server: McpServer, agent: Agent): void {
       title: 'List categories',
       description:
         'List the two-level category tree with entry counts. Roots come first, each followed by its ' +
-        'subcategories; path looks like "餐饮 / 咖啡".',
+        'subcategories; path looks like "餐饮-咖啡".',
       annotations: { readOnlyHint: true },
       inputSchema: {
         kind: z.enum(['expense', 'income']).optional().describe('Only categories of this kind.'),

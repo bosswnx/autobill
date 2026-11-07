@@ -16,16 +16,44 @@ export function categoryDescendantIds(categories: Category[], id: string): Set<s
   return ids
 }
 
+export function categoryParent(
+  categories: Category[],
+  category: Category | null | undefined,
+): Category | undefined {
+  if (!category?.parentId) return undefined
+  return categories.find((item) => item.id === category.parentId)
+}
+
+/** "餐饮-日常" for a child, "餐饮" for a root. */
+export function categoryLabel(
+  categories: Category[],
+  category: Category | null | undefined,
+): string {
+  if (!category) return ''
+  const parent = categoryParent(categories, category)
+  return parent ? `${parent.name}-${category.name}` : category.name
+}
+
+/** Children inherit the root's color and icon. */
+export function categoryColor(categories: Category[], category: Category): string {
+  return categoryParent(categories, category)?.color ?? category.color
+}
+
+export function categoryIcon(
+  categories: Category[],
+  category: Category,
+): string | null | undefined {
+  const parent = categoryParent(categories, category)
+  return parent ? parent.icon : category.icon
+}
+
 export function categoryPath(
   categories: Category[],
   id: string | null | undefined,
 ): string {
   if (!id) return ''
-  const byId = new Map(categories.map((category) => [category.id, category]))
-  const leaf = byId.get(id)
-  if (!leaf) return ''
-  const parent = leaf.parentId ? byId.get(leaf.parentId) : undefined
-  return parent ? `${parent.name} / ${leaf.name}` : leaf.name
+  const leaf = categories.find((category) => category.id === id)
+  return categoryLabel(categories, leaf)
 }
 
 export function categoryRootId(

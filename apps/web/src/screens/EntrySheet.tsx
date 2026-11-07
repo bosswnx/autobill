@@ -7,7 +7,7 @@ import { TagChip } from '../components/TagChip'
 import { createEntry, createTag, deleteEntry, updateEntry } from '../db/mutations'
 import { useI18n } from '../i18n'
 import { amountFromYuan, amountYuan, EMPTY_AMOUNT, type AmountExpr } from '../lib/amountKeypad'
-import { flattenCategoryTree } from '../lib/categories'
+import { categoryColor, categoryIcon, flattenCategoryTree } from '../lib/categories'
 import { entryTitle } from '../lib/entryTitle'
 import { centsToYuanInput, yuanToCents } from '../lib/money'
 import { useSwipeToClose } from '../lib/swipeToClose'
@@ -198,7 +198,16 @@ export function EntrySheet({ book, tags, categories, usage, entry, onClose }: Pr
             {kindCategories.map(({ category, depth }) => (
               <TagChip
                 key={category.id}
-                tag={depth > 0 ? { ...category, name: `· ${category.name}` } : category}
+                tag={
+                  depth > 0
+                    ? {
+                        ...category,
+                        name: `· ${category.name}`,
+                        color: categoryColor(categories, category),
+                        icon: categoryIcon(categories, category) ?? null,
+                      }
+                    : category
+                }
                 active={categoryId === category.id}
                 onClick={() =>
                   setCategoryId(categoryId === category.id ? null : category.id)

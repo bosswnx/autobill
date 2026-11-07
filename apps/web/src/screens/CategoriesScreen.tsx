@@ -9,7 +9,7 @@ import { TagChip } from '../components/TagChip'
 import { resolveTagIcon, TagIcon } from '../components/TagIcon'
 import { createCategory, deleteCategory, updateCategory } from '../db/mutations'
 import { useI18n } from '../i18n'
-import { categoryChildren } from '../lib/categories'
+import { categoryChildren, categoryColor, categoryIcon } from '../lib/categories'
 
 type Props = {
   bookId: string
@@ -65,7 +65,11 @@ export function CategoriesScreen({ bookId, categories, usage, onFilterCategory }
                         {children.map((child) => (
                           <TagChip
                             key={child.id}
-                            tag={child}
+                            tag={{
+                              ...child,
+                              color: categoryColor(categories, child),
+                              icon: categoryIcon(categories, child) ?? null,
+                            }}
                             count={usage[child.id] ?? 0}
                             size="sm"
                             onClick={() =>
@@ -134,11 +138,18 @@ function CategoryForm({
 }) {
   const { t } = useI18n()
   const { category } = initial
+  const parentId = category?.parentId ?? initial.parentId
+  const parent = parentId
+    ? categories.find((item) => item.id === parentId)
+    : undefined
+  const isChild = Boolean(parentId)
   const [name, setName] = useState(category?.name ?? '')
   const [color, setColor] = useState(
-    category?.color ?? nextColor(categories, initial.kind),
+    parent?.color ?? category?.color ?? nextColor(categories, initial.kind),
   )
-  const [icon, setIcon] = useState<string | null>(resolveTagIcon(category?.icon ?? null))
+  const [icon, setIcon] = useState<string | null>(
+    resolveTagIcon(parent?.icon ?? category?.icon ?? null),
+  )
   const [picking, setPicking] = useState<null | 'icon' | 'color'>(null)
   const [saving, setSaving] = useState(false)
   const [confirmingDelete, setConfirmingDelete] = useState(false)
@@ -164,14 +175,17 @@ function CategoryForm({
     setError('')
     try {
       if (category) {
-        await updateCategory(category.id, { name: trimmed, color, icon })
+        await updateCategory(
+          category.id,
+          isChild ? { name: trimmed } : { name: trimmed, color, icon },
+        )
       } else {
         await createCategory(bookId, {
           name: trimmed,
           kind: initial.kind,
           parentId: initial.parentId,
-          color,
-          icon,
+          color: parent?.color ?? color,
+          icon: parent?.icon ?? icon,
         })
       }
       onClose()
@@ -224,6 +238,7 @@ function CategoryForm({
               className="mt-1 w-full rounded-md border border-line bg-page px-3 py-2 text-sm placeholder:text-faint hover:bg-hover focus:border-accent"
             />
 
+            {isChild ? null : (
             <div className="mt-4 flex items-start gap-8">
               <div>
                 <div className="text-xs text-faint">{t.categories.icon}</div>
@@ -251,6 +266,7 @@ function CategoryForm({
                 />
               </div>
             </div>
+            )}
 
             {error ? <p className="mt-3 text-sm text-expense">{error}</p> : null}
 

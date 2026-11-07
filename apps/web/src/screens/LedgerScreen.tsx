@@ -4,7 +4,7 @@ import { TagChip } from '../components/TagChip'
 import { useI18n } from '../i18n'
 import { entryTitle } from '../lib/entryTitle'
 import { formatYuan } from '../lib/money'
-import { flattenCategoryTree } from '../lib/categories'
+import { categoryColor, categoryIcon, categoryLabel, flattenCategoryTree } from '../lib/categories'
 import { firstSortedTagName, sortByUsage, tagsOfKind } from '../lib/tags'
 import { dayKey, formatClock, formatDayHeading } from '../lib/time'
 
@@ -106,7 +106,16 @@ export function LedgerScreen({
               {categoryRows.map(({ category, depth }) => (
                 <TagChip
                   key={category.id}
-                  tag={depth > 0 ? { ...category, name: `· ${category.name}` } : category}
+                  tag={
+                    depth > 0
+                      ? {
+                          ...category,
+                          name: `· ${category.name}`,
+                          color: categoryColor(categories, category),
+                          icon: categoryIcon(categories, category) ?? null,
+                        }
+                      : category
+                  }
                   active={filterCategoryId === category.id}
                   onClick={() =>
                     onSelectCategory(filterCategoryId === category.id ? null : category.id)
@@ -165,7 +174,7 @@ export function LedgerScreen({
                   <EntryRow
                     key={entry.id}
                     entry={entry}
-                    category={entry.categoryId ? categoryMap.get(entry.categoryId) : undefined}
+                    category={categoryChip(categoryMap.get(entry.categoryId ?? ''), categories)}
                     tags={sortByUsage(
                       entry.tagIds
                         .map((id) => tagMap.get(id))
@@ -175,7 +184,7 @@ export function LedgerScreen({
                     title={entryTitle(
                       entry.note,
                       entry.type,
-                      (entry.categoryId ? categoryMap.get(entry.categoryId)?.name : undefined) ??
+                      categoryLabel(categories, categoryMap.get(entry.categoryId ?? '')) ||
                         firstSortedTagName(entry.tagIds, tags, usage),
                     )}
                     activeTagIds={filterTagIds}
@@ -214,6 +223,19 @@ function Stat({
       </span>
     </div>
   )
+}
+
+function categoryChip(
+  category: Category | undefined,
+  categories: Category[],
+): Category | undefined {
+  if (!category) return undefined
+  return {
+    ...category,
+    name: categoryLabel(categories, category),
+    color: categoryColor(categories, category),
+    icon: categoryIcon(categories, category) ?? null,
+  }
 }
 
 function EntryRow({
