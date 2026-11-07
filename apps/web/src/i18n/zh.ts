@@ -95,6 +95,10 @@ export const zh = {
   categories: {
     title: '分类',
     uncategorized: '未分类',
+    sortBy: '排序',
+    sortAmount: '金额',
+    sortName: '名称',
+    thisMonth: '本月',
     add: '新建分类',
     addChild: '新建子分类',
     edit: '编辑分类',

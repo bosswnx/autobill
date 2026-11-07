@@ -1,15 +1,17 @@
-import type { Category, TagKind } from '@autobill/shared'
+import type { Category, Entry, TagKind } from '@autobill/shared'
 import { TAG_COLOR_PALETTE } from '@autobill/shared'
-import { Plus } from 'lucide-react'
+import { ChevronRight, Plus } from 'lucide-react'
 import { useState } from 'react'
 import { ColorPicker } from '../components/ColorPicker'
 import { IconPicker } from '../components/IconPicker'
 import { Overlay } from '../components/Overlay'
-import { TagChip } from '../components/TagChip'
 import { resolveTagIcon, TagIcon } from '../components/TagIcon'
 import { createCategory, deleteCategory, updateCategory } from '../db/mutations'
+import { useBookEntries } from '../hooks/useLedger'
 import { useI18n } from '../i18n'
-import { categoryChildren, categoryColor, categoryIcon } from '../lib/categories'
+import { categoryChildren, categoryColor } from '../lib/categories'
+import { formatYuan } from '../lib/money'
+import { inMonth, monthKey } from '../lib/time'
 
 type Props = {
   bookId: string
@@ -24,71 +26,150 @@ type Editing = {
   parentId: string | null
 }
 
+type SortKey = 'amount' | 'name'
+
+type Totals = {
+  cents: number
+  count: number
+}
+
 export function CategoriesScreen({ bookId, categories, usage, onFilterCategory }: Props) {
   const { t } = useI18n()
   const [editing, setEditing] = useState<Editing | null>(null)
-  const roots = categoryChildren(categories, null)
+  const [sort, setSort] = useState<SortKey>('amount')
+  const entries = useBookEntries(bookId)
+  const month = monthKey()
+  const monthEntries = entries.filter((entry) => inMonth(entry.occurredAt, month))
+  const totals = buildTotals(monthEntries, categories)
 
   return (
-    <div className="flex flex-col gap-8">
+    <div className="flex flex-col gap-7">
+      <div className="flex items-center justify-end gap-2 text-xs text-muted">
+        <span>{t.categories.sortBy}</span>
+        <SortButton active={sort === 'amount'} onClick={() => setSort('amount')}>
+          {t.categories.sortAmount}
+        </SortButton>
+        <SortButton active={sort === 'name'} onClick={() => setSort('name')}>
+          {t.categories.sortName}
+        </SortButton>
+      </div>
+
       {(['expense', 'income'] as const).map((kind) => {
-        const group = roots.filter((category) => category.kind === kind)
+        const roots = sortCategories(
+          categoryChildren(categories, null).filter((category) => category.kind === kind),
+          totals,
+          sort,
+        )
+        const kindEntries = monthEntries.filter((entry) => entry.type === kind)
+        const totalCents = kindEntries.reduce((sum, entry) => sum + entry.amountCents, 0)
+        const uncategorized = kindEntries.filter((entry) => !entry.categoryId)
+        const uncategorizedCents = uncategorized.reduce(
+          (sum, entry) => sum + entry.amountCents,
+          0,
+        )
+
         return (
-          <section key={kind} className="flex flex-col gap-3">
-            <div className="flex items-center gap-2">
+          <section key={kind} className="flex flex-col gap-2">
+            <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
               <h2 className="text-sm font-medium">{t.tagKind[kind]}</h2>
+              <span className="text-xs tabular-nums text-faint">
+                {t.categories.thisMonth} {formatYuan(totalCents, { sign: 'never' })} ·{' '}
+                {t.categories.entryCount(kindEntries.length)}
+              </span>
               <button
                 type="button"
-                aria-label={t.categories.add}
                 onClick={() => setEditing({ kind, parentId: null })}
-                className="flex size-[22px] items-center justify-center rounded bg-field text-muted transition-colors duration-150 hover:bg-field-hover hover:text-ink"
+                className="ml-auto inline-flex items-center gap-1 rounded-md px-2 py-1 text-xs text-muted transition-colors duration-150 hover:bg-hover hover:text-ink"
               >
-                <Plus size={14} strokeWidth={1.5} />
+                <Plus size={13} strokeWidth={1.75} />
+                {t.categories.add}
               </button>
             </div>
-            {group.length === 0 ? (
-              <p className="text-sm text-muted">{t.categories.empty}</p>
+
+            {roots.length === 0 && uncategorized.length === 0 ? (
+              <p className="px-1 py-4 text-sm text-muted">{t.categories.empty}</p>
             ) : (
-              <div className="flex flex-col gap-2">
-                {group.map((root) => {
-                  const children = categoryChildren(categories, root.id)
+              <div className="flex flex-col">
+                {roots.map((root) => {
+                  const children = sortCategories(
+                    categoryChildren(categories, root.id),
+                    totals,
+                    sort,
+                  )
+                  const total = totals.get(root.id)
                   return (
-                    <div key={root.id} className="flex flex-col gap-1.5">
-                      <div>
-                        <TagChip
-                          tag={root}
-                          count={usage[root.id] ?? 0}
-                          onClick={() => setEditing({ category: root, kind, parentId: null })}
+                    <div key={root.id} className="flex flex-col">
+                      <button
+                        type="button"
+                        onClick={() =>
+                          setEditing({ category: root, kind, parentId: null })
+                        }
+                        className="flex w-full items-center gap-2 border-b border-line px-1 py-2.5 text-left text-sm transition-colors duration-150 hover:bg-hover"
+                      >
+                        <span
+                          className="size-2 shrink-0 rounded-full"
+                          style={{ background: categoryColor(categories, root) }}
                         />
-                      </div>
-                      <div className="ml-2 flex flex-wrap items-center gap-1.5 border-l border-line pl-3">
-                        {children.map((child) => (
-                          <TagChip
-                            key={child.id}
-                            tag={{
-                              ...child,
-                              color: categoryColor(categories, child),
-                              icon: categoryIcon(categories, child) ?? null,
-                            }}
-                            count={usage[child.id] ?? 0}
-                            size="sm"
-                            onClick={() =>
-                              setEditing({ category: child, kind, parentId: root.id })
-                            }
-                          />
-                        ))}
-                        <button
-                          type="button"
-                          onClick={() => setEditing({ kind, parentId: root.id })}
-                          className="inline-flex items-center gap-0.5 rounded px-1 py-px text-xs text-muted transition-colors duration-150 hover:bg-hover hover:text-ink"
-                        >
-                          <Plus size={12} strokeWidth={1.5} />
-                          {t.categories.addChild}
-                        </button>
-                      </div>
+                        <span className="flex size-4 shrink-0 items-center justify-center text-muted">
+                          {root.icon ? <TagIcon name={root.icon} size={14} /> : null}
+                        </span>
+                        <span className="min-w-0 flex-1 truncate font-medium">{root.name}</span>
+                        <span className="shrink-0 tabular-nums">
+                          {formatYuan(total?.cents ?? 0, { sign: 'never' })}
+                        </span>
+                        <span className="w-12 shrink-0 text-right text-xs tabular-nums text-faint">
+                          {t.categories.entryCount(total?.count ?? 0)}
+                        </span>
+                        <ChevronRight size={14} className="shrink-0 text-faint" />
+                      </button>
+
+                      {children.map((child) => {
+                        const childTotal = totals.get(child.id)
+                        return (
+                          <div key={child.id} className="relative">
+                            <span
+                              aria-hidden
+                              className="pointer-events-none absolute bottom-0 left-4 top-0 border-l border-line"
+                            />
+                            <button
+                              type="button"
+                              onClick={() =>
+                                setEditing({ category: child, kind, parentId: root.id })
+                              }
+                              className="flex w-full items-center gap-2 border-b border-line py-2 pl-8 pr-1 text-left text-sm transition-colors duration-150 hover:bg-hover"
+                            >
+                              <span className="min-w-0 flex-1 truncate">{child.name}</span>
+                              <span className="shrink-0 tabular-nums text-muted">
+                                {formatYuan(childTotal?.cents ?? 0, { sign: 'never' })}
+                              </span>
+                              <span className="w-12 shrink-0 text-right text-xs tabular-nums text-faint">
+                                {t.categories.entryCount(childTotal?.count ?? 0)}
+                              </span>
+                              <ChevronRight size={14} className="shrink-0 text-faint" />
+                            </button>
+                          </div>
+                        )
+                      })}
                     </div>
                   )
                 })}
+
+                {uncategorized.length > 0 ? (
+                  <div className="flex items-center gap-2 px-1 py-2.5 text-sm text-muted">
+                    <span className="size-2 shrink-0 rounded-full bg-faint" />
+                    <span className="flex size-4 shrink-0" />
+                    <span className="min-w-0 flex-1 truncate">
+                      {t.categories.uncategorized}
+                    </span>
+                    <span className="shrink-0 tabular-nums">
+                      {formatYuan(uncategorizedCents, { sign: 'never' })}
+                    </span>
+                    <span className="w-12 shrink-0 text-right text-xs tabular-nums text-faint">
+                      {t.categories.entryCount(uncategorized.length)}
+                    </span>
+                    <span className="w-3.5 shrink-0" />
+                  </div>
+                ) : null}
               </div>
             )}
           </section>
@@ -102,9 +183,7 @@ export function CategoriesScreen({ bookId, categories, usage, onFilterCategory }
           categories={categories}
           usage={usage}
           onClose={() => setEditing(null)}
-          onAddChild={(root) =>
-            setEditing({ kind: root.kind, parentId: root.id })
-          }
+          onAddChild={(root) => setEditing({ kind: root.kind, parentId: root.id })}
           onView={
             editing.category
               ? () => {
@@ -117,6 +196,59 @@ export function CategoriesScreen({ bookId, categories, usage, onFilterCategory }
       ) : null}
     </div>
   )
+}
+
+function SortButton({
+  active,
+  onClick,
+  children,
+}: {
+  active: boolean
+  onClick: () => void
+  children: string
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={`rounded px-1.5 py-0.5 transition-colors duration-150 ${
+        active ? 'bg-active text-ink' : 'text-muted hover:bg-hover hover:text-ink'
+      }`}
+    >
+      {children}
+    </button>
+  )
+}
+
+function buildTotals(entries: Entry[], categories: Category[]): Map<string, Totals> {
+  const totals = new Map<string, Totals>()
+  const parentOf = new Map(categories.map((category) => [category.id, category.parentId]))
+  const add = (id: string, entry: Entry) => {
+    const current = totals.get(id) ?? { cents: 0, count: 0 }
+    totals.set(id, {
+      cents: current.cents + entry.amountCents,
+      count: current.count + 1,
+    })
+  }
+  for (const entry of entries) {
+    if (!entry.categoryId) continue
+    add(entry.categoryId, entry)
+    const parentId = parentOf.get(entry.categoryId)
+    if (parentId) add(parentId, entry)
+  }
+  return totals
+}
+
+function sortCategories(
+  categories: Category[],
+  totals: Map<string, Totals>,
+  sort: SortKey,
+): Category[] {
+  return [...categories].sort((a, b) => {
+    if (sort === 'name') return a.name.localeCompare(b.name, 'zh')
+    const byAmount = (totals.get(b.id)?.cents ?? 0) - (totals.get(a.id)?.cents ?? 0)
+    return byAmount || a.name.localeCompare(b.name, 'zh')
+  })
 }
 
 function CategoryForm({
@@ -139,9 +271,7 @@ function CategoryForm({
   const { t } = useI18n()
   const { category } = initial
   const parentId = category?.parentId ?? initial.parentId
-  const parent = parentId
-    ? categories.find((item) => item.id === parentId)
-    : undefined
+  const parent = parentId ? categories.find((item) => item.id === parentId) : undefined
   const isChild = Boolean(parentId)
   const [name, setName] = useState(category?.name ?? '')
   const [color, setColor] = useState(
@@ -239,33 +369,33 @@ function CategoryForm({
             />
 
             {isChild ? null : (
-            <div className="mt-4 flex items-start gap-8">
-              <div>
-                <div className="text-xs text-faint">{t.categories.icon}</div>
-                <button
-                  type="button"
-                  onClick={() => setPicking('icon')}
-                  className="mt-1 flex size-8 items-center justify-center rounded-md border border-line text-ink transition-colors duration-150 hover:bg-hover"
-                  aria-label={t.categories.icon}
-                >
-                  {icon ? (
-                    <TagIcon name={icon} size={16} />
-                  ) : (
-                    <span className="text-xs text-faint">{t.common.none}</span>
-                  )}
-                </button>
+              <div className="mt-4 flex items-start gap-8">
+                <div>
+                  <div className="text-xs text-faint">{t.categories.icon}</div>
+                  <button
+                    type="button"
+                    onClick={() => setPicking('icon')}
+                    className="mt-1 flex size-8 items-center justify-center rounded-md border border-line text-ink transition-colors duration-150 hover:bg-hover"
+                    aria-label={t.categories.icon}
+                  >
+                    {icon ? (
+                      <TagIcon name={icon} size={16} />
+                    ) : (
+                      <span className="text-xs text-faint">{t.common.none}</span>
+                    )}
+                  </button>
+                </div>
+                <div>
+                  <div className="text-xs text-faint">{t.categories.color}</div>
+                  <button
+                    type="button"
+                    onClick={() => setPicking('color')}
+                    className="mt-1 size-8 rounded-full border border-line"
+                    style={{ background: color }}
+                    aria-label={t.categories.color}
+                  />
+                </div>
               </div>
-              <div>
-                <div className="text-xs text-faint">{t.categories.color}</div>
-                <button
-                  type="button"
-                  onClick={() => setPicking('color')}
-                  className="mt-1 size-8 rounded-full border border-line"
-                  style={{ background: color }}
-                  aria-label={t.categories.color}
-                />
-              </div>
-            </div>
             )}
 
             {error ? <p className="mt-3 text-sm text-expense">{error}</p> : null}
@@ -333,7 +463,10 @@ function CategoryForm({
       ) : null}
 
       {confirmingDelete && category ? (
-        <Overlay onClose={() => setConfirmingDelete(false)} className="overlay-pad z-[60] items-center">
+        <Overlay
+          onClose={() => setConfirmingDelete(false)}
+          className="overlay-pad z-[60] items-center"
+        >
           {() => (
             <div className="anim-panel max-h-full w-full max-w-sm overflow-y-auto rounded-xl border border-line bg-page p-5">
               <h2 className="text-lg font-semibold">{t.categories.deleteTitle}</h2>

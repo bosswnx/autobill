@@ -112,6 +112,10 @@ export const en: typeof zh = {
   categories: {
     title: 'Categories',
     uncategorized: 'Uncategorized',
+    sortBy: 'Sort by',
+    sortAmount: 'Amount',
+    sortName: 'Name',
+    thisMonth: 'This month',
     add: 'New category',
     addChild: 'New subcategory',
     edit: 'Edit category',
