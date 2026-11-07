@@ -139,7 +139,7 @@ export default function App() {
       </aside>
 
       <div className="flex min-h-svh flex-col desktop:ml-[var(--sidebar-width)]">
-        <main className="mx-auto w-full max-w-[var(--content-max)] flex-1 px-5 pb-[calc(7rem+var(--sab))] pt-[calc(2.5rem+var(--sat))] desktop:px-16 desktop:pb-16 desktop:pt-[calc(3rem+var(--sat))]">
+        <main className="mx-auto w-full max-w-[var(--content-max)] flex-1 px-5 pb-[calc(9rem+var(--sab))] pt-[calc(2.5rem+var(--sat))] desktop:px-16 desktop:pb-16 desktop:pt-[calc(3rem+var(--sat))]">
           <div key={screen} className="anim-page">
           {screen === 'ledger' && book && (
             <LedgerScreen
@@ -193,9 +193,20 @@ export default function App() {
           </div>
         </main>
 
+        {screen === 'ledger' && book ? (
+          <button
+            type="button"
+            onClick={() => setEditor({})}
+            aria-label={t.nav.addEntry}
+            className="fixed right-5 bottom-[calc(4.75rem+var(--sab))] z-30 flex size-14 items-center justify-center rounded-full bg-accent text-accent-ink shadow-fab transition-[transform,filter] duration-150 hover:brightness-105 active:scale-95 desktop:hidden"
+          >
+            <Plus size={24} strokeWidth={1.75} />
+          </button>
+        ) : null}
+
         {createPortal(
         <nav className="app-tabbar fixed inset-x-0 bottom-0 z-40 border-t border-line px-2 pb-[max(0.375rem,var(--sab))] pt-1 desktop:hidden">
-          <div className="grid grid-cols-5">
+          <div className="grid grid-cols-4">
             <NavButton
               current={screen}
               id="ledger"
@@ -212,14 +223,6 @@ export default function App() {
               icon={<ChartColumn size={22} strokeWidth={1.75} />}
               stacked
             />
-            <button
-              type="button"
-              onClick={() => book && setEditor({})}
-              aria-label={t.nav.addEntry}
-              className="flex h-full items-center justify-center rounded-md px-1 py-1 text-accent transition-colors duration-150 hover:bg-hover"
-            >
-              <Plus size={22} strokeWidth={1.75} />
-            </button>
             <NavButton
               current={screen}
               id="tags"

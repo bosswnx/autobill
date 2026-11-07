@@ -42,6 +42,7 @@
   --color-chart-asset: #787774;
   --color-tag-ink: #ffffff;
   --shadow-pop: 0 8px 24px rgb(55 53 47 / 14%);
+  --shadow-fab: 0 10px 30px rgb(55 53 47 / 22%), 0 2px 8px rgb(55 53 47 / 12%);
   --sidebar-width: 180px;
   --content-max: 48rem;
 }
@@ -75,6 +76,7 @@ html.dark {
   --color-chart-income: #46b8a4;
   --color-chart-asset: #9a9995;
   --shadow-pop: 0 8px 24px rgb(0 0 0 / 55%);
+  --shadow-fab: 0 10px 30px rgb(0 0 0 / 55%), 0 2px 8px rgb(0 0 0 / 35%);
 }
 
 :root {
