@@ -1,4 +1,4 @@
-import type { Book, Subscription, Tag } from '@tagbill/shared'
+import type { Book, Subscription, Tag } from '@autobill/shared'
 import { Plus } from 'lucide-react'
 import { useState } from 'react'
 import { TagChip } from '../components/TagChip'

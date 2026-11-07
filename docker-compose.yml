@@ -1,15 +1,15 @@
 services:
-  tagbill:
+  autobill:
     build: .
-    image: tagbill:local
-    container_name: tagbill
+    image: autobill:local
+    container_name: autobill
     restart: unless-stopped
     env_file:
       - .env
     environment:
       PORT: "8787"
       HOST: 0.0.0.0
-      TAGBILL_DATA: /data
+      AUTOBILL_DATA: /data
     ports:
       - "127.0.0.1:8787:8787"
     volumes:

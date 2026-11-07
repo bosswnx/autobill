@@ -22,25 +22,34 @@ type SecretsFile = {
 }
 
 function env(name: string): string | undefined {
-  // TAGLEDGER_* was the pre-rename prefix; keep reading it for existing installs.
-  const legacy = name.startsWith('TAGBILL_') ? name.replace('TAGBILL_', 'TAGLEDGER_') : name
-  const value = (process.env[name] ?? process.env[legacy])?.trim()
-  return value || undefined
+  // TAGBILL_* / TAGLEDGER_* were the previous prefixes; keep reading them.
+  const candidates = [name]
+  if (name.startsWith('AUTOBILL_')) {
+    candidates.push(name.replace('AUTOBILL_', 'TAGBILL_'), name.replace('AUTOBILL_', 'TAGLEDGER_'))
+  }
+  for (const key of candidates) {
+    const value = process.env[key]?.trim()
+    if (value) return value
+  }
+  return undefined
 }
 
 function dbPathFor(dataDir: string): string {
-  const next = join(dataDir, 'tagbill.sqlite')
-  const legacy = join(dataDir, 'tagledger.sqlite')
-  if (!existsSync(next) && existsSync(legacy)) {
+  const next = join(dataDir, 'autobill.sqlite')
+  if (existsSync(next)) return next
+  for (const name of ['tagbill.sqlite', 'tagledger.sqlite']) {
+    const legacy = join(dataDir, name)
+    if (!existsSync(legacy)) continue
     for (const suffix of ['', '-wal', '-shm']) {
       if (existsSync(`${legacy}${suffix}`)) renameSync(`${legacy}${suffix}`, `${next}${suffix}`)
     }
+    break
   }
   return next
 }
 
 function webRootPath(): string | null {
-  const raw = env('TAGBILL_WEB')
+  const raw = env('AUTOBILL_WEB')
   const candidates = [
     raw,
     join(root, '..', '..', 'web', 'dist'),
@@ -55,7 +64,7 @@ function webRootPath(): string | null {
 }
 
 function dataDirPath(): string {
-  const raw = env('TAGBILL_DATA') ?? join(root, '..', 'data')
+  const raw = env('AUTOBILL_DATA') ?? join(root, '..', 'data')
   return isAbsolute(raw) ? raw : join(process.cwd(), raw)
 }
 
@@ -79,8 +88,8 @@ export function loadConfig(): Config {
   const dataDir = dataDirPath()
   mkdirSync(dataDir, { recursive: true })
 
-  const fromEnvTarget = env('TAGBILL_TARGET_KEY')
-  const fromEnvPepper = env('TAGBILL_PEPPER')
+  const fromEnvTarget = env('AUTOBILL_TARGET_KEY')
+  const fromEnvPepper = env('AUTOBILL_PEPPER')
   const secrets =
     fromEnvTarget && fromEnvPepper
       ? { targetKey: fromEnvTarget, pepper: fromEnvPepper }

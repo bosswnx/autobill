@@ -2,14 +2,19 @@ export function nid(): string {
   return crypto.randomUUID()
 }
 
-const DEVICE_KEY = 'tagbill.deviceId'
-const LEGACY_DEVICE_KEY = 'tagledger.deviceId'
+const DEVICE_KEY = 'autobill.deviceId'
+const LEGACY_DEVICE_KEYS = ['tagbill.deviceId', 'tagledger.deviceId']
 
 export function deviceId(): string {
   let id = localStorage.getItem(DEVICE_KEY)
   if (!id) {
-    id = localStorage.getItem(LEGACY_DEVICE_KEY)
-    if (id) localStorage.setItem(DEVICE_KEY, id)
+    for (const key of LEGACY_DEVICE_KEYS) {
+      const legacy = localStorage.getItem(key)
+      if (!legacy) continue
+      id = legacy
+      localStorage.setItem(DEVICE_KEY, legacy)
+      break
+    }
   }
   if (!id) {
     id = nid()

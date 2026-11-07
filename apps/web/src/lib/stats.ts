@@ -1,4 +1,4 @@
-import type { Entry, Tag } from '@tagbill/shared'
+import type { Category, Entry, Tag } from '@autobill/shared'
 import { getLocale } from '../i18n'
 import {
   dayKey,
@@ -31,6 +31,25 @@ export type TagSlice = {
   focused: boolean
 }
 
+export type CategoryAmount = {
+  category: Category
+  cents: number
+  share: number
+}
+
+export type CategoryGroup = {
+  category: Category
+  cents: number
+  share: number
+  children: CategoryAmount[]
+}
+
+export type CategoryBreakdown = {
+  groups: CategoryGroup[]
+  uncategorizedCents: number
+  total: number
+}
+
 export type PeriodStats = {
   expense: number
   income: number
@@ -40,6 +59,8 @@ export type PeriodStats = {
   expenseSeries: SeriesPoint[]
   incomeSeries: SeriesPoint[]
   assetSeries: SeriesPoint[]
+  expenseCategories: CategoryBreakdown
+  incomeCategories: CategoryBreakdown
   expenseTagSlice: TagSlice
   incomeTagSlice: TagSlice
 }
@@ -85,6 +106,7 @@ export function buildPeriodStats(
   period: string,
   entries: Entry[],
   tags: Tag[],
+  categories: Category[],
   openingBalanceCents: number,
   options?: { now?: Date } & StatsFocus,
 ): PeriodStats {
@@ -144,9 +166,61 @@ export function buildPeriodStats(
       cents: incomeByKey.get(item.key) ?? 0,
     })),
     assetSeries,
+    expenseCategories: buildCategoryBreakdown(periodEntries, categories, 'expense'),
+    incomeCategories: buildCategoryBreakdown(periodEntries, categories, 'income'),
     expenseTagSlice: buildTagSlice(periodEntries, tags, 'expense', expenseTagIds),
     incomeTagSlice: buildTagSlice(periodEntries, tags, 'income', incomeTagIds),
   }
+}
+
+function buildCategoryBreakdown(
+  periodEntries: Entry[],
+  categories: Category[],
+  kind: 'expense' | 'income',
+): CategoryBreakdown {
+  const scoped = periodEntries.filter((entry) => entry.type === kind)
+  const total = scoped.reduce((sum, entry) => sum + entry.amountCents, 0)
+  const byId = new Map(
+    categories.filter((category) => category.kind === kind).map((category) => [category.id, category]),
+  )
+  const rootAmounts = new Map<string, number>()
+  const childAmounts = new Map<string, number>()
+  let uncategorizedCents = 0
+
+  for (const entry of scoped) {
+    const category = entry.categoryId ? byId.get(entry.categoryId) : undefined
+    if (!category) {
+      uncategorizedCents += entry.amountCents
+      continue
+    }
+    if (category.parentId) {
+      childAmounts.set(category.id, (childAmounts.get(category.id) ?? 0) + entry.amountCents)
+      rootAmounts.set(category.parentId, (rootAmounts.get(category.parentId) ?? 0) + entry.amountCents)
+    } else {
+      rootAmounts.set(category.id, (rootAmounts.get(category.id) ?? 0) + entry.amountCents)
+    }
+  }
+
+  const share = (cents: number) => (total > 0 ? Math.round((cents / total) * 1000) / 10 : 0)
+  const groups = categories
+    .filter((category) => category.kind === kind && category.parentId === null)
+    .map((category) => {
+      const cents = rootAmounts.get(category.id) ?? 0
+      const children = categories
+        .filter((child) => child.parentId === category.id)
+        .map((child) => ({
+          category: child,
+          cents: childAmounts.get(child.id) ?? 0,
+          share: share(childAmounts.get(child.id) ?? 0),
+        }))
+        .filter((child) => child.cents > 0)
+        .sort((a, b) => b.cents - a.cents || a.category.name.localeCompare(b.category.name, 'zh'))
+      return { category, cents, share: share(cents), children }
+    })
+    .filter((group) => group.cents > 0)
+    .sort((a, b) => b.cents - a.cents || a.category.name.localeCompare(b.category.name, 'zh'))
+
+  return { groups, uncategorizedCents, total }
 }
 
 function buildTagSlice(

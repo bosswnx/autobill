@@ -1,4 +1,4 @@
-import type { Book, Entry, EntryType, Tag } from '@tagbill/shared'
+import type { Book, Category, Entry, EntryType, Tag } from '@autobill/shared'
 import { useMemo, useRef, useState, type ReactNode } from 'react'
 import { AmountKeypad } from '../components/AmountKeypad'
 import { CompactPicker } from '../components/DateTimePickers'
@@ -7,6 +7,7 @@ import { TagChip } from '../components/TagChip'
 import { createEntry, createTag, deleteEntry, updateEntry } from '../db/mutations'
 import { useI18n } from '../i18n'
 import { amountFromYuan, amountYuan, EMPTY_AMOUNT, type AmountExpr } from '../lib/amountKeypad'
+import { flattenCategoryTree } from '../lib/categories'
 import { entryTitle } from '../lib/entryTitle'
 import { centsToYuanInput, yuanToCents } from '../lib/money'
 import { useSwipeToClose } from '../lib/swipeToClose'
@@ -16,6 +17,7 @@ import { formatCompactDate, fromDateTimeInput, nowIso, toDateInput, toTimeInput 
 type Props = {
   book: Book
   tags: Tag[]
+  categories: Category[]
   usage: Record<string, number>
   entry?: Entry
   onClose: () => void
@@ -24,13 +26,14 @@ type Props = {
 const fieldClass =
   'w-full rounded-md border border-line bg-page px-3 py-2 text-sm hover:bg-hover focus:border-accent'
 
-export function EntrySheet({ book, tags, usage, entry, onClose }: Props) {
+export function EntrySheet({ book, tags, categories, usage, entry, onClose }: Props) {
   const { t } = useI18n()
   const initial = entry?.occurredAt ?? nowIso()
   const [type, setType] = useState<EntryType>(entry?.type === 'income' ? 'income' : 'expense')
   const [amount, setAmount] = useState<AmountExpr>(
     entry ? amountFromYuan(centsToYuanInput(entry.amountCents)) : EMPTY_AMOUNT,
   )
+  const [categoryId, setCategoryId] = useState<string | null>(entry?.categoryId ?? null)
   const [tagIds, setTagIds] = useState<string[]>(() => {
     const ids = entry?.tagIds ?? []
     const allowed = new Set(
@@ -51,6 +54,10 @@ export function EntrySheet({ book, tags, usage, entry, onClose }: Props) {
   const kindTags = useMemo(
     () => sortByUsage(tagsOfKind(tags, type === 'income' ? 'income' : 'expense'), usage),
     [tags, usage, type],
+  )
+  const kindCategories = useMemo(
+    () => flattenCategoryTree(categories, type === 'income' ? 'income' : 'expense'),
+    [categories, type],
   )
   const visibleTags = useMemo(() => {
     const needle = tagQuery.trim().toLowerCase()
@@ -86,6 +93,7 @@ export function EntrySheet({ book, tags, usage, entry, onClose }: Props) {
       currency: book.currency,
       accountId: entry?.accountId ?? '',
       toAccountId: null,
+      categoryId,
       tagIds: tagIds.filter((id) => kindTags.some((tag) => tag.id === id)),
       note: note.trim(),
       occurredAt: fromDateTimeInput(date, time),
@@ -157,6 +165,7 @@ export function EntrySheet({ book, tags, usage, entry, onClose }: Props) {
                   type="button"
                   onClick={() => {
                     setType(item)
+                    setCategoryId(null)
                     const allowed = new Set(tagsOfKind(tags, item).map((tag) => tag.id))
                     setTagIds((current) => current.filter((id) => allowed.has(id)))
                     setTagQuery('')
@@ -173,7 +182,32 @@ export function EntrySheet({ book, tags, usage, entry, onClose }: Props) {
         </div>
 
         <div data-overlay-scroll className="flex-1 overflow-y-auto px-5 py-3">
-          <div className="text-xs text-faint">{t.entry.tags}</div>
+          <div className="text-xs text-faint">{t.categories.title}</div>
+          <div className="mt-2 flex flex-wrap items-center gap-1.5">
+            <button
+              type="button"
+              onClick={() => setCategoryId(null)}
+              className={`rounded px-1.5 py-0.5 text-xs transition-colors duration-150 md:text-sm ${
+                categoryId === null
+                  ? 'bg-active text-ink'
+                  : 'text-muted hover:bg-hover hover:text-ink'
+              }`}
+            >
+              {t.categories.none}
+            </button>
+            {kindCategories.map(({ category, depth }) => (
+              <TagChip
+                key={category.id}
+                tag={depth > 0 ? { ...category, name: `· ${category.name}` } : category}
+                active={categoryId === category.id}
+                onClick={() =>
+                  setCategoryId(categoryId === category.id ? null : category.id)
+                }
+              />
+            ))}
+          </div>
+
+          <div className="mt-4 text-xs text-faint">{t.entry.tags}</div>
             {tagSearchOpen && (
               <div className="anim-page mt-2">
                 <input

@@ -3,9 +3,9 @@
 <plist version="1.0">
 <dict>
   <key>CFBundleDisplayName</key>
-  <string>标签记账</string>
+  <string>轻记账</string>
   <key>CFBundleName</key>
-  <string>标签记账</string>
+  <string>轻记账</string>
   <key>LSHasLocalizedDisplayName</key>
   <true/>
   <key>NSAppTransportSecurity</key>

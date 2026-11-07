@@ -3,16 +3,19 @@ import { z } from 'zod'
 import type { Agent } from './store.ts'
 import {
   aliveTags,
+  createCategory,
   createEntry,
   createSubscription,
   createTag,
   defaultPeriod,
+  deleteCategory,
   deleteEntry,
   deleteSubscription,
   deleteTag,
   getEntry,
   isValidPeriod,
   ledgerInfo,
+  listCategories,
   listEntries,
   listSubscriptions,
   setSavings,
@@ -20,6 +23,7 @@ import {
   stats,
   tagUsage,
   tagView,
+  updateCategory,
   updateEntry,
   updateSubscription,
   updateTag,
@@ -41,6 +45,20 @@ const amountShape = {
     .min(0)
     .optional()
     .describe('Amount in yuan (36.5 = ¥36.50). Use either this or amountCents.'),
+}
+
+const categoryShape = {
+  categoryId: z
+    .string()
+    .nullable()
+    .optional()
+    .describe(
+      'Existing category id. null clears it. Omit to leave the entry uncategorized on create, or unchanged on update.',
+    ),
+  categoryPath: z
+    .string()
+    .optional()
+    .describe('Category path such as "餐饮 / 咖啡". Unknown paths fail; create with create_category first.'),
 }
 
 const tagSelectorShape = {
@@ -182,6 +200,84 @@ export function registerTools(server: McpServer, agent: Agent): void {
     async (args) => ok(deleteTag(agent, args.id, { withEntries: args.withEntries })),
   )
 
+  /* --------------------------- categories ------------------------- */
+
+  server.registerTool(
+    'list_categories',
+    {
+      title: 'List categories',
+      description:
+        'List the two-level category tree with entry counts. Roots come first, each followed by its ' +
+        'subcategories; path looks like "餐饮 / 咖啡".',
+      annotations: { readOnlyHint: true },
+      inputSchema: {
+        kind: z.enum(['expense', 'income']).optional().describe('Only categories of this kind.'),
+      },
+    },
+    async (args) => ok({ categories: listCategories(agent, args.kind) }),
+  )
+
+  server.registerTool(
+    'create_category',
+    {
+      title: 'Create category',
+      description:
+        'Create a category or a subcategory. Categories are two levels at most: parentId must point ' +
+        'at a root category. Returns the existing one when name and parent already match.',
+      annotations: { readOnlyHint: false, idempotentHint: true },
+      inputSchema: {
+        name: z.string().min(1).describe('Category name, e.g. 餐饮 or 咖啡.'),
+        kind: z.enum(['expense', 'income']).optional().describe('Default expense.'),
+        parentId: z
+          .string()
+          .nullable()
+          .optional()
+          .describe('Root category id for a subcategory; null or omitted creates a root.'),
+        color: z.string().optional().describe('Hex color. Picked automatically when omitted.'),
+        icon: z.string().nullable().optional().describe('Lucide icon name, or null.'),
+      },
+    },
+    async (args) => ok({ category: createCategory(agent, args) }),
+  )
+
+  server.registerTool(
+    'update_category',
+    {
+      title: 'Update category',
+      description: 'Rename a category, change its color or icon. It cannot be moved or change kind.',
+      annotations: { readOnlyHint: false, idempotentHint: true },
+      inputSchema: {
+        id: z.string().describe('Category id.'),
+        name: z.string().min(1).optional(),
+        color: z.string().optional(),
+        icon: z.string().nullable().optional(),
+      },
+    },
+    async (args) => {
+      const { id, ...patch } = args
+      return ok({ category: updateCategory(agent, id, patch) })
+    },
+  )
+
+  server.registerTool(
+    'delete_category',
+    {
+      title: 'Delete category',
+      description:
+        'Soft-delete a category and its subcategories. By default entries in them become ' +
+        'uncategorized; withEntries=true deletes those entries instead.',
+      annotations: { readOnlyHint: false, destructiveHint: true },
+      inputSchema: {
+        id: z.string().describe('Category id.'),
+        withEntries: z
+          .boolean()
+          .optional()
+          .describe('Also delete every entry in the category and its subcategories (default false).'),
+      },
+    },
+    async (args) => ok(deleteCategory(agent, args.id, { withEntries: args.withEntries })),
+  )
+
   /* ---------------------------- entries --------------------------- */
 
   server.registerTool(
@@ -201,6 +297,10 @@ export function registerTools(server: McpServer, agent: Agent): void {
         from: z.string().optional().describe('Inclusive start date, YYYY-MM-DD (local).'),
         to: z.string().optional().describe('Inclusive end date, YYYY-MM-DD (local).'),
         type: z.enum(['expense', 'income']).optional(),
+        categoryId: z
+          .string()
+          .optional()
+          .describe('Only entries in this category or its subcategories.'),
         tagIds: z.array(z.string()).optional().describe('Only entries carrying all of these tags.'),
         query: z.string().optional().describe('Case-insensitive note substring.'),
         limit: z.number().int().min(1).max(500).optional().describe('Default 100, max 500.'),
@@ -234,6 +334,7 @@ export function registerTools(server: McpServer, agent: Agent): void {
         type: z.enum(['expense', 'income']).describe('expense or income.'),
         ...amountShape,
         currency: z.string().optional().describe('Defaults to the book currency (usually CNY).'),
+        ...categoryShape,
         ...tagSelectorShape,
         note: z.string().optional().describe('Free text note, e.g. 午饭.'),
         occurredAt: z.string().optional().describe(timeDescription),
@@ -255,6 +356,7 @@ export function registerTools(server: McpServer, agent: Agent): void {
         type: z.enum(['expense', 'income']).optional(),
         ...amountShape,
         currency: z.string().optional(),
+        ...categoryShape,
         ...tagSelectorShape,
         note: z.string().optional(),
         occurredAt: z.string().optional().describe(timeDescription),

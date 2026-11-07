@@ -1,4 +1,4 @@
-# TagBill
+# AutoBill
 
 基于标签的个人账本。扁平标签，没有分类树，也没有钱包。一本书、一笔可改的**存款**。
 
@@ -17,7 +17,7 @@
 - 原生壳：Capacitor（iOS + Android）和 Tauri（macOS）
 - 图标：Lucide
 
-共享类型在 `@tagbill/shared`。Vite 和同步服务都直接吃源码，改类型不用先 build。
+共享类型在 `@autobill/shared`。Vite 和同步服务都直接吃源码，改类型不用先 build。
 
 ## 目录
 
@@ -73,11 +73,11 @@ npm run serve
 
 | 变量 | 作用 |
 | --- | --- |
-| `TAGBILL_TARGET_KEY` | 这台服务器的门禁，所有用户共用 |
-| `TAGBILL_PEPPER` | 用户 token 哈希用，不要给客户端 |
+| `AUTOBILL_TARGET_KEY` | 这台服务器的门禁，所有用户共用 |
+| `AUTOBILL_PEPPER` | 用户 token 哈希用，不要给客户端 |
 | `PORT` / `HOST` | 默认 `8787` / `0.0.0.0` |
-| `TAGBILL_DATA` | SQLite 和 secrets 目录 |
-| `TAGBILL_WEB` | 可选，网页 `dist` 目录 |
+| `AUTOBILL_DATA` | SQLite 和 secrets 目录 |
+| `AUTOBILL_WEB` | 可选，网页 `dist` 目录 |
 
 前面用 Caddy / nginx 终止 TLS。打开服务器上的网页时先登录：填服务器密钥和用户 token，不用填地址。
 
@@ -94,7 +94,7 @@ npm run serve
 ### Docker
 
 ```bash
-cp apps/server/.env.example .env   # 至少填 TAGBILL_TARGET_KEY 和 TAGBILL_PEPPER
+cp apps/server/.env.example .env   # 至少填 AUTOBILL_TARGET_KEY 和 AUTOBILL_PEPPER
 docker compose up -d --build
 ```
 
@@ -109,9 +109,9 @@ docker compose up -d --build
 - 用 target key + 用户 token 换 MCP token：
 
 ```bash
-TAGBILL_MCP_URL=https://ledger.example.com \
-TAGBILL_TARGET_KEY=... \
-TAGBILL_USER_TOKEN=... \
+AUTOBILL_MCP_URL=https://ledger.example.com \
+AUTOBILL_TARGET_KEY=... \
+AUTOBILL_USER_TOKEN=... \
 npm run mcp:token
 ```
 
@@ -122,7 +122,7 @@ npm run mcp:token
 ```json
 {
   "mcpServers": {
-    "tagbill": {
+    "autobill": {
       "type": "http",
       "url": "https://ledger.example.com/mcp",
       "headers": { "Authorization": "Bearer <token>" }
@@ -134,16 +134,16 @@ npm run mcp:token
 只支持 stdio 的客户端用内置桥：
 
 ```bash
-TAGBILL_MCP_URL=https://ledger.example.com \
-TAGBILL_MCP_TOKEN=<token> \
+AUTOBILL_MCP_URL=https://ledger.example.com \
+AUTOBILL_MCP_TOKEN=<token> \
 npm run mcp
 ```
 
-也可以不给 token，改成 `TAGBILL_TARGET_KEY` + `TAGBILL_USER_TOKEN`，桥启动时会自己换一个。
+也可以不给 token，改成 `AUTOBILL_TARGET_KEY` + `AUTOBILL_USER_TOKEN`，桥启动时会自己换一个。
 
-工具：`ledger_info`、`set_savings`、`list_tags`、`create_tag`、`update_tag`、`delete_tag`、`list_entries`、`get_entry`、`create_entry`、`update_entry`、`delete_entry`、`ledger_stats`、`list_subscriptions`、`create_subscription`、`update_subscription`、`delete_subscription`。
+工具：`ledger_info`、`set_savings`、`list_categories`、`create_category`、`update_category`、`delete_category`、`list_tags`、`create_tag`、`update_tag`、`delete_tag`、`list_entries`、`get_entry`、`create_entry`、`update_entry`、`delete_entry`、`ledger_stats`、`list_subscriptions`、`create_subscription`、`update_subscription`、`delete_subscription`。
 
-约定：金额是整数分（也可以传 `amountYuan`）；时间用 ISO 8601 或本地 `YYYY-MM-DD HH:mm`；「本月」按 `ledger_info` 返回的服务器时区算。标签只能通过 `create_tag` / `delete_tag` 增删；记账、订阅、改账里传了不存在的标签 id 或名字一律报错，先建标签再操作。订阅到点生成的流水仍由 App 打开时补，服务端不自动生成。MCP 没有「清空整本账」：设置里的清空只清本机，云端靠设备同步覆盖。
+约定：金额是整数分（也可以传 `amountYuan`）；时间用 ISO 8601 或本地 `YYYY-MM-DD HH:mm`；「本月」按 `ledger_info` 返回的服务器时区算。分类和标签都只能通过各自的 `create_*` / `delete_*` 增删；记账、订阅、改账里传了不存在的 id、路径或名字一律报错，先建再操作。统计默认按分类严格分摊（父分类含子分类），标签只作为可重叠的辅助视图。订阅到点生成的流水仍由 App 打开时补，服务端不自动生成。MCP 没有「清空整本账」：设置里的清空只清本机，云端靠设备同步覆盖。
 
 ### iPhone / iPad（可安装的 App）
 
@@ -165,7 +165,7 @@ npm run ios
 
 ```bash
 npm run build
-npm run cap:sync -w @tagbill/web
+npm run cap:sync -w @autobill/web
 ```
 
 再回 Xcode 点 Run。不必每次 `cap open`。
@@ -182,7 +182,7 @@ npm run ios:live
 
 手机和电脑要在同一 Wi-Fi。`ios:live` 会写 `CAP_SERVER_URL` 进 Capacitor 配置；打正式包前用普通的 `npm run ios`，不要带 live URL。
 
-Bundle ID 是 `app.tagbill`。上架、隐私清单、证书还没做，现在只覆盖本机安装。
+Bundle ID 是 `app.autobill`。上架、隐私清单、证书还没做，现在只覆盖本机安装。
 
 ### Android（可安装的 App）
 
@@ -200,7 +200,7 @@ npm run android
 
 ```bash
 npm run build
-npm run cap:sync -w @tagbill/web
+npm run cap:sync -w @autobill/web
 ```
 
 再回 Android Studio 点 Run。
@@ -217,7 +217,7 @@ npm run android:live
 
 手机和电脑要在同一 Wi-Fi。`android:live` 会写 `CAP_SERVER_URL` 进 Capacitor 配置；打正式包前用普通的 `npm run android`，不要带 live URL。
 
-应用 ID 是 `app.tagbill`。上架、签名、隐私清单还没做，现在只覆盖本机安装。
+应用 ID 是 `app.autobill`。上架、签名、隐私清单还没做，现在只覆盖本机安装。
 
 ### macOS（可安装的 App）
 
@@ -231,7 +231,7 @@ npm run macos
 
 会打开桌面窗口，前端走 Vite `http://127.0.0.1:1420`（和 `npm run dev` 的 5173 分开）。
 
-打 `TagBill.app` 和 dmg：
+打 `AutoBill.app` 和 dmg：
 
 ```bash
 npm run macos:build
@@ -243,18 +243,19 @@ Windows / Linux 壳还没接。
 
 ## 数据模型
 
-实体都带 `id / rev / createdAt / updatedAt / deletedAt`，删除是软删。写操作走 `mutations.ts`，并往 `changes` 表追加一条。设备 id 存在 `localStorage`（`tagbill.deviceId`）。
+实体都带 `id / rev / createdAt / updatedAt / deletedAt`，删除是软删。写操作走 `mutations.ts`，并往 `changes` 表追加一条。设备 id 存在 `localStorage`（`autobill.deviceId`）。
 
 | 表 | 作用 |
 | --- | --- |
 | `books` | 账本。`openingBalanceCents` 是期初，用来反推当前存款 |
-| `tags` | 标签。`kind` 只能是 `expense` 或 `income` |
-| `entries` | 流水。`type` 为支出/收入；`tagIds` 多对多 |
+| `categories` | 分类树，最多两层。根分类 `parentId` 为空，子分类指向根；`kind` 只能是 `expense` 或 `income` |
+| `tags` | 辅助标签。`kind` 只能是 `expense` 或 `income` |
+| `entries` | 流水。`type` 为支出/收入；`categoryId` 可空；`tagIds` 多对多 |
 | `accounts` | 预留，界面未用 |
 | `changes` | 变更日志。未上传时 `seq` 为空，服务端确认后写入序号 |
 | `meta` | 同步会话：服务器地址、设备 token、cursor |
 
-IndexedDB 库名：`tagbill`。
+IndexedDB 库名：`autobill`。
 
 **存款**不是单独存一个余额。用户填「现在有多少」时，会写成：
 
@@ -340,7 +341,7 @@ IndexedDB 库名：`tagbill`。
 | Android | 已接 | `npm run android`，Android Studio 装到真机或模拟器。平板同样竖屏底栏、横屏侧栏 |
 | 同步服务 | 已接 | `npm run server`，Linux + SQLite |
 
-不要另起 React Native / Flutter。共享层在 `@tagbill/shared`；业务和界面继续留在 `apps/web`。原生壳只负责窗口、安全区、以后可能的推送和文件备份。
+不要另起 React Native / Flutter。共享层在 `@autobill/shared`；业务和界面继续留在 `apps/web`。原生壳只负责窗口、安全区、以后可能的推送和文件备份。
 
 布局已经分了两套壳，接原生时沿用，不要为平板再开一套页面：
 

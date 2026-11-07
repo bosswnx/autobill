@@ -2,13 +2,13 @@ import { serve } from '@hono/node-server'
 import { Hono } from 'hono'
 import { cors } from 'hono/cors'
 import { bodyLimit } from 'hono/body-limit'
-import type { Change, ConnectRequest, ConnectResponse, SyncRequest, SyncResponse } from '@tagbill/shared'
+import type { Change, ConnectRequest, ConnectResponse, SyncRequest, SyncResponse } from '@autobill/shared'
 import {
   isEntityType,
   MAX_CHANGES_PER_SYNC,
   MAX_TOKEN_LENGTH,
   MIN_USER_TOKEN_LENGTH,
-} from '@tagbill/shared'
+} from '@autobill/shared'
 import { loadConfig } from './config.ts'
 import { hashSecret, newDeviceToken, newId, safeEqual, spaceKey } from './crypto.ts'
 import {
@@ -320,7 +320,7 @@ function parseChange(raw: Change): Change | null {
 }
 
 serve({ fetch: app.fetch, hostname: config.host, port: config.port }, () => {
-  console.log(`TagBill sync  http://${config.host}:${config.port}`)
+  console.log(`AutoBill sync  http://${config.host}:${config.port}`)
   console.log(`database         ${config.dbPath}`)
   if (config.webRoot) {
     console.log(`web              ${config.webRoot}`)
@@ -330,7 +330,7 @@ serve({ fetch: app.fetch, hostname: config.host, port: config.port }, () => {
   }
   if (config.generatedTargetKey) {
     console.log('')
-    console.log('TAGBILL_TARGET_KEY was not set. Using the generated value in data/secrets.json:')
+    console.log('AUTOBILL_TARGET_KEY was not set. Using the generated value in data/secrets.json:')
     console.log(`  ${config.targetKey}`)
     console.log('Put this in the app as the server target key. Keep it private.')
     console.log('')

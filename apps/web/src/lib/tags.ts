@@ -1,4 +1,4 @@
-import type { Tag, TagKind } from '@tagbill/shared'
+import type { Tag, TagKind } from '@autobill/shared'
 
 export function entryMatchesTagFilter(
   entry: { tagIds: string[] },

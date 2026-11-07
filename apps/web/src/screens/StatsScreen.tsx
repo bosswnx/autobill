@@ -1,4 +1,4 @@
-import type { Book, Tag } from '@tagbill/shared'
+import type { Book, Category, Tag } from '@autobill/shared'
 import { useMemo, useState, type ReactNode } from 'react'
 import { BarChart, LineChart, TagAmountList } from '../components/Charts'
 import { MonthPager } from '../components/MonthPager'
@@ -7,16 +7,24 @@ import { YearPager } from '../components/YearPager'
 import { useBookEntries } from '../hooks/useLedger'
 import { useI18n } from '../i18n'
 import { formatYuan } from '../lib/money'
-import { buildPeriodStats, sanitizeTagFocus, type StatsMode, type TagSlice } from '../lib/stats'
+import {
+  buildPeriodStats,
+  formatShare,
+  sanitizeTagFocus,
+  type CategoryBreakdown,
+  type StatsMode,
+  type TagSlice,
+} from '../lib/stats'
 import { monthKey, yearKey } from '../lib/time'
 
 type Props = {
   book: Book
   tags: Tag[]
+  categories: Category[]
   savings: number
 }
 
-export function StatsScreen({ book, tags, savings }: Props) {
+export function StatsScreen({ book, tags, categories, savings }: Props) {
   const { t } = useI18n()
   const [mode, setMode] = useState<StatsMode>('month')
   const [month, setMonth] = useState(monthKey())
@@ -29,11 +37,11 @@ export function StatsScreen({ book, tags, savings }: Props) {
   const incomeTagIds = useMemo(() => sanitizeTagFocus(incomeFocus, tags), [incomeFocus, tags])
   const stats = useMemo(
     () =>
-      buildPeriodStats(mode, period, entries, tags, book.openingBalanceCents ?? 0, {
+      buildPeriodStats(mode, period, entries, tags, categories, book.openingBalanceCents ?? 0, {
         expenseTagIds,
         incomeTagIds,
       }),
-    [mode, period, entries, tags, book.openingBalanceCents, expenseTagIds, incomeTagIds],
+    [mode, period, entries, tags, categories, book.openingBalanceCents, expenseTagIds, incomeTagIds],
   )
 
   const monthly = mode === 'month'
@@ -106,6 +114,12 @@ export function StatsScreen({ book, tags, savings }: Props) {
       <ChartBlock title={t.stats.assetChart}>
         <LineChart points={stats.assetSeries} color="var(--color-chart-asset)" />
       </ChartBlock>
+      <ChartBlock title={t.stats.expenseCategories}>
+        <CategoryRows breakdown={stats.expenseCategories} empty={t.stats.noData} />
+      </ChartBlock>
+      <ChartBlock title={t.stats.incomeCategories}>
+        <CategoryRows breakdown={stats.incomeCategories} empty={t.stats.noData} />
+      </ChartBlock>
       <TagSliceBlock
         title={t.stats.expenseTags}
         tags={tags}
@@ -122,6 +136,77 @@ export function StatsScreen({ book, tags, savings }: Props) {
         slice={stats.incomeTagSlice}
         empty={t.stats.emptyIncomeTags}
       />
+    </div>
+  )
+}
+
+function CategoryRows({
+  breakdown,
+  empty,
+}: {
+  breakdown: CategoryBreakdown
+  empty: string
+}) {
+  const { t } = useI18n()
+  if (breakdown.groups.length === 0 && breakdown.uncategorizedCents === 0) {
+    return <p className="py-6 text-sm text-muted">{empty}</p>
+  }
+  return (
+    <div className="flex flex-col gap-1.5">
+      {breakdown.groups.map((group) => (
+        <div key={group.category.id} className="flex flex-col gap-1">
+          <CategoryRow category={group.category} cents={group.cents} share={group.share} />
+          {group.children.length > 0 ? (
+            <div className="ml-3 flex flex-col gap-1 border-l border-line pl-3">
+              {group.children.map((child) => (
+                <CategoryRow
+                  key={child.category.id}
+                  category={child.category}
+                  cents={child.cents}
+                  share={child.share}
+                />
+              ))}
+            </div>
+          ) : null}
+        </div>
+      ))}
+      {breakdown.uncategorizedCents > 0 ? (
+        <div className="flex items-center justify-between gap-3 py-1 text-sm">
+          <span className="flex items-center gap-2 text-muted">
+            <span className="size-2 rounded-full bg-faint" />
+            {t.categories.uncategorized}
+          </span>
+          <span className="flex items-baseline gap-2 tabular-nums">
+            <span>{formatYuan(breakdown.uncategorizedCents, { sign: 'never' })}</span>
+            <span className="w-11 text-right text-xs text-faint">
+              {formatShare(breakdown.uncategorizedCents, breakdown.total)}
+            </span>
+          </span>
+        </div>
+      ) : null}
+    </div>
+  )
+}
+
+function CategoryRow({
+  category,
+  cents,
+  share,
+}: {
+  category: Category
+  cents: number
+  share: number
+}) {
+  return (
+    <div className="flex items-center justify-between gap-3 py-1 text-sm">
+      <span className="flex min-w-0 items-center gap-2">
+        <span className="size-2 shrink-0 rounded-full" style={{ background: category.color }} />
+        <span className="truncate">{category.name}</span>
+      </span>
+      <span className="flex shrink-0 items-baseline gap-2 tabular-nums">
+        <span>{formatYuan(cents, { sign: 'never' })}</span>
+        <span className="w-11 text-right text-xs text-faint">{share}%</span>
+      </span>
     </div>
   )
 }

@@ -1,6 +1,6 @@
 import { createRequire } from 'node:module'
-import type { Account, Book, Change, EntityType, Entry, Subscription, Tag } from '@tagbill/shared'
-import { incomingWins } from '@tagbill/shared'
+import type { Account, Book, Category, Change, EntityType, Entry, Subscription, Tag } from '@autobill/shared'
+import { incomingWins } from '@autobill/shared'
 
 const require = createRequire(import.meta.url)
 const Database = require('better-sqlite3') as typeof import('better-sqlite3')
@@ -241,7 +241,7 @@ export function maxSeq(spaceId: string): number {
 export function applyEntity(spaceId: string, change: Change): void {
   const payload = change.payload
   if (!payload || typeof payload !== 'object') return
-  const body = payload as Book | Tag | Entry | Account | Subscription
+  const body = payload as Book | Category | Tag | Entry | Account | Subscription
   const current = db
     .prepare('SELECT updated_at AS updatedAt, rev FROM entities WHERE id = ?')
     .get(body.id) as { updatedAt: string; rev: number } | undefined

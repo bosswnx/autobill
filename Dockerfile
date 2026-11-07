@@ -15,7 +15,7 @@ RUN npm run build
 ENV NODE_ENV=production \
     PORT=8787 \
     HOST=0.0.0.0 \
-    TAGBILL_DATA=/data
+    AUTOBILL_DATA=/data
 
 VOLUME ["/data"]
 EXPOSE 8787

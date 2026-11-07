@@ -1,4 +1,4 @@
-import type { MergeChoice } from '@tagbill/shared'
+import type { MergeChoice } from '@autobill/shared'
 import { Overlay } from '../components/Overlay'
 import { useI18n } from '../i18n'
 

@@ -1,4 +1,4 @@
-import type { EntryType } from '@tagbill/shared'
+import type { EntryType } from '@autobill/shared'
 import { getMessages } from '../i18n'
 
 export function entryTitle(

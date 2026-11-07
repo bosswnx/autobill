@@ -1,5 +1,5 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="1200" height="320" viewBox="0 0 1200 320" role="img" aria-labelledby="title desc">
-  <title id="title">标签记账横向品牌标识</title>
+  <title id="title">轻记账横向品牌标识</title>
   <desc id="desc">Tag Ledger 中文横向品牌标识，包含居中的标签账单图形、中文品牌名和产品说明。</desc>
   <g transform="translate(36 36)">
     <rect width="248" height="248" rx="58" fill="#F7F6F3"/>
@@ -12,6 +12,6 @@
       <rect x="93" y="155" width="61" height="12" rx="6" fill="#F7F6F3"/>
     </g>
   </g>
-  <text x="334" y="176" fill="#343430" font-size="108" font-weight="680" letter-spacing="3" font-family="PingFang SC,Hiragino Sans GB,Microsoft YaHei,Noto Sans CJK SC,sans-serif">标签记账</text>
+  <text x="334" y="176" fill="#343430" font-size="108" font-weight="680" letter-spacing="3" font-family="PingFang SC,Hiragino Sans GB,Microsoft YaHei,Noto Sans CJK SC,sans-serif">轻记账</text>
   <text x="340" y="231" fill="#8B8B86" font-size="27" font-weight="500" letter-spacing="7" font-family="PingFang SC,Hiragino Sans GB,Microsoft YaHei,Noto Sans CJK SC,sans-serif">用标签，记清每一笔</text>
 </svg>

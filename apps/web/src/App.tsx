@@ -8,6 +8,8 @@ import { initSync, subscribeSync } from './sync/engine'
 import { isConnected } from './sync/session'
 import {
   useBook,
+  useCategories,
+  useCategoryUsage,
   useEntries,
   useEntry,
   useMonthStats,
@@ -34,6 +36,7 @@ export default function App() {
   const [screen, setScreen] = useState<Screen>('ledger')
   const [month, setMonth] = useState(monthKey())
   const [filterTagIds, setFilterTagIds] = useState<string[]>([])
+  const [filterCategoryId, setFilterCategoryId] = useState<string | null>(null)
   const [query, setQuery] = useState('')
   const [editor, setEditor] = useState<null | { entryId?: string }>(null)
   const { t } = useI18n()
@@ -77,7 +80,9 @@ export default function App() {
 
   const book = useBook()
   const tags = useTags(book?.id)
-  const entries = useEntries(book?.id, month, filterTagIds, query)
+  const categories = useCategories(book?.id)
+  const categoryUsage = useCategoryUsage(book?.id)
+  const entries = useEntries(book?.id, month, filterCategoryId, filterTagIds, query)
   const stats = useMonthStats(book?.id, month)
   const usage = useTagUsage(book?.id)
   const savings = useSavings(book)
@@ -143,8 +148,11 @@ export default function App() {
               stats={stats}
               entries={entries}
               tags={tags}
+              categories={categories}
               usage={usage}
               savings={savings}
+              filterCategoryId={filterCategoryId}
+              onSelectCategory={setFilterCategoryId}
               filterTagIds={filterTagIds}
               onToggleTag={(id) =>
                 setFilterTagIds((current) =>
@@ -159,16 +167,23 @@ export default function App() {
           )}
           {screen === 'ledger' && !book && <MissingBook onSettings={() => setScreen('settings')} />}
           {screen === 'stats' && book && (
-            <StatsScreen book={book} tags={tags} savings={savings} />
+            <StatsScreen book={book} tags={tags} categories={categories} savings={savings} />
           )}
           {screen === 'stats' && !book && <MissingBook onSettings={() => setScreen('settings')} />}
           {screen === 'tags' && book && (
             <ManageScreen
               book={book}
               tags={tags}
+              categories={categories}
               usage={usage}
+              categoryUsage={categoryUsage}
               onFilterTag={(id) => {
                 setFilterTagIds([id])
+                setScreen('ledger')
+              }}
+              onFilterCategory={(id) => {
+                setFilterCategoryId(id)
+                setFilterTagIds([])
                 setScreen('ledger')
               }}
             />
@@ -231,6 +246,7 @@ export default function App() {
         <EntryEditor
           book={book}
           tags={tags}
+          categories={categories}
           usage={usage}
           entryId={editor.entryId}
           onClose={() => setEditor(null)}
@@ -299,12 +315,14 @@ function NavButton({
 function EntryEditor({
   book,
   tags,
+  categories,
   usage,
   entryId,
   onClose,
 }: {
   book: NonNullable<ReturnType<typeof useBook>>
   tags: ReturnType<typeof useTags>
+  categories: ReturnType<typeof useCategories>
   usage: Record<string, number>
   entryId?: string
   onClose: () => void
@@ -318,5 +336,14 @@ function EntryEditor({
       </div>
     )
   }
-  return <EntrySheet book={book} tags={tags} usage={usage} entry={entry} onClose={onClose} />
+  return (
+    <EntrySheet
+      book={book}
+      tags={tags}
+      categories={categories}
+      usage={usage}
+      entry={entry}
+      onClose={onClose}
+    />
+  )
 }

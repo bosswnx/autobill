@@ -1,24 +1,24 @@
 {
-  "name": "tagbill",
+  "name": "autobill",
   "private": true,
   "workspaces": [
     "apps/*",
     "packages/*"
   ],
   "scripts": {
-    "dev": "npm run dev -w @tagbill/web",
-    "dev:lan": "npm run dev:lan -w @tagbill/web",
-    "build": "npm run build -w @tagbill/web",
-    "server": "npm run dev -w @tagbill/server",
-    "server:start": "npm run start -w @tagbill/server",
-    "mcp": "npm run mcp -w @tagbill/server",
-    "mcp:token": "npm run mcp:token -w @tagbill/server",
+    "dev": "npm run dev -w @autobill/web",
+    "dev:lan": "npm run dev:lan -w @autobill/web",
+    "build": "npm run build -w @autobill/web",
+    "server": "npm run dev -w @autobill/server",
+    "server:start": "npm run start -w @autobill/server",
+    "mcp": "npm run mcp -w @autobill/server",
+    "mcp:token": "npm run mcp:token -w @autobill/server",
     "serve": "npm run build && npm run server:start",
-    "ios": "npm run ios -w @tagbill/web",
-    "ios:live": "npm run ios:live -w @tagbill/web",
-    "android": "npm run android -w @tagbill/web",
-    "android:live": "npm run android:live -w @tagbill/web",
-    "macos": "npm run macos -w @tagbill/web",
-    "macos:build": "npm run macos:build -w @tagbill/web"
+    "ios": "npm run ios -w @autobill/web",
+    "ios:live": "npm run ios:live -w @autobill/web",
+    "android": "npm run android -w @autobill/web",
+    "android:live": "npm run android:live -w @autobill/web",
+    "macos": "npm run macos -w @autobill/web",
+    "macos:build": "npm run macos:build -w @autobill/web"
   }
 }

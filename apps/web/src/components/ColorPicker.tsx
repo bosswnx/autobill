@@ -1,4 +1,4 @@
-import { TAG_COLOR_PALETTE } from '@tagbill/shared'
+import { TAG_COLOR_PALETTE } from '@autobill/shared'
 import { Overlay } from './Overlay'
 import { useI18n } from '../i18n'
 

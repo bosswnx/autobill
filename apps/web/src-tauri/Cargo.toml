@@ -1,13 +1,13 @@
 [package]
-name = "tagbill"
+name = "autobill"
 version = "0.0.0"
-description = "标签记账"
+description = "轻记账"
 authors = ["you"]
 edition = "2021"
 rust-version = "1.77"
 
 [lib]
-name = "tagbill_lib"
+name = "autobill_lib"
 crate-type = ["staticlib", "cdylib", "rlib"]
 
 [build-dependencies]

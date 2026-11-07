@@ -16,7 +16,7 @@ function ordinal(n: number): string {
 }
 
 export const en: typeof zh = {
-  appName: 'TagBill',
+  appName: 'AutoBill',
   htmlLang: 'en',
   intl: 'en',
 
@@ -64,6 +64,7 @@ export const en: typeof zh = {
   },
 
   ledger: {
+    all: 'All',
     title: 'Ledger',
     expense: 'Expense',
     income: 'Income',
@@ -94,6 +95,8 @@ export const en: typeof zh = {
     assetChart: 'Assets',
     expenseTags: 'Expense tags',
     incomeTags: 'Income tags',
+    expenseCategories: 'Expense categories',
+    incomeCategories: 'Income categories',
     drillHint: 'Click a tag to filter',
     emptyExpenseTags: 'No expense tags in this period',
     emptyIncomeTags: 'No income tags in this period',
@@ -104,6 +107,27 @@ export const en: typeof zh = {
     modeMonth: 'Mo',
     modeYear: 'Yr',
     noData: 'No data yet',
+  },
+
+  categories: {
+    title: 'Categories',
+    uncategorized: 'Uncategorized',
+    add: 'New category',
+    addChild: 'New subcategory',
+    edit: 'Edit category',
+    name: 'Name',
+    namePlaceholder: 'Category name',
+    icon: 'Icon',
+    color: 'Color',
+    none: 'No category',
+    empty: 'No categories yet',
+    entryCount: (n: number) => `${n} entries`,
+    deleteTitle: 'Delete category',
+    deleteHint: 'Subcategories are deleted too.',
+    deleteKeep: 'Delete category only',
+    deleteKeepDetail: 'Entries in this category and its subcategories become Uncategorized; the entries stay.',
+    deleteWithEntries: 'Delete entries too',
+    deleteWithEntriesDetail: (n: number) => `Delete ${n} entries in this category and its subcategories.`,
   },
 
   tags: {
@@ -150,6 +174,7 @@ export const en: typeof zh = {
 
   manage: {
     title: 'Manage',
+    categories: 'Categories',
     tags: 'Tags',
     subscriptions: 'Subscriptions',
   },

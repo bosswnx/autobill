@@ -1,23 +1,44 @@
-import type { Book, Tag } from '@tagbill/shared'
+import type { Book, Category, Tag } from '@autobill/shared'
 import { useState } from 'react'
 import { useI18n } from '../i18n'
 import { useSubscriptions } from '../hooks/useLedger'
+import { CategoriesScreen } from './CategoriesScreen'
 import { SubscriptionsScreen } from './SubscriptionsScreen'
 import { TagsScreen } from './TagsScreen'
 
-type Tab = 'tags' | 'subscriptions'
+type Tab = 'categories' | 'tags' | 'subscriptions'
 
 type Props = {
   book: Book
   tags: Tag[]
+  categories: Category[]
   usage: Record<string, number>
+  categoryUsage: Record<string, number>
   onFilterTag: (id: string) => void
+  onFilterCategory: (id: string) => void
 }
 
-export function ManageScreen({ book, tags, usage, onFilterTag }: Props) {
+export function ManageScreen({
+  book,
+  tags,
+  categories,
+  usage,
+  categoryUsage,
+  onFilterTag,
+  onFilterCategory,
+}: Props) {
   const { t } = useI18n()
-  const [tab, setTab] = useState<Tab>('tags')
+  const [tab, setTab] = useState<Tab>('categories')
   const subscriptions = useSubscriptions(book.id)
+  const tabs = [
+    { id: 'categories' as const, label: t.manage.categories },
+    { id: 'tags' as const, label: t.manage.tags },
+    { id: 'subscriptions' as const, label: t.manage.subscriptions },
+  ]
+  const index = Math.max(
+    0,
+    tabs.findIndex((item) => item.id === tab),
+  )
 
   return (
     <div className="flex flex-col gap-8">
@@ -26,17 +47,12 @@ export function ManageScreen({ book, tags, usage, onFilterTag }: Props) {
           {t.manage.title}
         </h1>
         <div className="self-start overflow-hidden rounded-md bg-hover p-[3px]">
-          <div className="relative grid grid-cols-2">
+          <div className="relative grid grid-cols-3">
             <span
-              className="pointer-events-none absolute inset-y-0 w-1/2 rounded bg-page transition-transform duration-200 ease-out"
-              style={{ transform: tab === 'subscriptions' ? 'translateX(100%)' : 'translateX(0)' }}
+              className="pointer-events-none absolute inset-y-0 w-1/3 rounded bg-page transition-transform duration-200 ease-out"
+              style={{ transform: `translateX(${index * 100}%)` }}
             />
-            {(
-              [
-                { id: 'tags', label: t.manage.tags },
-                { id: 'subscriptions', label: t.manage.subscriptions },
-              ] as const
-            ).map((item) => (
+            {tabs.map((item) => (
               <button
                 key={item.id}
                 type="button"
@@ -52,7 +68,14 @@ export function ManageScreen({ book, tags, usage, onFilterTag }: Props) {
         </div>
       </header>
 
-      {tab === 'tags' ? (
+      {tab === 'categories' ? (
+        <CategoriesScreen
+          bookId={book.id}
+          categories={categories}
+          usage={categoryUsage}
+          onFilterCategory={onFilterCategory}
+        />
+      ) : tab === 'tags' ? (
         <TagsScreen bookId={book.id} tags={tags} usage={usage} onFilterTag={onFilterTag} />
       ) : (
         <SubscriptionsScreen book={book} tags={tags} usage={usage} subscriptions={subscriptions} />

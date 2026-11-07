@@ -4,7 +4,7 @@ export type TagKind = 'expense' | 'income'
 
 export type AccountKind = 'cash' | 'bank' | 'alipay' | 'wechat' | 'credit' | 'other'
 
-export type EntityType = 'book' | 'account' | 'tag' | 'entry' | 'subscription'
+export type EntityType = 'book' | 'account' | 'category' | 'tag' | 'entry' | 'subscription'
 
 export type SubscriptionCadence = 'weekly' | 'monthly' | 'yearly'
 
@@ -46,6 +46,19 @@ export type Tag = Syncable & {
   icon?: string | null
 }
 
+/**
+ * Two levels at most: a root category has parentId null, a child points at a
+ * root. Deeper nesting is rejected by the mutations and the MCP tools.
+ */
+export type Category = Syncable & {
+  bookId: string
+  kind: TagKind
+  name: string
+  parentId: string | null
+  color: string
+  icon?: string | null
+}
+
 export type Entry = Syncable & {
   bookId: string
   type: EntryType
@@ -53,6 +66,7 @@ export type Entry = Syncable & {
   currency: string
   accountId: string
   toAccountId: string | null
+  categoryId: string | null
   tagIds: string[]
   note: string
   occurredAt: string
@@ -119,7 +133,14 @@ export type ConnectResponse = {
 
 export type MergeChoice = 'local' | 'cloud' | 'both'
 
-export const ENTITY_TYPES: EntityType[] = ['book', 'account', 'tag', 'entry', 'subscription']
+export const ENTITY_TYPES: EntityType[] = [
+  'book',
+  'account',
+  'category',
+  'tag',
+  'entry',
+  'subscription',
+]
 
 export const MIN_USER_TOKEN_LENGTH = 8
 export const MAX_TOKEN_LENGTH = 256

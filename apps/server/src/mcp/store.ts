@@ -1,6 +1,7 @@
 import { randomUUID } from 'node:crypto'
 import type {
   Book,
+  Category,
   Change,
   EntityType,
   Entry,
@@ -11,8 +12,8 @@ import type {
   Syncable,
   Tag,
   TagKind,
-} from '@tagbill/shared'
-import { TAG_COLOR_PALETTE } from '@tagbill/shared'
+} from '@autobill/shared'
+import { TAG_COLOR_PALETTE } from '@autobill/shared'
 import { applyEntity, cloudBookId, getEntityRow, insertChange, listEntityRows, withTxn } from '../db.ts'
 import { nextOccurrenceOf, resolveCadence } from './schedule.ts'
 import {
@@ -32,9 +33,19 @@ export type Agent = {
 
 const DEFAULT_BOOK_NAME = '日常'
 
-export type EntryView = Entry & { amountYuan: number; tagNames: string[] }
+export type EntryView = Entry & {
+  amountYuan: number
+  tagNames: string[]
+  categoryPath: string | null
+}
 
 export type TagView = Tag & { entryCount: number }
+
+export type CategoryView = Category & {
+  entryCount: number
+  path: string
+  depth: number
+}
 
 export type SubscriptionView = Subscription & {
   amountYuan: number
@@ -48,7 +59,7 @@ export type LedgerInfo = {
   openingBalanceCents: number
   savingsCents: number
   savingsYuan: number
-  counts: { entries: number; tags: number; subscriptions: number }
+  counts: { entries: number; categories: number; tags: number; subscriptions: number }
   serverTime: string
   timeZone: string
 }
@@ -106,6 +117,10 @@ export function aliveTags(agent: Agent): Tag[] {
   return alive(payloads<Tag>(agent.spaceId, 'tag'))
 }
 
+export function aliveCategories(agent: Agent): Category[] {
+  return alive(payloads<Category>(agent.spaceId, 'category'))
+}
+
 export function aliveEntries(agent: Agent, bookId?: string): Entry[] {
   const book = bookId ?? ensureBook(agent).id
   return alive(payloads<Entry>(agent.spaceId, 'entry')).filter((entry) => entry.bookId === book)
@@ -130,13 +145,66 @@ export function tagView(tag: Tag, usage: Map<string, number>): TagView {
   return { ...tag, entryCount: usage.get(tag.id) ?? 0 }
 }
 
-export function entryView(entry: Entry, tags: Tag[]): EntryView {
+export function categoryPathOf(
+  categories: Category[],
+  id: string | null | undefined,
+): string | null {
+  if (!id) return null
+  const byId = new Map(categories.map((category) => [category.id, category]))
+  const leaf = byId.get(id)
+  if (!leaf) return null
+  const parent = leaf.parentId ? byId.get(leaf.parentId) : undefined
+  return parent ? `${parent.name} / ${leaf.name}` : leaf.name
+}
+
+export function categoryUsage(agent: Agent): Map<string, number> {
+  const usage = new Map<string, number>()
+  for (const entry of aliveEntries(agent)) {
+    if (!entry.categoryId) continue
+    usage.set(entry.categoryId, (usage.get(entry.categoryId) ?? 0) + 1)
+  }
+  return usage
+}
+
+export function entryView(entry: Entry, tags: Tag[], categories: Category[]): EntryView {
   const names = new Map(tags.map((tag) => [tag.id, tag.name]))
   return {
     ...entry,
     amountYuan: entry.amountCents / 100,
     tagNames: entry.tagIds.map((id) => names.get(id) ?? id),
+    categoryPath: categoryPathOf(categories, entry.categoryId),
   }
+}
+
+export function listCategories(agent: Agent, kind?: TagKind): CategoryView[] {
+  const categories = aliveCategories(agent).filter(
+    (category) => kind === undefined || category.kind === kind,
+  )
+  const usage = categoryUsage(agent)
+  const roots = categories
+    .filter((category) => category.parentId === null)
+    .sort((a, b) => a.name.localeCompare(b.name, 'zh'))
+  const rows: CategoryView[] = []
+  for (const root of roots) {
+    rows.push({
+      ...root,
+      entryCount: usage.get(root.id) ?? 0,
+      path: root.name,
+      depth: 0,
+    })
+    const children = categories
+      .filter((category) => category.parentId === root.id)
+      .sort((a, b) => a.name.localeCompare(b.name, 'zh'))
+    for (const child of children) {
+      rows.push({
+        ...child,
+        entryCount: usage.get(child.id) ?? 0,
+        path: `${root.name} / ${child.name}`,
+        depth: 1,
+      })
+    }
+  }
+  return rows
 }
 
 export function subscriptionView(sub: Subscription, tags: Tag[], now = new Date()): SubscriptionView {
@@ -164,6 +232,7 @@ export function ledgerInfo(agent: Agent): LedgerInfo {
     savingsYuan: savings / 100,
     counts: {
       entries: entries.length,
+      categories: aliveCategories(agent).length,
       tags: tags.length,
       subscriptions: subscriptions.length,
     },
@@ -177,6 +246,7 @@ export type EntryFilter = {
   from?: string
   to?: string
   type?: EntryType
+  categoryId?: string
   tagIds?: string[]
   query?: string
   limit?: number
@@ -186,6 +256,15 @@ export type EntryFilter = {
 export function listEntries(agent: Agent, filter: EntryFilter): EntryView[] {
   const book = ensureBook(agent)
   const tags = aliveTags(agent)
+  const categories = aliveCategories(agent)
+  const scope = filter.categoryId
+    ? new Set([
+        filter.categoryId,
+        ...categories
+          .filter((category) => category.parentId === filter.categoryId)
+          .map((category) => category.id),
+      ])
+    : null
   const limit = Math.min(Math.max(filter.limit ?? 100, 1), 500)
   const offset = Math.max(filter.offset ?? 0, 0)
   const needle = filter.query?.trim().toLowerCase() ?? ''
@@ -197,6 +276,7 @@ export function listEntries(agent: Agent, filter: EntryFilter): EntryView[] {
     .filter((entry) => {
       if (filter.month && !inMonth(entry.occurredAt, filter.month)) return false
       if (filter.type && entry.type !== filter.type) return false
+      if (scope && !(entry.categoryId && scope.has(entry.categoryId))) return false
       if (tagFilter.length > 0 && !tagFilter.every((id) => entry.tagIds.includes(id))) return false
       if (needle && !entry.note.toLowerCase().includes(needle)) return false
       const at = new Date(entry.occurredAt).getTime()
@@ -206,13 +286,13 @@ export function listEntries(agent: Agent, filter: EntryFilter): EntryView[] {
     })
     .sort((a, b) => b.occurredAt.localeCompare(a.occurredAt))
     .slice(offset, offset + limit)
-    .map((entry) => entryView(entry, tags))
+    .map((entry) => entryView(entry, tags, categories))
 }
 
 export function getEntry(agent: Agent, id: string): EntryView {
   const entry = aliveEntries(agent).find((row) => row.id === id)
   if (!entry) throw new Error(`entry not found: ${id}`)
-  return entryView(entry, aliveTags(agent))
+  return entryView(entry, aliveTags(agent), aliveCategories(agent))
 }
 
 export function getTag(agent: Agent, id: string): Tag {
@@ -249,6 +329,7 @@ export function stats(
   const book = ensureBook(agent)
   const entries = aliveEntries(agent, book.id)
   const tags = aliveTags(agent)
+  const categories = aliveCategories(agent)
   const known = new Set(tags.map((tag) => tag.id))
   const sanitize = (ids?: string[]) => (ids ?? []).filter((id) => known.has(id))
   const result = buildPeriodStats(
@@ -256,6 +337,7 @@ export function stats(
     period,
     entries,
     tags,
+    categories,
     book.openingBalanceCents ?? 0,
     {
       expenseTagIds: sanitize(focus?.expenseTagIds),
@@ -383,11 +465,176 @@ export function deleteTag(
   return { deletedTagId: deleted.id, deletedEntryIds }
 }
 
+export function getCategory(agent: Agent, id: string): Category {
+  const category = aliveCategories(agent).find((row) => row.id === id)
+  if (!category) throw new Error(`category not found: ${id}`)
+  return category
+}
+
+function categoryView(
+  agent: Agent,
+  category: Category,
+  categories: Category[] = aliveCategories(agent),
+): CategoryView {
+  const parent = category.parentId
+    ? categories.find((item) => item.id === category.parentId)
+    : undefined
+  return {
+    ...category,
+    entryCount: categoryUsage(agent).get(category.id) ?? 0,
+    path: parent ? `${parent.name} / ${category.name}` : category.name,
+    depth: category.parentId ? 1 : 0,
+  }
+}
+
+export function createCategory(
+  agent: Agent,
+  input: { name: string; kind?: TagKind; parentId?: string | null; color?: string; icon?: string | null },
+): CategoryView {
+  const book = ensureBook(agent)
+  const kind: TagKind = input.kind === 'income' ? 'income' : 'expense'
+  const name = input.name.trim()
+  if (!name) throw new Error('category name is required')
+  const parentId = input.parentId ?? null
+  const categories = aliveCategories(agent)
+
+  if (parentId) {
+    const parent = categories.find((category) => category.id === parentId)
+    if (!parent) throw new Error(`parent category not found: ${parentId}`)
+    if (parent.parentId) throw new Error('categories support only two levels')
+    if (parent.kind !== kind) throw new Error(`parent category "${parent.name}" is ${parent.kind}, not ${kind}`)
+  }
+
+  const existing = categories.find(
+    (category) =>
+      category.parentId === parentId && category.kind === kind && category.name === name,
+  )
+  if (existing) return categoryView(agent, existing, categories)
+
+  const used = new Set(categories.map((category) => category.color))
+  const color =
+    input.color?.trim() ||
+    TAG_COLOR_PALETTE.find((item) => !used.has(item)) ||
+    TAG_COLOR_PALETTE[0]
+  const now = nowIso()
+  const category: Category = {
+    id: randomUUID(),
+    bookId: book.id,
+    kind,
+    name,
+    parentId,
+    color,
+    icon: input.icon ?? null,
+    rev: 0,
+    createdAt: now,
+    updatedAt: now,
+    deletedAt: null,
+  }
+  const saved = write(agent, 'category', category, book.id)
+  return categoryView(agent, saved, [...categories, saved])
+}
+
+export function updateCategory(
+  agent: Agent,
+  id: string,
+  patch: { name?: string; color?: string; icon?: string | null },
+): CategoryView {
+  const current = getCategory(agent, id)
+  const name = patch.name === undefined ? current.name : patch.name.trim()
+  if (!name) throw new Error('category name is required')
+  const next: Category = {
+    ...current,
+    name,
+    color: patch.color?.trim() || current.color,
+    icon: patch.icon === undefined ? current.icon : patch.icon,
+  }
+  return categoryView(agent, write(agent, 'category', next, current.bookId))
+}
+
+export function deleteCategory(
+  agent: Agent,
+  id: string,
+  options: { withEntries?: boolean } = {},
+): { deletedCategoryIds: string[]; deletedEntryIds: string[]; uncategorizedEntryIds: string[] } {
+  const current = getCategory(agent, id)
+  const children = aliveCategories(agent).filter((category) => category.parentId === id)
+  const now = nowIso()
+  const deletedCategoryIds: string[] = []
+  for (const category of [current, ...children]) {
+    const deleted = write(agent, 'category', { ...category, deletedAt: now }, category.bookId)
+    deletedCategoryIds.push(deleted.id)
+  }
+
+  const ids = new Set(deletedCategoryIds)
+  const deletedEntryIds: string[] = []
+  const uncategorizedEntryIds: string[] = []
+  for (const entry of aliveEntries(agent, current.bookId)) {
+    if (!entry.categoryId || !ids.has(entry.categoryId)) continue
+    if (options.withEntries) {
+      write(agent, 'entry', { ...entry, deletedAt: now }, entry.bookId)
+      deletedEntryIds.push(entry.id)
+    } else {
+      write(agent, 'entry', { ...entry, categoryId: null }, entry.bookId)
+      uncategorizedEntryIds.push(entry.id)
+    }
+  }
+  return { deletedCategoryIds, deletedEntryIds, uncategorizedEntryIds }
+}
+
+function resolveCategory(
+  agent: Agent,
+  type: 'expense' | 'income',
+  input: { categoryId?: string | null; categoryPath?: string },
+): string | null {
+  const categories = aliveCategories(agent)
+
+  if (input.categoryId !== undefined) {
+    if (input.categoryId === null) return null
+    const category = categories.find((item) => item.id === input.categoryId)
+    if (!category) {
+      throw new Error(`category not found: ${input.categoryId}; create it first with create_category`)
+    }
+    if (category.kind !== type) {
+      throw new Error(`category "${category.name}" is a ${category.kind} category, not ${type}`)
+    }
+    return category.id
+  }
+
+  if (input.categoryPath) {
+    const parts = input.categoryPath
+      .split('/')
+      .map((part) => part.trim())
+      .filter(Boolean)
+    const root = categories.find(
+      (category) => category.parentId === null && category.kind === type && category.name === parts[0],
+    )
+    if (!root) {
+      throw new Error(
+        `category "${input.categoryPath}" does not exist; create it first with create_category`,
+      )
+    }
+    if (parts.length === 1) return root.id
+    const child = categories.find(
+      (category) => category.parentId === root.id && category.name === parts[1],
+    )
+    if (!child) {
+      throw new Error(
+        `category "${input.categoryPath}" does not exist; create it first with create_category`,
+      )
+    }
+    return child.id
+  }
+
+  return null
+}
+
 export type EntryInput = {
   type?: EntryType
   amountCents?: number
   amountYuan?: number | string
   currency?: string
+  categoryId?: string | null
+  categoryPath?: string
   tagIds?: string[]
   tagNames?: string[]
   note?: string
@@ -398,6 +645,7 @@ export function createEntry(agent: Agent, input: EntryInput): EntryView {
   const book = ensureBook(agent)
   const type = entryType(input.type)
   const amountCents = amountCentsFrom(input, 'amount')
+  const categoryId = resolveCategory(agent, type, input)
   const tagIds = resolveTags(agent, type, input)
   const now = nowIso()
   const entry: Entry = {
@@ -408,6 +656,7 @@ export function createEntry(agent: Agent, input: EntryInput): EntryView {
     currency: input.currency?.trim() || book.currency,
     accountId: '',
     toAccountId: null,
+    categoryId,
     tagIds,
     note: (input.note ?? '').trim(),
     occurredAt: isoFrom(input.occurredAt),
@@ -416,7 +665,7 @@ export function createEntry(agent: Agent, input: EntryInput): EntryView {
     updatedAt: now,
     deletedAt: null,
   }
-  return entryView(write(agent, 'entry', entry, book.id), aliveTags(agent))
+  return entryView(write(agent, 'entry', entry, book.id), aliveTags(agent), aliveCategories(agent))
 }
 
 export function updateEntry(agent: Agent, id: string, patch: EntryInput): EntryView {
@@ -431,9 +680,14 @@ export function updateEntry(agent: Agent, id: string, patch: EntryInput): EntryV
           const tag = aliveTags(agent).find((row) => row.id === tagId)
           return !tag || tag.kind === tagKindOf(type)
         })
+  const categoryId =
+    patch.categoryId !== undefined || patch.categoryPath !== undefined
+      ? resolveCategory(agent, tagKindOf(type), patch)
+      : current.categoryId ?? null
   const next: Entry = {
     ...current,
     type,
+    categoryId,
     amountCents:
       patch.amountCents === undefined && patch.amountYuan === undefined
         ? current.amountCents
@@ -443,7 +697,7 @@ export function updateEntry(agent: Agent, id: string, patch: EntryInput): EntryV
     note: patch.note === undefined ? current.note : patch.note.trim(),
     occurredAt: patch.occurredAt === undefined ? current.occurredAt : isoFrom(patch.occurredAt),
   }
-  return entryView(write(agent, 'entry', next, book.id), aliveTags(agent))
+  return entryView(write(agent, 'entry', next, book.id), aliveTags(agent), aliveCategories(agent))
 }
 
 export function deleteEntry(agent: Agent, id: string): { deletedEntryId: string } {

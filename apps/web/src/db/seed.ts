@@ -1,4 +1,4 @@
-import { createBook, createEntry, createTag } from './mutations'
+import { createBook, createCategory, createEntry, createTag } from './mutations'
 import { db } from './database'
 import { getMessages } from '../i18n'
 import { hasLocalData, isConnected } from '../sync/session'
@@ -23,10 +23,42 @@ async function seedOnce(): Promise<void> {
   const seed = getMessages().seed
   const book = await createBook(seed.bookName, 'CNY')
 
-  const food = await createTag(book.id, seed.tags.food, '#c45c26', null, 'expense')
-  const coffee = await createTag(book.id, seed.tags.coffee, '#8b5a2b', null, 'expense')
-  const transit = await createTag(book.id, seed.tags.transit, '#3d5a80', null, 'expense')
-  const salary = await createTag(book.id, seed.tags.salary, '#2f6f4e', null, 'income')
+  const food = await createCategory(book.id, {
+    name: seed.tags.food,
+    kind: 'expense',
+    color: '#c45c26',
+  })
+  const coffee = await createCategory(book.id, {
+    name: seed.tags.coffee,
+    kind: 'expense',
+    parentId: food.id,
+    color: '#8b5a2b',
+  })
+  const transit = await createCategory(book.id, {
+    name: seed.tags.transit,
+    kind: 'expense',
+    color: '#3d5a80',
+  })
+  const salary = await createCategory(book.id, {
+    name: seed.tags.salary,
+    kind: 'income',
+    color: '#2f6f4e',
+  })
+  await createCategory(book.id, {
+    name: seed.tags.daily,
+    kind: 'expense',
+    color: '#6b705c',
+  })
+  await createCategory(book.id, {
+    name: seed.tags.shopping,
+    kind: 'expense',
+    color: '#9b4d6c',
+  })
+
+  const foodTag = await createTag(book.id, seed.tags.food, '#c45c26', null, 'expense')
+  const coffeeTag = await createTag(book.id, seed.tags.coffee, '#8b5a2b', null, 'expense')
+  const transitTag = await createTag(book.id, seed.tags.transit, '#3d5a80', null, 'expense')
+  const salaryTag = await createTag(book.id, seed.tags.salary, '#2f6f4e', null, 'income')
   await createTag(book.id, seed.tags.daily, '#6b705c', null, 'expense')
   await createTag(book.id, seed.tags.shopping, '#9b4d6c', null, 'expense')
 
@@ -42,7 +74,8 @@ async function seedOnce(): Promise<void> {
     currency: 'CNY',
     accountId: '',
     toAccountId: null,
-    tagIds: [coffee.id, food.id],
+    categoryId: coffee.id,
+    tagIds: [coffeeTag.id, foodTag.id],
     note: seed.notes.luckin,
     occurredAt: yesterday.toISOString(),
   })
@@ -54,7 +87,8 @@ async function seedOnce(): Promise<void> {
     currency: 'CNY',
     accountId: '',
     toAccountId: null,
-    tagIds: [transit.id],
+    categoryId: transit.id,
+    tagIds: [transitTag.id],
     note: seed.notes.metro,
     occurredAt: now.toISOString(),
   })
@@ -70,7 +104,8 @@ async function seedOnce(): Promise<void> {
     currency: 'CNY',
     accountId: '',
     toAccountId: null,
-    tagIds: [salary.id],
+    categoryId: salary.id,
+    tagIds: [salaryTag.id],
     note: seed.notes.salary,
     occurredAt: payday.toISOString(),
   })

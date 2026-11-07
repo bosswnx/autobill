@@ -1,4 +1,4 @@
-import type { Subscription, SubscriptionCadence, SubscriptionTime } from '@tagbill/shared'
+import type { Subscription, SubscriptionCadence, SubscriptionTime } from '@autobill/shared'
 
 /**
  * Mirrors apps/web/src/lib/subscriptionSchedule.ts. The server computes

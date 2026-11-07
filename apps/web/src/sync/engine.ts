@@ -1,5 +1,5 @@
-import type { ConnectResponse, MergeChoice } from '@tagbill/shared'
-import { MAX_CHANGES_PER_SYNC } from '@tagbill/shared'
+import type { ConnectResponse, MergeChoice } from '@autobill/shared'
+import { MAX_CHANGES_PER_SYNC } from '@autobill/shared'
 import { Capacitor } from '@capacitor/core'
 import { db } from '../db/database'
 import { deviceId } from '../lib/id'
@@ -136,7 +136,7 @@ export async function runSync(): Promise<void> {
 
     await db.transaction(
       'rw',
-      [db.books, db.tags, db.entries, db.accounts, db.subscriptions, db.changes],
+      [db.books, db.categories, db.tags, db.entries, db.accounts, db.subscriptions, db.changes],
       async () => {
       for (const change of response.changes) {
         await applyChange(change)
@@ -180,7 +180,7 @@ async function installFromCloud(serverUrl: string, token: string): Promise<void>
   })
   await db.transaction(
     'rw',
-    [db.books, db.tags, db.entries, db.accounts, db.subscriptions, db.changes],
+    [db.books, db.categories, db.tags, db.entries, db.accounts, db.subscriptions, db.changes],
     async () => {
     await clearLedger()
     for (const change of response.changes) {

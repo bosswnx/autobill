@@ -1,9 +1,10 @@
-import type { Entry, Tag } from '@tagbill/shared'
+import type { Category, Entry, Tag } from '@autobill/shared'
 import { MonthPager } from '../components/MonthPager'
 import { TagChip } from '../components/TagChip'
 import { useI18n } from '../i18n'
 import { entryTitle } from '../lib/entryTitle'
 import { formatYuan } from '../lib/money'
+import { flattenCategoryTree } from '../lib/categories'
 import { firstSortedTagName, sortByUsage, tagsOfKind } from '../lib/tags'
 import { dayKey, formatClock, formatDayHeading } from '../lib/time'
 
@@ -20,8 +21,11 @@ type Props = {
   stats: Stats
   entries: Entry[]
   tags: Tag[]
+  categories: Category[]
   usage: Record<string, number>
   savings: number
+  filterCategoryId: string | null
+  onSelectCategory: (id: string | null) => void
   filterTagIds: string[]
   onToggleTag: (id: string) => void
   onClearTags: () => void
@@ -36,8 +40,11 @@ export function LedgerScreen({
   stats,
   entries,
   tags,
+  categories,
   usage,
   savings,
+  filterCategoryId,
+  onSelectCategory,
   filterTagIds,
   onToggleTag,
   onClearTags,
@@ -46,7 +53,9 @@ export function LedgerScreen({
   onOpenEntry,
 }: Props) {
   const tagMap = new Map(tags.map((tag) => [tag.id, tag]))
+  const categoryMap = new Map(categories.map((category) => [category.id, category]))
   const sortedTags = sortByUsage(tags, usage)
+  const categoryRows = flattenCategoryTree(categories)
   const groups = groupByDay(entries)
   const { t } = useI18n()
 
@@ -80,6 +89,32 @@ export function LedgerScreen({
           className="w-full rounded-md border border-line bg-page px-3 py-2 text-sm placeholder:text-faint hover:bg-hover focus:border-accent"
         />
         <div className="flex flex-col gap-4">
+          {categoryRows.length > 0 && (
+            <div className="flex flex-wrap items-center gap-1.5">
+              <span className="mr-1 text-xs text-faint">{t.categories.title}</span>
+              <button
+                type="button"
+                onClick={() => onSelectCategory(null)}
+                className={`rounded px-1.5 py-0.5 text-xs transition-colors duration-150 md:text-sm ${
+                  filterCategoryId === null
+                    ? 'bg-active text-ink'
+                    : 'text-muted hover:bg-hover hover:text-ink'
+                }`}
+              >
+                {t.ledger.all}
+              </button>
+              {categoryRows.map(({ category, depth }) => (
+                <TagChip
+                  key={category.id}
+                  tag={depth > 0 ? { ...category, name: `· ${category.name}` } : category}
+                  active={filterCategoryId === category.id}
+                  onClick={() =>
+                    onSelectCategory(filterCategoryId === category.id ? null : category.id)
+                  }
+                />
+              ))}
+            </div>
+          )}
           {(['expense', 'income'] as const).map((kind) => {
             const group = tagsOfKind(sortedTags, kind)
             if (group.length === 0) return null
@@ -97,8 +132,15 @@ export function LedgerScreen({
               </div>
             )
           })}
-          {filterTagIds.length > 0 && (
-            <button type="button" className="self-start px-1 text-xs text-muted hover:text-ink" onClick={onClearTags}>
+          {(filterTagIds.length > 0 || filterCategoryId !== null) && (
+            <button
+              type="button"
+              className="self-start px-1 text-xs text-muted hover:text-ink"
+              onClick={() => {
+                onClearTags()
+                onSelectCategory(null)
+              }}
+            >
               {t.ledger.clearFilters}
             </button>
           )}
@@ -107,7 +149,7 @@ export function LedgerScreen({
 
       <div key={month} className="anim-page">
       {groups.length === 0 ? (
-        <EmptyState filtered={Boolean(query || filterTagIds.length)} />
+        <EmptyState filtered={Boolean(query || filterTagIds.length || filterCategoryId)} />
       ) : (
         <div className="flex flex-col gap-7">
           {groups.map((group) => (
@@ -123,6 +165,7 @@ export function LedgerScreen({
                   <EntryRow
                     key={entry.id}
                     entry={entry}
+                    category={entry.categoryId ? categoryMap.get(entry.categoryId) : undefined}
                     tags={sortByUsage(
                       entry.tagIds
                         .map((id) => tagMap.get(id))
@@ -132,7 +175,8 @@ export function LedgerScreen({
                     title={entryTitle(
                       entry.note,
                       entry.type,
-                      firstSortedTagName(entry.tagIds, tags, usage),
+                      (entry.categoryId ? categoryMap.get(entry.categoryId)?.name : undefined) ??
+                        firstSortedTagName(entry.tagIds, tags, usage),
                     )}
                     activeTagIds={filterTagIds}
                     onClick={() => onOpenEntry(entry.id)}
@@ -174,12 +218,14 @@ function Stat({
 
 function EntryRow({
   entry,
+  category,
   tags,
   title,
   activeTagIds,
   onClick,
 }: {
   entry: Entry
+  category?: Category
   tags: Tag[]
   title: string
   activeTagIds: string[]
@@ -205,8 +251,9 @@ function EntryRow({
           <span className="truncate text-base md:text-sm">{title}</span>
           <span className="shrink-0 text-xs text-faint">{formatClock(entry.occurredAt)}</span>
         </div>
-        {tags.length > 0 && (
+        {(category || tags.length > 0) && (
           <div className="mt-1.5 flex flex-wrap gap-1">
+            {category ? <TagChip tag={category} size="sm" /> : null}
             {tags.map((tag) => (
               <TagChip key={tag.id} tag={tag} active={activeTagIds.includes(tag.id)} size="sm" />
             ))}

@@ -7,7 +7,7 @@ export default defineConfig({
   plugins: [react(), tailwindcss()],
   resolve: {
     alias: {
-      '@tagbill/shared': path.resolve(import.meta.dirname, '../../packages/shared/src/index.ts'),
+      '@autobill/shared': path.resolve(import.meta.dirname, '../../packages/shared/src/index.ts'),
     },
   },
   server: {

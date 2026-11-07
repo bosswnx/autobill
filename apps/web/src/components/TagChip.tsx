@@ -1,5 +1,5 @@
 import { useRef, type CSSProperties, type MouseEvent, type PointerEvent } from 'react'
-import type { Tag } from '@tagbill/shared'
+import type { Tag } from '@autobill/shared'
 import { TagIcon } from './TagIcon'
 
 type Props = {

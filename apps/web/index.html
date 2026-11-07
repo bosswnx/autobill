@@ -6,6 +6,7 @@
       (() => {
         try {
           const mode =
+            localStorage.getItem('autobill.theme') ||
             localStorage.getItem('tagbill.theme') ||
             localStorage.getItem('tagledger.theme') ||
             'system'
@@ -37,7 +38,7 @@
     <meta name="theme-color" content="#F7F6F3" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="default" />
-    <title>标签记账</title>
+    <title>轻记账</title>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link

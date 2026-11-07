@@ -1,4 +1,4 @@
-import type { Entry, Tag } from '@tagbill/shared'
+import type { Category, Entry, Tag } from '@autobill/shared'
 
 /** Mirrors apps/web/src/lib/stats.ts, without locale-dependent labels. */
 
@@ -25,6 +25,28 @@ export type TagSlice = {
   focused: boolean
 }
 
+export type CategoryAmount = {
+  categoryId: string
+  name: string
+  path: string
+  cents: number
+  share: number
+}
+
+export type CategoryGroup = {
+  categoryId: string
+  name: string
+  cents: number
+  share: number
+  children: CategoryAmount[]
+}
+
+export type CategoryBreakdown = {
+  groups: CategoryGroup[]
+  uncategorizedCents: number
+  totalCents: number
+}
+
 export type PeriodStats = {
   expenseCents: number
   incomeCents: number
@@ -35,6 +57,8 @@ export type PeriodStats = {
   expenseSeries: SeriesPoint[]
   incomeSeries: SeriesPoint[]
   assetSeries: SeriesPoint[]
+  expenseCategories: CategoryBreakdown
+  incomeCategories: CategoryBreakdown
   expenseTags: TagSlice
   incomeTags: TagSlice
 }
@@ -49,6 +73,7 @@ export function buildPeriodStats(
   period: string,
   entries: Entry[],
   tags: Tag[],
+  categories: Category[],
   openingBalanceCents: number,
   options?: StatsFocus & { now?: Date },
 ): PeriodStats {
@@ -107,6 +132,8 @@ export function buildPeriodStats(
       cents: incomeByKey.get(item.key) ?? 0,
     })),
     assetSeries,
+    expenseCategories: buildCategoryBreakdown(periodEntries, categories, 'expense'),
+    incomeCategories: buildCategoryBreakdown(periodEntries, categories, 'income'),
     expenseTags: buildTagSlice(periodEntries, tags, 'expense', expenseFocus),
     incomeTags: buildTagSlice(periodEntries, tags, 'income', incomeFocus),
   }
@@ -163,6 +190,65 @@ function buildTagSlice(
     }))
     .sort((a, b) => b.cents - a.cents || a.name.localeCompare(b.name))
   return { items, totalCents, remainderCents, focused: focusIds.length > 0 }
+}
+
+function buildCategoryBreakdown(
+  periodEntries: Entry[],
+  categories: Category[],
+  kind: 'expense' | 'income',
+): CategoryBreakdown {
+  const scoped = periodEntries.filter((entry) => entry.type === kind)
+  const totalCents = scoped.reduce((sum, entry) => sum + entry.amountCents, 0)
+  const byId = new Map(
+    categories.filter((category) => category.kind === kind).map((category) => [category.id, category]),
+  )
+  const rootAmounts = new Map<string, number>()
+  const childAmounts = new Map<string, number>()
+  let uncategorizedCents = 0
+
+  for (const entry of scoped) {
+    const category = entry.categoryId ? byId.get(entry.categoryId) : undefined
+    if (!category) {
+      uncategorizedCents += entry.amountCents
+      continue
+    }
+    if (category.parentId) {
+      childAmounts.set(category.id, (childAmounts.get(category.id) ?? 0) + entry.amountCents)
+      rootAmounts.set(category.parentId, (rootAmounts.get(category.parentId) ?? 0) + entry.amountCents)
+    } else {
+      rootAmounts.set(category.id, (rootAmounts.get(category.id) ?? 0) + entry.amountCents)
+    }
+  }
+
+  const share = (cents: number) =>
+    totalCents > 0 ? Math.round((cents / totalCents) * 1000) / 10 : 0
+  const groups = categories
+    .filter((category) => category.kind === kind && category.parentId === null)
+    .map((category) => {
+      const cents = rootAmounts.get(category.id) ?? 0
+      const children = categories
+        .filter((child) => child.parentId === category.id)
+        .map((child) => ({
+          categoryId: child.id,
+          name: child.name,
+          path: `${category.name} / ${child.name}`,
+          cents: childAmounts.get(child.id) ?? 0,
+          share: share(childAmounts.get(child.id) ?? 0),
+        }))
+        .filter((child) => child.cents > 0)
+        .sort((a, b) => b.cents - a.cents || a.name.localeCompare(b.name))
+      return {
+        categoryId: category.id,
+        name: category.name,
+        cents,
+        share: share(cents),
+        children,
+      }
+    })
+    .filter((group) => group.cents > 0)
+    .sort((a, b) => b.cents - a.cents || a.name.localeCompare(b.name))
+
+  return { groups, uncategorizedCents, totalCents }
 }
 
 function signedAmount(entry: Entry): number {

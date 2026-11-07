@@ -1,6 +1,7 @@
-import type { Book, Entry, Subscription, Tag } from '@tagbill/shared'
+import type { Book, Category, Entry, Subscription, Tag } from '@autobill/shared'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { db } from '../db/database'
+import { categoryDescendantIds } from '../lib/categories'
 import { entryMatchesTagFilter } from '../lib/tags'
 import { inMonth } from '../lib/time'
 
@@ -40,6 +41,31 @@ export function useTags(bookId: string | undefined): Tag[] {
   )
 }
 
+export function useCategories(bookId: string | undefined): Category[] {
+  return (
+    useLiveQuery(async () => {
+      if (!bookId) return []
+      const rows = await db.categories.where('bookId').equals(bookId).toArray()
+      return alive(rows).sort((a, b) => a.name.localeCompare(b.name, 'zh'))
+    }, [bookId]) ?? []
+  )
+}
+
+export function useCategoryUsage(bookId: string | undefined): Record<string, number> {
+  return (
+    useLiveQuery(async () => {
+      if (!bookId) return {}
+      const rows = alive(await db.entries.where('bookId').equals(bookId).toArray())
+      const usage: Record<string, number> = {}
+      for (const entry of rows) {
+        if (!entry.categoryId) continue
+        usage[entry.categoryId] = (usage[entry.categoryId] ?? 0) + 1
+      }
+      return usage
+    }, [bookId]) ?? {}
+  )
+}
+
 export function useAllTags(bookId: string | undefined): Tag[] {
   return (
     useLiveQuery(async () => {
@@ -61,6 +87,7 @@ export function useBookEntries(bookId: string | undefined): Entry[] {
 export function useEntries(
   bookId: string | undefined,
   month: string,
+  categoryId: string | null,
   tagIds: string[],
   query: string,
 ): Entry[] {
@@ -69,16 +96,21 @@ export function useEntries(
       if (!bookId) return []
       const rows = await db.entries.where('bookId').equals(bookId).toArray()
       const tags = alive(await db.tags.where('bookId').equals(bookId).toArray())
+      const categories = alive(
+        await db.categories.where('bookId').equals(bookId).toArray(),
+      )
+      const scope = categoryId ? categoryDescendantIds(categories, categoryId) : null
       const needle = query.trim().toLowerCase()
       return alive(rows)
         .filter((entry) => inMonth(entry.occurredAt, month))
+        .filter((entry) => (scope ? Boolean(entry.categoryId && scope.has(entry.categoryId)) : true))
         .filter((entry) => entryMatchesTagFilter(entry, tagIds, tags))
         .filter((entry) => {
           if (!needle) return true
           return entry.note.toLowerCase().includes(needle)
         })
         .sort((a, b) => b.occurredAt.localeCompare(a.occurredAt))
-    }, [bookId, month, tagIds.join('|'), query]) ?? []
+    }, [bookId, month, categoryId, tagIds.join('|'), query]) ?? []
   )
 }
 

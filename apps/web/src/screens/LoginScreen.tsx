@@ -1,5 +1,5 @@
-import type { ConnectResponse, MergeChoice } from '@tagbill/shared'
-import { MIN_USER_TOKEN_LENGTH } from '@tagbill/shared'
+import type { ConnectResponse, MergeChoice } from '@autobill/shared'
+import { MIN_USER_TOKEN_LENGTH } from '@autobill/shared'
 import { useState } from 'react'
 import { describeSyncError } from '../sync/api'
 import { connectToServer, finishConnect } from '../sync/engine'

@@ -1,20 +1,26 @@
 import { mintAgentToken } from './mint.ts'
 
-const env = (name: string): string | undefined =>
-  process.env[name]?.trim() ||
-  process.env[name.replace('TAGBILL_', 'TAGLEDGER_')]?.trim() ||
-  undefined
+const env = (name: string): string | undefined => {
+  const legacy = name.startsWith('AUTOBILL_')
+    ? [name.replace('AUTOBILL_', 'TAGBILL_'), name.replace('AUTOBILL_', 'TAGLEDGER_')]
+    : []
+  for (const key of [name, ...legacy]) {
+    const value = process.env[key]?.trim()
+    if (value) return value
+  }
+  return undefined
+}
 
-const serverUrl = env('TAGBILL_MCP_URL') ?? process.argv[2] ?? ''
-const targetKey = env('TAGBILL_TARGET_KEY') ?? process.argv[3] ?? ''
-const userToken = env('TAGBILL_USER_TOKEN') ?? process.argv[4] ?? ''
-const deviceName = env('TAGBILL_MCP_DEVICE_NAME') ?? process.argv[5] ?? 'AI agent'
+const serverUrl = env('AUTOBILL_MCP_URL') ?? process.argv[2] ?? ''
+const targetKey = env('AUTOBILL_TARGET_KEY') ?? process.argv[3] ?? ''
+const userToken = env('AUTOBILL_USER_TOKEN') ?? process.argv[4] ?? ''
+const deviceName = env('AUTOBILL_MCP_DEVICE_NAME') ?? process.argv[5] ?? 'AI agent'
 
 if (!serverUrl || !targetKey || !userToken) {
   console.error(
-    'usage: TAGBILL_MCP_URL=https://ledger.example.com \\\n' +
-      '       TAGBILL_TARGET_KEY=... TAGBILL_USER_TOKEN=... \\\n' +
-      '       npm run mcp:token -w @tagbill/server',
+    'usage: AUTOBILL_MCP_URL=https://ledger.example.com \\\n' +
+      '       AUTOBILL_TARGET_KEY=... AUTOBILL_USER_TOKEN=... \\\n' +
+      '       npm run mcp:token -w @autobill/server',
   )
   process.exit(1)
 }

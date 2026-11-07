@@ -1,5 +1,6 @@
 import type {
   Book,
+  Category,
   Change,
   EntityType,
   Entry,
@@ -9,8 +10,8 @@ import type {
   SubscriptionTime,
   Tag,
   TagKind,
-} from '@tagbill/shared'
-import { TAG_COLOR_PALETTE } from '@tagbill/shared'
+} from '@autobill/shared'
+import { TAG_COLOR_PALETTE } from '@autobill/shared'
 import { db } from './database'
 import { deviceId, nid } from '../lib/id'
 import { nowIso } from '../lib/time'
@@ -172,6 +173,119 @@ export async function deleteTag(id: string, opts?: { withEntries?: boolean }): P
   })
 }
 
+export type CategoryDraft = {
+  name: string
+  kind?: TagKind
+  parentId?: string | null
+  color?: string
+  icon?: string | null
+}
+
+export async function createCategory(bookId: string, draft: CategoryDraft): Promise<Category> {
+  const kind: TagKind = draft.kind === 'income' ? 'income' : 'expense'
+  const parentId = draft.parentId ?? null
+  const name = draft.name.trim()
+  if (!name) throw new Error('category name is required')
+
+  if (parentId) {
+    const parent = await db.categories.get(parentId)
+    if (!parent || parent.deletedAt) throw new Error('parent category not found')
+    if (parent.parentId) throw new Error('categories support only two levels')
+    if (parent.kind !== kind) throw new Error('parent category kind mismatch')
+  }
+
+  const existing = await db.categories
+    .where('bookId')
+    .equals(bookId)
+    .filter(
+      (category) =>
+        !category.deletedAt &&
+        category.parentId === parentId &&
+        category.kind === kind &&
+        category.name === name,
+    )
+    .first()
+  if (existing) return existing
+
+  const used = new Set(
+    (await db.categories.where('bookId').equals(bookId).toArray())
+      .filter((category) => !category.deletedAt)
+      .map((category) => category.color),
+  )
+  const color =
+    draft.color ?? TAG_COLOR_PALETTE.find((item) => !used.has(item)) ?? TAG_COLOR_PALETTE[0]
+  const now = nowIso()
+  const category: Category = {
+    id: nid(),
+    bookId,
+    kind,
+    name,
+    parentId,
+    color,
+    icon: draft.icon ?? null,
+    rev: 1,
+    createdAt: now,
+    updatedAt: now,
+    deletedAt: null,
+  }
+  await db.categories.add(category)
+  await appendChange(bookId, 'category', category.id, category.rev, category)
+  return category
+}
+
+export async function updateCategory(
+  id: string,
+  patch: Partial<Pick<Category, 'name' | 'color' | 'icon'>>,
+): Promise<void> {
+  const current = await db.categories.get(id)
+  if (!current) return
+  const next: Category = {
+    ...current,
+    ...patch,
+    name: patch.name === undefined ? current.name : patch.name.trim(),
+    rev: current.rev + 1,
+    updatedAt: nowIso(),
+  }
+  await db.categories.put(next)
+  await appendChange(next.bookId, 'category', next.id, next.rev, next)
+}
+
+export async function deleteCategory(
+  id: string,
+  opts?: { withEntries?: boolean },
+): Promise<void> {
+  const current = await db.categories.get(id)
+  if (!current) return
+  const children = (await db.categories.where('bookId').equals(current.bookId).toArray()).filter(
+    (category) => !category.deletedAt && category.parentId === id,
+  )
+  const ids = new Set([id, ...children.map((category) => category.id)])
+  const affected = (await db.entries.where('bookId').equals(current.bookId).toArray()).filter(
+    (entry) => !entry.deletedAt && entry.categoryId !== null && ids.has(entry.categoryId),
+  )
+  const now = nowIso()
+
+  await db.transaction('rw', db.categories, db.entries, db.changes, async () => {
+    for (const category of [current, ...children]) {
+      const next: Category = {
+        ...category,
+        deletedAt: now,
+        rev: category.rev + 1,
+        updatedAt: now,
+      }
+      await db.categories.put(next)
+      await appendChange(next.bookId, 'category', next.id, next.rev, next)
+    }
+    for (const entry of affected) {
+      const next: Entry = opts?.withEntries
+        ? { ...entry, deletedAt: now, rev: entry.rev + 1, updatedAt: now }
+        : { ...entry, categoryId: null, rev: entry.rev + 1, updatedAt: now }
+      await db.entries.put(next)
+      await appendChange(next.bookId, 'entry', next.id, next.rev, next)
+    }
+  })
+}
+
 export type EntryDraft = {
   id?: string
   bookId: string
@@ -180,6 +294,7 @@ export type EntryDraft = {
   currency: string
   accountId: string
   toAccountId: string | null
+  categoryId: string | null
   tagIds: string[]
   note: string
   occurredAt: string

@@ -1,5 +1,5 @@
 export const zh = {
-  appName: '标签记账',
+  appName: '轻记账',
   htmlLang: 'zh-CN',
   intl: 'zh-CN',
 
@@ -47,6 +47,7 @@ export const zh = {
   },
 
   ledger: {
+    all: '全部',
     title: '流水',
     expense: '支出',
     income: '收入',
@@ -77,6 +78,8 @@ export const zh = {
     assetChart: '资产',
     expenseTags: '支出标签',
     incomeTags: '收入标签',
+    expenseCategories: '支出分类',
+    incomeCategories: '收入分类',
     drillHint: '点击标签以进行筛选',
     emptyExpenseTags: '这个时段没有支出标签',
     emptyIncomeTags: '这个时段没有收入标签',
@@ -87,6 +90,27 @@ export const zh = {
     modeMonth: '月',
     modeYear: '年',
     noData: '还没有数据',
+  },
+
+  categories: {
+    title: '分类',
+    uncategorized: '未分类',
+    add: '新建分类',
+    addChild: '新建子分类',
+    edit: '编辑分类',
+    name: '名称',
+    namePlaceholder: '分类名称',
+    icon: '图标',
+    color: '颜色',
+    none: '不选分类',
+    empty: '还没有分类',
+    entryCount: (n: number) => `${n} 笔`,
+    deleteTitle: '删除分类',
+    deleteHint: '子分类会一起删除。',
+    deleteKeep: '只删分类',
+    deleteKeepDetail: '这个分类和子分类下的流水会变成「未分类」，流水本身保留。',
+    deleteWithEntries: '连同流水删除',
+    deleteWithEntriesDetail: (n: number) => `删除这个分类和子分类下的 ${n} 笔流水。`,
   },
 
   tags: {
@@ -131,6 +155,7 @@ export const zh = {
 
   manage: {
     title: '管理',
+    categories: '分类',
     tags: '标签',
     subscriptions: '订阅',
   },
