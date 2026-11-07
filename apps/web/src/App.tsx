@@ -198,7 +198,7 @@ export default function App() {
             type="button"
             onClick={() => setEditor({})}
             aria-label={t.nav.addEntry}
-            className="fixed right-5 bottom-[calc(4.75rem+var(--sab))] z-30 flex size-14 items-center justify-center rounded-full bg-accent text-accent-ink shadow-fab transition-[transform,filter] duration-150 hover:brightness-105 active:scale-95 desktop:hidden"
+            className="fixed right-5 bottom-[calc(4.75rem+var(--sab))] z-30 flex size-14 items-center justify-center rounded-full bg-ink text-page shadow-fab transition-[transform,opacity] duration-150 hover:opacity-90 active:scale-95 desktop:hidden"
           >
             <Plus size={24} strokeWidth={1.75} />
           </button>
