@@ -160,17 +160,17 @@ export function isEntityType(value: string): value is EntityType {
 }
 
 export const TAG_COLOR_PALETTE = [
-  '#c45c26',
-  '#3d5a80',
-  '#2f6f4e',
-  '#9b4d6c',
-  '#6b705c',
-  '#7c4a7c',
-  '#8b5a2b',
-  '#4a5568',
-  '#b45309',
-  '#1d4e89',
-  '#9a3412',
-  '#365314',
+  '#c05a3e',
+  '#c2702c',
+  '#9c7526',
+  '#6f8140',
+  '#3f7d5a',
+  '#2f7f7a',
+  '#3a6ea5',
+  '#5560a8',
+  '#8a5a9e',
+  '#a8547c',
+  '#b5484f',
+  '#6b6f76',
 ] as const
 

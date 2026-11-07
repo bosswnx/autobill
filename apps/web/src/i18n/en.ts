@@ -345,6 +345,7 @@ export const en: typeof zh = {
 
   colorPicker: {
     title: 'Choose color',
+    custom: 'Custom color',
   },
 
   keypad: {

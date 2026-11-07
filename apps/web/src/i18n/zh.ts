@@ -315,6 +315,7 @@ export const zh = {
 
   colorPicker: {
     title: '选择颜色',
+    custom: '自定义颜色',
   },
 
   keypad: {
