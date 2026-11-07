@@ -178,6 +178,7 @@ export function CategoriesScreen({ bookId, categories, usage, onFilterCategory }
 
       {editing ? (
         <CategoryForm
+          key={editing.category?.id ?? `new:${editing.kind}:${editing.parentId ?? 'root'}`}
           bookId={bookId}
           initial={editing}
           categories={categories}
@@ -415,10 +416,7 @@ function CategoryForm({
                   <button
                     type="button"
                     className="rounded-md bg-field px-3 py-1.5 text-sm text-muted transition-colors duration-150 hover:bg-field-hover hover:text-ink"
-                    onClick={() => {
-                      onAddChild(category)
-                      close()
-                    }}
+                    onClick={() => onAddChild(category)}
                   >
                     {t.categories.addChild}
                   </button>
