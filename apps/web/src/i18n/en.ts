@@ -117,7 +117,7 @@ export const en: typeof zh = {
     sortName: 'Name',
     thisMonth: 'This month',
     add: 'New category',
-    addChild: 'New subcategory',
+    addChild: 'Add subcategory',
     edit: 'Edit category',
     name: 'Name',
     namePlaceholder: 'Category name',

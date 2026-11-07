@@ -401,44 +401,31 @@ function CategoryForm({
 
             {error ? <p className="mt-3 text-sm text-expense">{error}</p> : null}
 
-            <div className="mt-6 flex flex-wrap items-center justify-between gap-2">
-              <div className="flex flex-wrap gap-1">
-                {category ? (
-                  <button
-                    type="button"
-                    className="rounded-md border border-expense px-3 py-1.5 text-sm text-expense hover:bg-hover"
-                    onClick={() => setConfirmingDelete(true)}
-                  >
-                    {t.common.delete}
-                  </button>
-                ) : null}
-                {canAddChild && category ? (
-                  <button
-                    type="button"
-                    className="rounded-md bg-field px-3 py-1.5 text-sm text-muted transition-colors duration-150 hover:bg-field-hover hover:text-ink"
-                    onClick={() => onAddChild(category)}
-                  >
-                    {t.categories.addChild}
-                  </button>
-                ) : null}
-                {onView ? (
-                  <button
-                    type="button"
-                    className="rounded-md bg-field px-3 py-1.5 text-sm text-muted transition-colors duration-150 hover:bg-field-hover hover:text-ink"
-                    onClick={onView}
-                  >
-                    {t.tags.viewLedger}
-                  </button>
-                ) : null}
-              </div>
-              <div className="flex gap-1">
-                <button
-                  type="button"
-                  className="rounded-md bg-field px-3 py-1.5 text-sm text-muted transition-colors duration-150 hover:bg-field-hover hover:text-ink"
-                  onClick={close}
-                >
-                  {t.common.cancel}
-                </button>
+            <div className="mt-6 flex flex-col gap-2">
+              {canAddChild || onView ? (
+                <div className="flex flex-wrap gap-1">
+                  {canAddChild && category ? (
+                    <button
+                      type="button"
+                      className="rounded-md bg-field px-3 py-1.5 text-sm text-muted transition-colors duration-150 hover:bg-field-hover hover:text-ink"
+                      onClick={() => onAddChild(category)}
+                    >
+                      {t.categories.addChild}
+                    </button>
+                  ) : null}
+                  {onView ? (
+                    <button
+                      type="button"
+                      className="rounded-md bg-field px-3 py-1.5 text-sm text-muted transition-colors duration-150 hover:bg-field-hover hover:text-ink"
+                      onClick={onView}
+                    >
+                      {t.tags.viewLedger}
+                    </button>
+                  ) : null}
+                </div>
+              ) : null}
+
+              <div className="flex flex-wrap items-center gap-1">
                 <button
                   type="button"
                   disabled={saving || !name.trim()}
@@ -447,6 +434,22 @@ function CategoryForm({
                 >
                   {saving ? t.common.saving : t.common.save}
                 </button>
+                <button
+                  type="button"
+                  className="rounded-md bg-field px-3 py-1.5 text-sm text-muted transition-colors duration-150 hover:bg-field-hover hover:text-ink"
+                  onClick={close}
+                >
+                  {t.common.cancel}
+                </button>
+                {category ? (
+                  <button
+                    type="button"
+                    className="ml-auto rounded-md border border-expense px-3 py-1.5 text-sm text-expense hover:bg-hover"
+                    onClick={() => setConfirmingDelete(true)}
+                  >
+                    {t.common.delete}
+                  </button>
+                ) : null}
               </div>
             </div>
           </div>

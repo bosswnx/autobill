@@ -100,7 +100,7 @@ export const zh = {
     sortName: '名称',
     thisMonth: '本月',
     add: '新建分类',
-    addChild: '新建子分类',
+    addChild: '添加子分类',
     edit: '编辑分类',
     name: '名称',
     namePlaceholder: '分类名称',
